@@ -19,7 +19,8 @@ final class SSHRemoteSession: NSObject, RemoteSession, LocalProcessTerminalViewD
         view.processDelegate = self
         view.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
         terminal = view
-        view.startProcess(executable: "/usr/bin/ssh", args: SSHArguments.make(profile))
+        view.startProcess(executable: "/usr/bin/ssh", args: SSHArguments.make(profile),
+                          environment: SSHArguments.environment())
         guard view.process.running else {
             status = .disconnected(reason: NSLocalizedString("ssh.ended", comment: ""))
             return
@@ -27,6 +28,13 @@ final class SSHRemoteSession: NSObject, RemoteSession, LocalProcessTerminalViewD
         // Process running is not proof of successful authentication.
         status = .running
     }
+    #if DEBUG
+    var diagnosticText: String {
+        guard let data = terminal?.getTerminal().getBufferAsData() else { return "No terminal" }
+        return String(decoding: data, as: UTF8.self)
+    }
+    #endif
+
     func stop() {
         terminal?.processDelegate = nil
         terminal?.terminate()

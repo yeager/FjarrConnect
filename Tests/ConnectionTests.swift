@@ -54,6 +54,13 @@ final class ConnectionTests: XCTestCase {
         XCTAssertEqual(parsed.port, source.port)
         XCTAssertEqual(ConnectionURI.profile(from: "vnc://[::1]:5901")?.host, "::1")
     }
+    func testSSHRetainsAgentAndCommandSearchPath() {
+        let environment = SSHArguments.environment(from: ["SSH_AUTH_SOCK": "/tmp/test-agent", "PATH": "/usr/bin:/opt/homebrew/bin"])
+        XCTAssertTrue(environment.contains("SSH_AUTH_SOCK=/tmp/test-agent"))
+        XCTAssertTrue(environment.contains("PATH=/usr/bin:/opt/homebrew/bin"))
+        XCTAssertTrue(environment.contains("TERM=xterm-256color"))
+    }
+
     func testSSHArgumentsKeepUserDataSeparate() {
         let profile = ConnectionProfile(name: "test", transport: .ssh, host: "host", username: "name;echo example")
         let args = SSHArguments.make(profile)

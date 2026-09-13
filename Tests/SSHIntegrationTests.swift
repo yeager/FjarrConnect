@@ -52,7 +52,7 @@ final class SSHIntegrationTests: XCTestCase {
         session.start()
         XCTAssertEqual(session.status, .running)
         wait(for: [exited], timeout: 10)
-        XCTAssertNotNil(session.status.error)
+        XCTAssertNotNil(session.status.error, session.diagnosticText)
         session.stop()
         XCTAssertEqual(session.status, .disconnected(reason: nil))
         subscription.cancel()
