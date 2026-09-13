@@ -72,3 +72,5 @@
 "favorite.remove" = "Fjern fra favoritter";
 
 "session.timeout" = "Forbindelsen fik timeout. Kontrollér adresse, skærmdeling og firewall, og prøv igen.";
+
+"rdp.showWindow" = "Vis fjernskrivebord";

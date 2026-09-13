@@ -72,3 +72,5 @@
 "favorite.remove" = "Fjern fra favoritter";
 
 "session.timeout" = "Tilkoblingen tok for lang tid. Kontroller adresse, skjermdeling og brannmur, og prøv igjen.";
+
+"rdp.showWindow" = "Vis eksternt skrivebord";

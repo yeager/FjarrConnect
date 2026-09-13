@@ -72,3 +72,5 @@
 "favorite.remove" = "Remove from favorites";
 
 "session.timeout" = "The connection timed out. Check the address, Screen Sharing and firewall, then try again.";
+
+"rdp.showWindow" = "Show remote desktop";
