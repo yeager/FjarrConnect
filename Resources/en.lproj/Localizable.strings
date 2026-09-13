@@ -1,0 +1,36 @@
+/* FjärrConnect — English (base) */
+
+"quickconnect.placeholder"   = "vnc://host or user@host";
+
+"sidebar.saved"              = "Saved Connections";
+"sidebar.saved.empty"        = "No saved connections yet";
+"sidebar.discovered"         = "On Your Network";
+"sidebar.discovered.empty"   = "Searching…";
+
+"profile.new"                = "New Connection";
+"profile.edit"               = "Edit Connection";
+
+"action.edit"                = "Edit";
+"action.delete"              = "Delete";
+"action.disconnect"          = "Disconnect";
+"action.cancel"              = "Cancel";
+"action.save"                = "Save";
+
+"detail.empty.title"         = "No Active Session";
+"detail.empty.description"   = "Pick a saved connection, choose a Mac on your network, or type an address to connect.";
+
+"field.name"                 = "Name";
+"field.protocol"             = "Protocol";
+"field.host"                 = "Host";
+"field.username"             = "Username";
+"field.password"             = "Password";
+"field.group"                = "Group";
+"field.port.format"          = "Port (default %d)";
+
+"transport.vnc"              = "VNC / Screen Sharing";
+"transport.rdp"              = "RDP";
+"transport.ssh"              = "SSH";
+
+"backend.pending.hint"       = "This protocol’s engine isn’t wired up in this build yet.";
+"backend.ssh.pending"        = "SSH support is not yet implemented.";
+"backend.rdp.pending"        = "RDP support is not yet implemented.";

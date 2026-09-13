@@ -1,0 +1,36 @@
+/* FjärrConnect — Norsk bokmål (nb) */
+
+"quickconnect.placeholder"   = "vnc://vert eller bruker@vert";
+
+"sidebar.saved"              = "Lagrede tilkoblinger";
+"sidebar.saved.empty"        = "Ingen lagrede tilkoblinger ennå";
+"sidebar.discovered"         = "På nettverket ditt";
+"sidebar.discovered.empty"   = "Søker…";
+
+"profile.new"                = "Ny tilkobling";
+"profile.edit"               = "Rediger tilkobling";
+
+"action.edit"                = "Rediger";
+"action.delete"              = "Slett";
+"action.disconnect"          = "Koble fra";
+"action.cancel"              = "Avbryt";
+"action.save"                = "Lagre";
+
+"detail.empty.title"         = "Ingen aktiv økt";
+"detail.empty.description"   = "Velg en lagret tilkobling, en Mac på nettverket, eller skriv inn en adresse for å koble til.";
+
+"field.name"                 = "Navn";
+"field.protocol"             = "Protokoll";
+"field.host"                 = "Vert";
+"field.username"             = "Brukernavn";
+"field.password"             = "Passord";
+"field.group"                = "Gruppe";
+"field.port.format"          = "Port (standard %d)";
+
+"transport.vnc"              = "VNC / Skjermdeling";
+"transport.rdp"              = "RDP";
+"transport.ssh"              = "SSH";
+
+"backend.pending.hint"       = "Motoren for denne protokollen er ikke koblet til i denne versjonen ennå.";
+"backend.ssh.pending"        = "SSH-støtte er ikke implementert ennå.";
+"backend.rdp.pending"        = "RDP-støtte er ikke implementert ennå.";

@@ -1,0 +1,36 @@
+/* FjärrConnect — Dansk (da) */
+
+"quickconnect.placeholder"   = "vnc://vært eller bruger@vært";
+
+"sidebar.saved"              = "Gemte forbindelser";
+"sidebar.saved.empty"        = "Ingen gemte forbindelser endnu";
+"sidebar.discovered"         = "På dit netværk";
+"sidebar.discovered.empty"   = "Søger…";
+
+"profile.new"                = "Ny forbindelse";
+"profile.edit"               = "Rediger forbindelse";
+
+"action.edit"                = "Rediger";
+"action.delete"              = "Slet";
+"action.disconnect"          = "Afbryd";
+"action.cancel"              = "Annuller";
+"action.save"                = "Gem";
+
+"detail.empty.title"         = "Ingen aktiv session";
+"detail.empty.description"   = "Vælg en gemt forbindelse, en Mac på netværket, eller skriv en adresse for at oprette forbindelse.";
+
+"field.name"                 = "Navn";
+"field.protocol"             = "Protokol";
+"field.host"                 = "Vært";
+"field.username"             = "Brugernavn";
+"field.password"             = "Adgangskode";
+"field.group"                = "Gruppe";
+"field.port.format"          = "Port (standard %d)";
+
+"transport.vnc"              = "VNC / Skærmdeling";
+"transport.rdp"              = "RDP";
+"transport.ssh"              = "SSH";
+
+"backend.pending.hint"       = "Motoren til denne protokol er ikke tilsluttet i denne version endnu.";
+"backend.ssh.pending"        = "SSH-understøttelse er ikke implementeret endnu.";
+"backend.rdp.pending"        = "RDP-understøttelse er ikke implementeret endnu.";

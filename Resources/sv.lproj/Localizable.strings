@@ -1,0 +1,36 @@
+/* FjärrConnect — Svenska (sv) */
+
+"quickconnect.placeholder"   = "vnc://värd eller användare@värd";
+
+"sidebar.saved"              = "Sparade anslutningar";
+"sidebar.saved.empty"        = "Inga sparade anslutningar än";
+"sidebar.discovered"         = "På ditt nätverk";
+"sidebar.discovered.empty"   = "Söker…";
+
+"profile.new"                = "Ny anslutning";
+"profile.edit"               = "Redigera anslutning";
+
+"action.edit"                = "Redigera";
+"action.delete"              = "Ta bort";
+"action.disconnect"          = "Koppla från";
+"action.cancel"              = "Avbryt";
+"action.save"                = "Spara";
+
+"detail.empty.title"         = "Ingen aktiv session";
+"detail.empty.description"   = "Välj en sparad anslutning, en Mac på nätverket, eller skriv en adress för att ansluta.";
+
+"field.name"                 = "Namn";
+"field.protocol"             = "Protokoll";
+"field.host"                 = "Värd";
+"field.username"             = "Användarnamn";
+"field.password"             = "Lösenord";
+"field.group"                = "Grupp";
+"field.port.format"          = "Port (standard %d)";
+
+"transport.vnc"              = "VNC / Skärmdelning";
+"transport.rdp"              = "RDP";
+"transport.ssh"              = "SSH";
+
+"backend.pending.hint"       = "Motorn för det här protokollet är inte inkopplad i den här versionen än.";
+"backend.ssh.pending"        = "SSH-stöd är inte implementerat än.";
+"backend.rdp.pending"        = "RDP-stöd är inte implementerat än.";

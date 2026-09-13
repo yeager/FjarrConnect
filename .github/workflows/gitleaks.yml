@@ -1,0 +1,34 @@
+name: gitleaks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: Scan for secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0   # full history, so every commit is scanned
+
+      # Uses the open-source gitleaks CLI directly (MIT). Unlike the official
+      # gitleaks-action (v2+), this needs no license key for org- or user-owned
+      # repos. Pinned to a specific release for reproducible runs.
+      - name: Run gitleaks
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/repo" \
+            ghcr.io/gitleaks/gitleaks:v8.30.1 \
+            detect \
+              --source=/repo \
+              --config=/repo/.gitleaks.toml \
+              --redact \
+              --verbose \
+              --exit-code=1
