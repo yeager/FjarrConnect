@@ -1,71 +1,131 @@
 <div align="center">
   <img src="icon.png" width="128" alt="FjärrConnect app icon"/>
   <h1>FjärrConnect</h1>
-  <p><strong>Native macOS remote-desktop client for VNC, RDP and SSH.</strong></p>
+  <p><strong>Your remote machines, in one Mac app.</strong></p>
   <p>
-    <img src="https://img.shields.io/badge/protected%20by-gitleaks-blue" alt="protected by gitleaks"/>
-    <img src="https://github.com/yeager/FjarrConnect/actions/workflows/ci.yml/badge.svg" alt="CI"/>
-    <img src="https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey" alt="platform"/>
-    <img src="https://img.shields.io/badge/license-MIT-green" alt="license"/>
+    <a href="https://github.com/yeager/FjarrConnect/actions/workflows/ci.yml"><img src="https://github.com/yeager/FjarrConnect/actions/workflows/ci.yml/badge.svg" alt="Mac build and tests"/></a>
+    <a href="https://github.com/yeager/FjarrConnect/actions/workflows/gitleaks.yml"><img src="https://github.com/yeager/FjarrConnect/actions/workflows/gitleaks.yml/badge.svg" alt="Gitleaks secret scan"/></a>
+    <img src="https://img.shields.io/badge/macOS-14%2B-lightgrey" alt="macOS 14 or later"/>
+    <img src="https://img.shields.io/badge/architectures-Apple%20Silicon%20%2B%20Intel-blue" alt="Apple Silicon and Intel"/>
+    <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license"/>
   </p>
 </div>
 
-A native macOS remote-desktop client for reaching the machines on your network —
-**VNC** (including Mac Screen Sharing), **RDP**, and **SSH** — from one place.
-Saved connection profiles, credentials in the Keychain, Bonjour auto-discovery,
-and a fully Scandinavian-localized interface.
+FjärrConnect brings **VNC / Mac Screen Sharing, SSH and RDP** into one connection
+manager for **macOS 14 or later**, on **Apple Silicon (arm64) and Intel (x86_64)**.
+There are no Windows, Linux or mobile app targets.
 
-> **Naming.** `FjärrConnect` is the display name; `FjarrConnect` / `fjarrconnect`
-> is the internal name used everywhere tooling requires ASCII (bundle id, target,
-> module). *Fjärr* is Swedish for "remote" — as in *fjärrskrivbord*, remote desktop.
+## Version 0.1
 
----
+Version **0.1.0 is being prepared**. The release workflow is implemented; a release
+is published only after its gitleaks scan, Mac tests and universal packaging pass.
+Check [GitHub Releases](https://github.com/yeager/FjarrConnect/releases) for published
+builds and [Actions](https://github.com/yeager/FjarrConnect/actions) for current verification.
+
+The downloadable archive will be `FjarrConnect-0.1.0-macOS-universal.zip`, accompanied
+by `SHA256SUMS.txt`. Unzip the archive and move FjärrConnect to Applications.
+
+The initial release uses **ad-hoc signing**, not Developer ID signing or Apple
+notarization. macOS may require approval under **System Settings → Privacy & Security**
+on first launch. Never disable Gatekeeper globally to install the app.
 
 ## Features
 
-- **Three protocols, one app** — VNC, RDP, and SSH behind a single connection list.
-- **Auto-discovery** — Macs sharing their screen appear automatically on your LAN
-  via Bonjour (`_rfb._tcp`), the same mechanism Apple Remote Desktop uses.
-- **Saved profiles** — name, host, port, protocol, username, and optional grouping,
-  persisted locally and reusable with one click.
-- **Credentials in the Keychain** — passwords are never written to the profile file
-  or to disk in plain text.
-- **Quick connect** — type `vnc://user@host:port` (or just a hostname) to connect
-  without saving anything.
-- **Localized** — English, Swedish, Danish, and Norwegian Bokmål.
+- **Favorites:** click the star beside a saved connection to pin it to the Favorites
+  section. Click again to remove it. Favorites persist between launches, work with
+  search, and preserve compatibility with existing saved profiles.
+- **Saved connections:** create, edit and delete profiles with a name, host, port,
+  protocol, username and optional group. Right-click a connection for available actions.
+- **Session tabs:** keep multiple connections open and switch between them. Closing
+  a tab disconnects its session; closing the app disconnects all sessions.
+- **Search:** find saved connections by name, host, group or protocol, and filter
+  discovered Macs by name.
+- **Quick connect:** press **⌘K**, enter an address, then press Return.
+- **New connection:** press **⌘N**. Leave the name blank to use the hostname.
+- **Bonjour discovery:** find Macs advertising Screen Sharing on the local network,
+  with refresh and visible connection errors.
+- **Keychain credentials:** save VNC and RDP passwords in the macOS Keychain. Quick
+  connections can use a password without saving it.
+- **Localized interface:** English, Swedish, Danish and Norwegian Bokmål.
+- **Refreshed icon:** an editable SVG master with all required Mac icon sizes.
 
-## Protocol status
+## Protocols
 
-| Protocol | Status | Engine |
+| Protocol | How it works | Authentication |
 |---|---|---|
-| VNC / Screen Sharing | ✅ Implemented | [RoyalVNCKit](https://github.com/royalapplications/royalvnc) (MIT) |
-| RDP | 🚧 Stubbed behind the seam | [FreeRDP 3](https://github.com/FreeRDP/FreeRDP) (Apache-2.0) |
-| SSH | 🚧 Stubbed behind the seam | [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) + [Citadel](https://github.com/orlandos-nl/Citadel) |
+| VNC / Mac Screen Sharing | Embedded desktop through [RoyalVNCKit](https://github.com/royalapplications/royalvnc), with keyboard, mouse and clipboard support | VNC password or remote Mac username/password; optional Keychain storage |
+| SSH | Embedded [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) terminal running macOS `/usr/bin/ssh` | Your SSH configuration, keys and ssh-agent; passwords and new host-key confirmation in the terminal |
+| RDP | Native [FreeRDP](https://github.com/FreeRDP/FreeRDP) SDL client in a separate desktop window, managed by FjärrConnect | Username/password; FreeRDP handles certificate prompts |
 
-RoyalVNCKit speaks both classic VNC auth and Apple Remote Desktop auth, so a macOS
-account username/password connects to any Mac with Screen Sharing enabled.
+**RDP packaging is currently being verified.** The CI/release pipeline builds a
+self-contained FreeRDP runtime for both Mac architectures and bundles it into the
+app. The app also detects a locally installed SDL client from `brew install freerdp`
+for developer builds. A release must pass the bundled-runtime checks before publishing.
 
-## Requirements
+SSH passwords are entered directly in the terminal and are **not** saved by
+FjärrConnect. SSH private keys remain managed by OpenSSH and your ssh-agent.
+The status “Client running” for SSH/RDP means the client process started; it does
+not claim that authentication succeeded.
 
-- **macOS 14 or later** (uses `ContentUnavailableView` and the two-parameter `onChange`).
-- Apple Silicon or Intel — the release build is a **universal binary**.
-- To build: **Xcode 16.4+** and **[XcodeGen](https://github.com/yonaskolb/XcodeGen)**.
+## Connect to a Mac
 
-## Building
+1. On the remote Mac, enable **System Settings → General → Sharing → Screen Sharing**.
+2. Open FjärrConnect. Allow Local Network access if macOS asks.
+3. Select the Mac under **On Your Network**, or enter `vnc://studio.local` in Quick Connect.
+4. Enter the remote Mac account's username and password. For a saved profile, you can
+   remember the password in Keychain.
+5. Save frequently used machines with **⌘N**, then click their star to make them favorites.
 
-The Xcode project is generated from `project.yml`, so no `.xcodeproj` is committed —
-`project.yml` is the single source of truth for the bundle id, Info.plist keys,
-localizations, app icon, and the RoyalVNCKit dependency.
+Quick-connect examples:
+
+```text
+studio.local
+vnc://admin@studio.local:5901
+ssh://deploy@server.local:2222
+rdp://user@workstation.local
+vnc://[::1]:5900
+```
+
+Ports must be between **1 and 65535**. Passwords, query parameters and arbitrary
+paths are rejected in connection URLs; use the sign-in dialog for credentials.
+In the profile editor, enter only the hostname/IP in the Host field and the port in
+its own field. IPv6 addresses in URLs use brackets.
+
+## Credentials and local data
+
+Profiles are stored in:
+
+```text
+~/Library/Application Support/FjarrConnect/profiles.json
+```
+
+The JSON contains connection details and favorite state, **not passwords**. VNC/RDP
+passwords are stored as per-profile Keychain items. When editing a profile, enable
+**Change saved password** to replace it; an empty replacement removes the saved password.
+
+Saving reports errors instead of silently losing changes. An unreadable or corrupt
+profile file is preserved and blocks further saves so it cannot be overwritten by
+an empty connection list. Back up the file before repairing or removing it.
+
+VNC encryption depends on the server and authentication protocol; use a trusted
+network or VPN. SSH retains OpenSSH host-key checks, and RDP retains certificate
+verification. RDP credentials are passed through an anonymous pipe, not command-line
+arguments or temporary profile files.
+
+## Build from source
+
+You need **Xcode 16.4+** and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+The Xcode project is generated from `project.yml`.
 
 ```bash
 git clone https://github.com/yeager/FjarrConnect.git
 cd FjarrConnect
 brew install xcodegen
-xcodegen generate          # writes FjarrConnect.xcodeproj + Generated/Info.plist
-open FjarrConnect.xcodeproj # then press ⌘R
+xcodegen generate
+open FjarrConnect.xcodeproj
 ```
 
-Command-line build (identical to CI), producing a universal binary:
+Build the universal app:
 
 ```bash
 xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
@@ -73,87 +133,89 @@ xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
   ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO build
 ```
 
-## Usage
+Run Mac tests for the host architecture:
 
-1. On the **target** Mac: System Settings ▸ General ▸ Sharing ▸ **Screen Sharing** → on.
-2. Launch FjärrConnect and allow the Local Network permission prompt (macOS 15+).
-3. The Mac appears under **On Your Network** — click to connect. Or type an address
-   in the quick-connect field (`vnc://studio.local`), or save a reusable profile with
-   the **+** button.
-
-Saved profiles can be edited or deleted from the sidebar's context menu; passwords
-are stored in the Keychain, keyed by the profile's id.
-
-## Localization
-
-Every user-facing string is a key in `Resources/<lang>.lproj/Localizable.strings`,
-translated for:
-
-- 🇬🇧 English (base) · 🇸🇪 Swedish · 🇩🇰 Danish · 🇳🇴 Norwegian Bokmål
-
-All four tables are kept in key-for-key parity. Add a language by copying an `.lproj`
-folder and adding the locale under the target's localizations in `project.yml`.
-
-## Architecture
-
-The design borrows Remmina's protocol-plugin model: a single seam, `RemoteSession`,
-hides every transport library so the UI never talks to a concrete backend.
-
-```
-ContentView ─ ConnectionManager ─ (any RemoteSession)
-                                    ├── VNCRemoteSession  (RoyalVNCKit)
-                                    ├── RDPRemoteSession  (FreeRDP — stub)
-                                    └── SSHRemoteSession  (SwiftTerm — stub)
+```bash
+xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
+  -configuration Debug -destination 'platform=macOS' \
+  ARCHS="$(uname -m)" ONLY_ACTIVE_ARCH=YES \
+  CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO test
 ```
 
-`ProtocolRegistry.makeSession(for:)` is the only place that knows which libraries
-exist — adding a real RDP or SSH backend means implementing one file, with no UI
-changes. Supporting types:
+`scripts/build-rdp.sh arm64` and `scripts/build-rdp.sh x86_64` build the bundled RDP
+runtime from pinned FreeRDP, OpenSSL and SDL sources on a Mac with CMake available.
+CI combines both outputs and `scripts/build-release.sh` packages the app. A normal
+Xcode build does not automatically compile or bundle the RDP runtime.
 
-- `ConnectionProfile` / `ProfileStore` — the saved-machine model and its JSON store.
-- `KeychainStore` — per-profile passwords via Keychain Services.
-- `BonjourBrowser` — `_rfb._tcp` discovery and endpoint resolution.
-- `ConnectionURI` — `vnc://user@host:port` quick-connect parsing.
+## GitHub Actions and releases
 
-## Security
+Development is on **`main`**.
 
-Secrets are kept out of the repository by [gitleaks](https://github.com/gitleaks/gitleaks) (MIT):
+- **CI:** checks localizations and icons, runs macOS regression tests, builds both RDP
+  runtime slices and packages the universal app. Packaging verifies architecture
+  slices in the app and embedded native code, checks ad-hoc signatures, and creates
+  a ZIP archive with a SHA-256 checksum.
+- **gitleaks:** scans the complete repository history on pushes to `main` and pull
+  requests. The release workflow also requires a clean full-history scan.
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.1.0`**, triggers a
+  fresh scan, test and build. GitHub publishes the release assets only when these pass.
 
-- **CI** (`.github/workflows/gitleaks.yml`) scans full history on every push/PR using
-  the gitleaks CLI — no license key required, unlike the official action for orgs.
-- **Pre-commit** (`.pre-commit-config.yaml`) runs the same scan locally:
-  `pipx install pre-commit && pre-commit install`.
-- App credentials live only in the macOS Keychain, never in source or profile files.
+For maintainers, after the current `main` revision passes verification:
 
-## Continuous integration
+```bash
+git pull --ff-only
+git tag v0.1.0
+git push origin v0.1.0
+```
 
-`.github/workflows/ci.yml` runs on every push and PR:
+Do not reuse or move an already published release tag. Use a new version for fixes.
+Release notes are maintained in `RELEASE_NOTES.md`.
 
-- Runner **macos-15**, Xcode pinned to **16.4**.
-- `xcodegen generate` → `xcodebuild` a **universal** (`arm64` + `x86_64`) build.
-- `lipo -info` verifies both slices, and the `.app` is uploaded as an artifact.
+Local checks:
 
-## App icon
+```bash
+python3 scripts/check-resources.py
+gitleaks detect --source . --redact
+gitleaks detect --source . --no-git --redact
+git diff --check
+```
 
-`icon.svg` is the editable master — a Bifröst-style aurora arc bridging two nodes,
-evoking both the Nordic name and the app's job of connecting two machines. It's
-rasterized into `Resources/Assets.xcassets/AppIcon.appiconset` (16–1024px), and
-`icon.png` / `icon.icns` are provided for use outside the app bundle.
+An optional pre-commit hook is configured in `.pre-commit-config.yaml`.
 
-## Roadmap
+## Project layout
 
-- Implement the SSH backend (SwiftTerm PTY + Citadel) and RDP backend (FreeRDP xcframework).
-- SSH key-based auth, with keys in the Keychain.
-- Session tabs and per-profile colour tags.
-- Localize the remaining `SessionStatus` labels.
-- Unit tests (`ConnectionURI`, `ProfileStore`) wired into CI.
-- Signed and notarized release builds.
+| Directory | Purpose |
+|---|---|
+| `App` | App lifecycle and session ownership |
+| `Model` | Profiles, favorites, validation, persistence and Keychain access |
+| `Protocols` | VNC, SSH and RDP session implementations |
+| `Views` | Connection list, tabs, profile editor and sign-in UI |
+| `Discovery` | Bonjour browsing and endpoint resolution |
+| `Resources` | Mac app icon and four localization tables |
+| `Tests` | Regression tests for addresses, credentials, profiles and favorites |
+| `scripts` | Resource validation, icon generation and release/runtime builds |
 
-## Licensing
+`RemoteSession` is the common backend interface. `ConnectionManager` owns session
+tabs; UI code does not need to know each backend's transport implementation.
 
-FjärrConnect is released under the [MIT License](LICENSE).
+## Icon and localization
 
-Dependencies keep their own permissive licenses: RoyalVNCKit (MIT), and — once
-integrated — FreeRDP (Apache-2.0), SwiftTerm (BSD), Citadel (MIT). The design draws
-architectural inspiration from [Remmina](https://gitlab.com/Remmina/Remmina)
-(GPLv2+); ideas and UX only — no Remmina code is included.
+`icon.svg` is the editable icon master. Regenerate `icon.png`, `icon.icns` and all
+Mac asset-catalog sizes with:
+
+```bash
+python3 -m pip install cairosvg pillow
+python3 scripts/generate-icon.py
+python3 scripts/check-resources.py
+```
+
+User-facing strings live in `Resources/{en,sv,da,nb}.lproj/Localizable.strings`.
+Keep the four tables in key-for-key parity; the resource check enforces this.
+
+## License
+
+FjärrConnect is [MIT licensed](LICENSE). Dependencies retain their own licenses:
+RoyalVNCKit (MIT), SwiftTerm (MIT), FreeRDP and OpenSSL (Apache-2.0), SDL and SDL_ttf
+(zlib), and FreeType (FreeType License). Bundled RDP dependency notices are copied
+into the app's `Contents/Resources/Licenses` directory by the packaging workflow.
+No Remmina source code is included.
