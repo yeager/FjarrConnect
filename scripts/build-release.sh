@@ -7,6 +7,12 @@ xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
   CODE_SIGNING_ALLOWED=NO build | xcbeautify
 APP='build/release/Build/Products/Release/FjarrConnect.app'
 test -d "$APP"
+mkdir -p "$APP/Contents/Helpers" "$APP/Contents/Resources/Licenses"
+lipo -create build/rdp-artifacts/rdp-arm64/sdl-freerdp build/rdp-artifacts/rdp-x86_64/sdl-freerdp \
+  -output "$APP/Contents/Helpers/sdl-freerdp"
+chmod +x "$APP/Contents/Helpers/sdl-freerdp"
+cp build/rdp-artifacts/rdp-arm64/Licenses/* "$APP/Contents/Resources/Licenses/"
+"$APP/Contents/Helpers/sdl-freerdp" /version
 # Fail on missing slices in either the app or embedded dynamic frameworks.
 while IFS= read -r binary; do
   if file "$binary" | grep -q 'Mach-O'; then

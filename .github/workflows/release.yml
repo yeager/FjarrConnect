@@ -8,6 +8,8 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  rdp:
+    uses: ./.github/workflows/rdp-runtime.yml
   secrets:
     name: Scan complete history with gitleaks
     runs-on: ubuntu-latest
@@ -22,7 +24,7 @@ jobs:
             --source=/repo --config=/repo/.gitleaks.toml --redact --exit-code=1
   build:
     name: Test and package Mac ARM + Intel
-    needs: secrets
+    needs: [secrets, rdp]
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +48,10 @@ jobs:
             -configuration Debug -destination 'platform=macOS' \
             -derivedDataPath build/test -resultBundlePath build/TestResults.xcresult \
             CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO test | xcbeautify
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: rdp-*
+          path: build/rdp-artifacts
       - name: Build and verify universal release
         run: bash scripts/build-release.sh
       - uses: actions/upload-artifact@v4
