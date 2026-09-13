@@ -51,7 +51,7 @@ final class SSHRemoteSession: NSObject, RemoteSession, LocalProcessTerminalViewD
     func hostCurrentDirectoryUpdate(source: TerminalView, directory: String?) {}
     func processTerminated(source: TerminalView, exitCode: Int32?) {
         DispatchQueue.main.async { [weak self] in
-            guard let self, self.terminal === source else { return }
+            guard let self, self.terminal === source, !self.status.isFinished else { return }
             self.status = .disconnected(reason: exitCode == 0 ? nil : NSLocalizedString("ssh.ended", comment: ""))
         }
     }
