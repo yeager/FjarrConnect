@@ -20,6 +20,10 @@ final class SSHRemoteSession: NSObject, RemoteSession, LocalProcessTerminalViewD
         view.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
         terminal = view
         view.startProcess(executable: "/usr/bin/ssh", args: SSHArguments.make(profile))
+        guard view.process.running else {
+            status = .disconnected(reason: NSLocalizedString("ssh.ended", comment: ""))
+            return
+        }
         // Process running is not proof of successful authentication.
         status = .running
     }
