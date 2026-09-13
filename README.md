@@ -15,14 +15,14 @@ FjärrConnect brings **VNC / Mac Screen Sharing, SSH and RDP** into one connecti
 manager for **macOS 14 or later**, on **Apple Silicon (arm64) and Intel (x86_64)**.
 There are no Windows, Linux or mobile app targets.
 
-## Version 0.1
+## Version 0.2
 
-Version **0.1.0 is being prepared**. The release workflow is implemented; a release
+Version **0.2.0 is being prepared**. The release workflow is implemented; a release
 is published only after its gitleaks scan, Mac tests and universal packaging pass.
 Check [GitHub Releases](https://github.com/yeager/FjarrConnect/releases) for published
 builds and [Actions](https://github.com/yeager/FjarrConnect/actions) for current verification.
 
-The downloadable archive will be `FjarrConnect-0.1.0-macOS-universal.zip`, accompanied
+The downloadable archive will be `FjarrConnect-0.2.0-macOS-universal.zip`, accompanied
 by `SHA256SUMS.txt`. Unzip the archive and move FjärrConnect to Applications.
 
 The initial release uses **ad-hoc signing**, not Developer ID signing or Apple
@@ -157,15 +157,15 @@ Development is on **`main`**.
   a ZIP archive with a SHA-256 checksum.
 - **gitleaks:** scans the complete repository history on pushes to `main` and pull
   requests. The release workflow also requires a clean full-history scan.
-- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.1.0`**, triggers a
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.0`**, triggers a
   fresh scan, test and build. GitHub publishes the release assets only when these pass.
 
 For maintainers, after the current `main` revision passes verification:
 
 ```bash
 git pull --ff-only
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 Do not reuse or move an already published release tag. Use a new version for fixes.
