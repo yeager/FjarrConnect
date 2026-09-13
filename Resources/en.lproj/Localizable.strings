@@ -31,6 +31,42 @@
 "transport.rdp"              = "RDP";
 "transport.ssh"              = "SSH";
 
-"backend.pending.hint"       = "This protocol’s engine isn’t wired up in this build yet.";
-"backend.ssh.pending"        = "SSH support is not yet implemented.";
-"backend.rdp.pending"        = "RDP support is not yet implemented.";
+
+"group.ungrouped" = "Connections";
+"status.idle" = "Ready";
+"status.connecting" = "Connecting…";
+"status.connected" = "Connected";
+"status.running" = "Client running";
+"status.disconnecting" = "Disconnecting…";
+"status.disconnected" = "Disconnected";
+"action.connect" = "Connect";
+"action.reconnect" = "Reconnect";
+"action.quickConnect" = "Quick Connect";
+"action.closeSession" = "Close session";
+"action.copyAddress" = "Copy address";
+"action.refresh" = "Refresh network";
+"action.ok" = "OK";
+"error.title" = "Could not complete the action";
+"welcome.title" = "Your machines. One place.";
+"search.placeholder" = "Search connections";
+"search.empty" = "No matching connections";
+"field.changePassword" = "Change saved password";
+"field.password.hint" = "Stored in your Mac Keychain. Leave empty to remove the saved password.";
+"auth.title" = "Sign in to connect";
+"auth.remember" = "Remember in Keychain";
+"auth.hint" = "For Mac Screen Sharing, use the remote Mac account. Leave the password empty if the server needs no authentication.";
+"profile.delete.title" = "Delete this saved connection?";
+"quickconnect.invalid" = "Enter a host or vnc://, ssh://, rdp:// address with a port between 1 and 65535. Enter passwords in the sign-in dialog.";
+"session.retry" = "Check the address and credentials, then reconnect.";
+"ssh.authentication" = "SSH uses your Mac’s keys, ssh-agent and SSH configuration. Enter passwords and verify new host keys in the terminal.";
+"ssh.ended" = "SSH ended. Read the terminal message for details before reconnecting.";
+"rdp.install" = "RDP needs FreeRDP’s native Mac client. Install it with “brew install freerdp”, then connect again.";
+"rdp.invalid" = "RDP credentials cannot contain line breaks.";
+"rdp.ended" = "RDP ended. Check the server, credentials and certificate, then reconnect.";
+"rdp.window.title" = "Your desktop opens in its own window";
+"rdp.window.description" = "Complete any sign-in or certificate prompt in FreeRDP. Disconnect here to close the remote desktop.";
+"discovery.resolveFailed" = "Could not reach this Mac. Check Screen Sharing and Local Network permission, then refresh.";
+
+"sidebar.favorites" = "Favorites";
+"favorite.add" = "Add to favorites";
+"favorite.remove" = "Remove from favorites";

@@ -1,47 +1,52 @@
 import SwiftUI
+import SwiftTerm
 
-/// SSH backend. Unlike VNC/RDP this is a *terminal*, not a framebuffer, so its
-/// `makeScreenView()` returns a terminal emulator rather than a bitmap surface.
-///
-/// Recommended open-source pieces (all permissive, App-Store-safe):
-///   • Terminal UI: SwiftTerm (BSD/MIT) — https://github.com/migueldeicaza/SwiftTerm
-///   • SSH transport: Citadel (MIT, SwiftNIO SSH) — https://github.com/orlandos-nl/Citadel
-///     or NIOSSH directly (Apache-2.0).
-///
-/// Wiring sketch (once those packages are added):
-///   1. Open an SSHClient to profile.host:profile.port with username/password
-///      (or a key from the Keychain).
-///   2. Request a PTY + shell channel.
-///   3. Pipe channel stdout → SwiftTerm's `feed(byteArray:)`, and
-///      SwiftTerm's `send` callback → channel stdin.
-///   4. Map `status` from the channel/connection lifecycle.
-final class SSHRemoteSession: NSObject, RemoteSession {
+/// Apple's OpenSSH supplies host-key verification, ssh-agent, ~/.ssh/config,
+/// password and keyboard-interactive authentication. No shell interpolation.
+final class SSHRemoteSession: NSObject, RemoteSession, LocalProcessTerminalViewDelegate {
     let profile: ConnectionProfile
-    private let password: String?
-
     @Published private(set) var status: SessionStatus = .idle
+    private var terminal: LocalProcessTerminalView?
 
     init(profile: ConnectionProfile, password: String?) {
         self.profile = profile
-        self.password = password
         super.init()
     }
 
     func start() {
-        // TODO: replace with a real Citadel/NIOSSH connection + SwiftTerm PTY.
-        status = .disconnected(reason: NSLocalizedString("backend.ssh.pending", comment: ""))
+        guard terminal == nil else { return }
+        let view = LocalProcessTerminalView(frame: CGRect(x: 0, y: 0, width: 900, height: 600))
+        view.processDelegate = self
+        view.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
+        terminal = view
+        view.startProcess(executable: "/usr/bin/ssh", args: SSHArguments.make(profile))
+        // Process running is not proof of successful authentication.
+        status = .running
     }
-
     func stop() {
+        terminal?.processDelegate = nil
+        terminal?.terminate()
+        terminal = nil
         status = .disconnected(reason: nil)
     }
-
     func makeScreenView() -> AnyView {
-        AnyView(
-            BackendPlaceholderView(
-                transport: .ssh,
-                host: "\(profile.username.map { "\($0)@" } ?? "")\(profile.host):\(profile.port)"
-            )
-        )
+        AnyView(Group {
+            if let terminal { TerminalWrapper(view: terminal) }
+        })
     }
+    func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}
+    func setTerminalTitle(source: LocalProcessTerminalView, title: String) {}
+    func hostCurrentDirectoryUpdate(source: TerminalView, directory: String?) {}
+    func processTerminated(source: TerminalView, exitCode: Int32?) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.terminal === source else { return }
+            self.status = .disconnected(reason: exitCode == 0 ? nil : NSLocalizedString("ssh.ended", comment: ""))
+        }
+    }
+}
+
+private struct TerminalWrapper: NSViewRepresentable {
+    let view: LocalProcessTerminalView
+    func makeNSView(context: Context) -> LocalProcessTerminalView { view }
+    func updateNSView(_ nsView: LocalProcessTerminalView, context: Context) {}
 }

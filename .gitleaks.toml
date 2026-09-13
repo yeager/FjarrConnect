@@ -1,20 +1,3 @@
-# Gitleaks configuration for FjärrConnect
-# Docs: https://github.com/gitleaks/gitleaks#configuration
 title = "FjärrConnect gitleaks config"
-
-# Start from gitleaks' built-in ruleset (API keys, tokens, private keys, etc.)
-# and add project-specific tweaks below.
 [extend]
 useDefault = true
-
-[allowlist]
-description = "Project allowlist"
-
-# Localized UI label files contain words like "Password"/"Lösenord" that are
-# field labels, never real secrets — keep them from tripping generic rules.
-paths = [
-  '''Resources/.*\.lproj/.*\.strings''',
-]
-
-# NOTE: real credentials in this app live only in the macOS Keychain and are
-# never written to disk or source, so there should be nothing else to allowlist.

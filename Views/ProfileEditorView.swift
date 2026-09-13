@@ -1,90 +1,89 @@
 import SwiftUI
 
-/// Create or edit a saved connection profile. The password is written straight to
-/// the Keychain via `ProfileStore`; it never lives in the profile struct or on disk.
 struct ProfileEditorView: View {
     @EnvironmentObject var profiles: ProfileStore
     @Environment(\.dismiss) private var dismiss
-
     private let existing: ConnectionProfile?
-
     @State private var name: String
     @State private var transport: RemoteTransport
     @State private var host: String
     @State private var portText: String
     @State private var username: String
-    @State private var password: String
+    @State private var password = ""
+    @State private var changePassword = false
     @State private var group: String
+    @State private var errorMessage: String?
 
     init(profile: ConnectionProfile?) {
-        self.existing = profile
-        _name     = State(initialValue: profile?.name ?? "")
+        existing = profile
+        _name = State(initialValue: profile?.name ?? "")
         _transport = State(initialValue: profile?.transport ?? .vnc)
-        _host     = State(initialValue: profile?.host ?? "")
+        _host = State(initialValue: profile?.host ?? "")
         _portText = State(initialValue: profile.map { String($0.port) } ?? "")
         _username = State(initialValue: profile?.username ?? "")
-        _password = State(initialValue: profile.flatMap { KeychainStore.password(for: $0.id) } ?? "")
-        _group    = State(initialValue: profile?.group ?? "")
+        _group = State(initialValue: profile?.group ?? "")
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(existing == nil ? "profile.new" : "profile.edit")
-                .font(.title2).bold()
-
+            Label(existing == nil ? "profile.new" : "profile.edit", systemImage: "display.2")
+                .font(.title2.bold())
             Form {
-                TextField("field.name", text: $name)
-
-                Picker("field.protocol", selection: $transport) {
-                    ForEach(ProtocolRegistry.available) { t in
-                        Text(LocalizedStringKey(t.displayNameKey)).tag(t)
+                Section {
+                    TextField("field.name", text: $name)
+                    Picker("field.protocol", selection: $transport) {
+                        ForEach(ProtocolRegistry.available) { Text(LocalizedStringKey($0.displayNameKey)).tag($0) }
+                    }
+                    .onChange(of: transport) { old, new in
+                        if portText.isEmpty || portText == String(old.defaultPort) { portText = String(new.defaultPort) }
+                    }
+                    TextField("field.host", text: $host)
+                    TextField(String(format: NSLocalizedString("field.port.format", comment: ""), Int(transport.defaultPort)), text: $portText)
+                    TextField("field.group", text: $group)
+                }
+                Section {
+                    TextField("field.username", text: $username)
+                    if transport == .ssh {
+                        Text("ssh.authentication").font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        if existing != nil { Toggle("field.changePassword", isOn: $changePassword) }
+                        if existing == nil || changePassword {
+                            SecureField("field.password", text: $password)
+                            Text("field.password.hint").font(.caption).foregroundStyle(.secondary)
+                        }
                     }
                 }
-                .onChange(of: transport) { _, newValue in
-                    if portText.isEmpty { portText = String(newValue.defaultPort) }
-                }
-
-                TextField("field.host", text: $host)
-                TextField(placeholderPort, text: $portText)
-                TextField("field.username", text: $username)
-                SecureField("field.password", text: $password)
-                TextField("field.group", text: $group)
-            }
-            .formStyle(.grouped)
-
+            }.formStyle(.grouped)
+            if let errorMessage { Text(errorMessage).foregroundStyle(.red).textSelection(.enabled) }
             HStack {
                 Spacer()
-                Button("action.cancel") { dismiss() }
-                    .keyboardShortcut(.cancelAction)
-                Button("action.save", action: save)
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(name.isEmpty || host.isEmpty)
+                Button("action.cancel") { dismiss() }.keyboardShortcut(.cancelAction)
+                Button("action.save", action: save).keyboardShortcut(.defaultAction).disabled(candidate == nil)
             }
-        }
-        .padding(20)
-        .frame(width: 420)
+        }.padding(24).frame(width: 480)
     }
 
-    private var placeholderPort: String {
-        String(format: NSLocalizedString("field.port.format", comment: ""),
-               Int(transport.defaultPort))
+    private var candidate: ConnectionProfile? {
+        let cleanHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let portValue = portText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let port = portValue.isEmpty ? transport.defaultPort : UInt16(portValue), port > 0 else { return nil }
+        let cleanUser = username.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanGroup = group.trimmingCharacters(in: .whitespacesAndNewlines)
+        let result = ConnectionProfile(id: existing?.id ?? UUID(), name: cleanName.isEmpty ? cleanHost : cleanName,
+                                       transport: transport, host: cleanHost, port: port,
+                                       username: cleanUser.isEmpty ? nil : cleanUser, group: cleanGroup.isEmpty ? nil : cleanGroup,
+                                       isFavorite: existing?.isFavorite ?? false)
+        return result.isValid ? result : nil
     }
 
     private func save() {
-        let port = UInt16(portText) ?? transport.defaultPort
-        var profile = existing ?? ConnectionProfile(name: name, transport: transport, host: host)
-        profile.name = name
-        profile.transport = transport
-        profile.host = host
-        profile.port = port
-        profile.username = username.isEmpty ? nil : username
-        profile.group = group.isEmpty ? nil : group
-
-        if existing == nil {
-            profiles.add(profile, password: password)
-        } else {
-            profiles.update(profile, password: password)
-        }
-        dismiss()
+        guard let profile = candidate else { return }
+        do {
+            let credential: String? = transport == .ssh ? nil : (existing == nil || changePassword ? password : nil)
+            try profiles.save(profile, password: credential)
+            password = ""
+            dismiss()
+        } catch { errorMessage = error.localizedDescription }
     }
 }

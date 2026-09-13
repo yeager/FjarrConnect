@@ -1,7 +1,6 @@
 import Foundation
 
-/// Supported transports. VNC is implemented; RDP and SSH are scaffolded behind the
-/// same `RemoteSession` seam (FreeRDP for RDP, SwiftTerm + an SSH lib for SSH).
+/// The three supported remote transports.
 enum RemoteTransport: String, Codable, CaseIterable, Identifiable {
     case vnc
     case rdp
@@ -50,13 +49,21 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
     /// Optional Remmina-style organisation.
     var group: String?
 
+    // Optional on disk so profiles created before favorites decode unchanged.
+    private var favorite: Bool?
+    var isFavorite: Bool {
+        get { favorite ?? false }
+        set { favorite = newValue }
+    }
+
     init(id: UUID = UUID(),
          name: String,
          transport: RemoteTransport = .vnc,
          host: String,
          port: UInt16? = nil,
          username: String? = nil,
-         group: String? = nil) {
+         group: String? = nil,
+         isFavorite: Bool = false) {
         self.id = id
         self.name = name
         self.transport = transport
@@ -64,14 +71,22 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
         self.port = port ?? transport.defaultPort
         self.username = username
         self.group = group
+        self.favorite = isFavorite ? true : nil
     }
 
     /// A Remmina-style URI, e.g. `vnc://admin@studio.local:5900`.
     var uri: String {
-        var s = "\(transport.uriScheme)://"
-        if let u = username, !u.isEmpty { s += "\(u)@" }
-        s += host
-        if port != transport.defaultPort { s += ":\(port)" }
-        return s
+        var components = URLComponents()
+        components.scheme = transport.uriScheme
+        components.host = host.contains(":") ? "[\(host)]" : host
+        components.user = username.flatMap { $0.isEmpty ? nil : $0 }
+        if port != transport.defaultPort { components.port = Int(port) }
+        return components.string ?? "\(transport.uriScheme)://\(host)"
+    }
+
+    var isValid: Bool {
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        ConnectionURI.validHost(host) && port > 0 &&
+        username?.contains(where: { $0.isNewline || $0.asciiValue == 0 }) != true
     }
 }

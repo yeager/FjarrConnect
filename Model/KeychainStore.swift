@@ -1,45 +1,56 @@
 import Foundation
 import Security
 
-/// Minimal Keychain-Services wrapper. Passwords are stored per profile id,
-/// never in the profile file — the same separation Remmina uses via libsecret.
+/// Update in place so a failed write never deletes a previously saved password.
 enum KeychainStore {
     private static let service = "se.fjarrconnect.app"
 
-    static func setPassword(_ password: String?, for id: UUID) {
-        let account = id.uuidString
-        // Clear any existing item first.
-        SecItemDelete(query(account: account) as CFDictionary)
-
-        guard let password, !password.isEmpty,
-              let data = password.data(using: .utf8) else { return }
-
-        var add = query(account: account)
-        add[kSecValueData as String] = data
-        add[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-        SecItemAdd(add as CFDictionary, nil)
+    struct Failure: LocalizedError {
+        let status: OSStatus
+        var errorDescription: String? {
+            SecCopyErrorMessageString(status, nil) as String? ?? "Keychain (\(status))"
+        }
     }
 
-    static func password(for id: UUID) -> String? {
-        var q = query(account: id.uuidString)
+    static func setPassword(_ password: String?, for id: UUID) throws {
+        guard let password else { return }
+        guard !password.isEmpty else { try deletePassword(for: id); return }
+        let data = Data(password.utf8)
+        let query = query(id: id)
+        let status = SecItemUpdate(query as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        if status == errSecItemNotFound {
+            var add = query
+            add[kSecValueData as String] = data
+            add[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+            try check(SecItemAdd(add as CFDictionary, nil))
+        } else { try check(status) }
+    }
+
+    static func password(for id: UUID) throws -> String? {
+        var q = query(id: id)
         q[kSecReturnData as String] = true
         q[kSecMatchLimit as String] = kSecMatchLimitOne
-
-        var result: AnyObject?
-        guard SecItemCopyMatching(q as CFDictionary, &result) == errSecSuccess,
-              let data = result as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(q as CFDictionary, &result)
+        if status == errSecItemNotFound { return nil }
+        try check(status)
+        guard let data = result as? Data, let password = String(data: data, encoding: .utf8) else {
+            throw Failure(status: errSecDecode)
+        }
+        return password
     }
 
-    static func deletePassword(for id: UUID) {
-        SecItemDelete(query(account: id.uuidString) as CFDictionary)
+    static func deletePassword(for id: UUID) throws {
+        let status = SecItemDelete(query(id: id) as CFDictionary)
+        if status != errSecItemNotFound { try check(status) }
     }
 
-    private static func query(account: String) -> [String: Any] {
-        [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account
-        ]
+    private static func check(_ status: OSStatus) throws {
+        guard status == errSecSuccess else { throw Failure(status: status) }
+    }
+
+    private static func query(id: UUID) -> [String: Any] {
+        [kSecClass as String: kSecClassGenericPassword,
+         kSecAttrService as String: service, kSecAttrAccount as String: id.uuidString]
     }
 }

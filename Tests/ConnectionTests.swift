@@ -1,0 +1,97 @@
+import XCTest
+@testable import FjarrConnect
+
+final class ConnectionTests: XCTestCase {
+    func testLegacyProfileDefaultsToNotFavorite() throws {
+        let json = """
+        {"id":"11111111-1111-1111-1111-111111111111","name":"Studio","transport":"vnc","host":"studio.local","port":5900}
+        """
+        let profile = try JSONDecoder().decode(ConnectionProfile.self, from: Data(json.utf8))
+        XCTAssertFalse(profile.isFavorite)
+    }
+
+    func testFavoritesPersistAndDoNotDuplicateGroupedProfiles() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let store = ProfileStore(fileURL: file)
+        let profile = ConnectionProfile(name: "Studio", host: "studio.local")
+        try store.save(profile, password: nil)
+        try store.toggleFavorite(profile.id)
+        XCTAssertEqual(store.favorites.map(\.id), [profile.id])
+        XCTAssertTrue(store.grouped.isEmpty)
+        let reloaded = ProfileStore(fileURL: file)
+        XCTAssertEqual(reloaded.favorites.map(\.id), [profile.id])
+        var edited = try XCTUnwrap(reloaded.profiles.first)
+        edited.name = "Office"
+        try reloaded.save(edited, password: nil)
+        XCTAssertTrue(try XCTUnwrap(reloaded.profiles.first).isFavorite)
+        try reloaded.toggleFavorite(profile.id)
+        XCTAssertTrue(reloaded.favorites.isEmpty)
+        XCTAssertEqual(reloaded.grouped.flatMap(\.profiles).map(\.id), [profile.id])
+        XCTAssertFalse(try XCTUnwrap(ProfileStore(fileURL: file).profiles.first).isFavorite)
+    }
+
+    func testQuickConnectDefaultsAndProtocols() {
+        XCTAssertEqual(ConnectionURI.profile(from: " studio.local ")?.port, 5900)
+        XCTAssertEqual(ConnectionURI.profile(from: "ssh://user@host")?.port, 22)
+        XCTAssertEqual(ConnectionURI.profile(from: "RDP://host:3390")?.transport, .rdp)
+        XCTAssertEqual(ConnectionURI.profile(from: "vnc://host:65535")?.port, 65535)
+    }
+    func testInvalidAddressesDoNotTrapOrSilentlyChangeMeaning() {
+        for input in ["", " ", "vnc://host:65536", "vnc://host:0", "vnc://host:-1",
+                      "vnc://host:999999999999999999999999", "ftp://host", "vnc://host/path",
+                      "vnc://host?password=example", "vnc://host#fragment", "vnc://user:example@host",
+                      "vnc://-oProxyCommand=touch", "vnc://a b", "vnc://user%0Aadmin@host"] {
+            XCTAssertNil(ConnectionURI.profile(from: input), input)
+        }
+    }
+    func testIPv6AndEscapedUsernameRoundTrip() throws {
+        let source = ConnectionProfile(name: "IPv6", transport: .ssh, host: "fe80::1%en0", port: 2222, username: "test@domain")
+        let parsed = try XCTUnwrap(ConnectionURI.profile(from: source.uri))
+        XCTAssertEqual(parsed.host, source.host)
+        XCTAssertEqual(parsed.username, source.username)
+        XCTAssertEqual(parsed.port, source.port)
+        XCTAssertEqual(ConnectionURI.profile(from: "vnc://[::1]:5901")?.host, "::1")
+    }
+    func testSSHArgumentsKeepUserDataSeparate() {
+        let profile = ConnectionProfile(name: "test", transport: .ssh, host: "host", username: "name;echo example")
+        let args = SSHArguments.make(profile)
+        XCTAssertEqual(Array(args.suffix(2)), ["--", "host"])
+        XCTAssertTrue(args.contains("name;echo example"))
+        XCTAssertTrue(args.contains("StrictHostKeyChecking=ask"))
+    }
+    func testRDPCredentialsUsePipeFormatAndRejectLineInjection() throws {
+        let profile = ConnectionProfile(name: "test", transport: .rdp, host: "::1", username: "test user")
+        let input = try XCTUnwrap(RDPArguments.input(profile: profile, password: "example with spaces"))
+        let text = String(decoding: input, as: UTF8.self)
+        XCTAssertTrue(text.contains("/v:[::1]:3389\n"))
+        XCTAssertTrue(text.contains("/p:example with spaces\n"))
+        XCTAssertFalse(text.contains("/cert:ignore"))
+        XCTAssertNil(RDPArguments.input(profile: profile, password: "example\n/cert:ignore"))
+    }
+    func testCorruptProfilesArePreserved() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let corrupt = Data("not json".utf8)
+        try corrupt.write(to: file)
+        let store = ProfileStore(fileURL: file)
+        XCTAssertNotNil(store.errorMessage)
+        XCTAssertThrowsError(try store.save(ConnectionProfile(name: "test", host: "host"), password: nil))
+        XCTAssertEqual(try Data(contentsOf: file), corrupt)
+    }
+    func testSaveReloadAndEditWithoutCredentials() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let store = ProfileStore(fileURL: file)
+        var profile = ConnectionProfile(name: "Studio", host: "studio.local")
+        try store.save(profile, password: nil)
+        profile.name = "Office"
+        try store.save(profile, password: nil)
+        XCTAssertEqual(ProfileStore(fileURL: file).profiles, [profile])
+        XCTAssertFalse(String(decoding: try Data(contentsOf: file), as: UTF8.self).contains("password"))
+    }
+}

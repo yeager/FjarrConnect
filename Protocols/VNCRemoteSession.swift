@@ -29,6 +29,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
     // MARK: RemoteSession
 
     func start() {
+        guard connection == nil else { return }
         let settings = VNCConnection.Settings(
             isDebugLoggingEnabled: false,
             hostname: profile.host,
@@ -51,8 +52,12 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
     }
 
     func stop() {
-        setStatus(.disconnecting)
-        connection?.disconnect()
+        let old = connection
+        connection = nil
+        old?.delegate = nil
+        old?.disconnect()
+        framebufferView = nil
+        status = .disconnected(reason: nil)
     }
 
     func makeScreenView() -> AnyView {
@@ -73,6 +78,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
 
     func connection(_ connection: VNCConnection,
                     stateDidChange connectionState: VNCConnection.ConnectionState) {
+        guard self.connection === connection else { return }
         switch connectionState.status {
         case .connecting:    setStatus(.connecting)
         case .connected:     setStatus(.connected)
@@ -98,17 +104,15 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
 
     func connection(_ connection: VNCConnection,
                     didCreateFramebuffer framebuffer: VNCFramebuffer) {
-        // Must build the NSView on the main thread; the view takes over as the
-        // connection's delegate and forwards callbacks back to us.
+        // RoyalVNCKit 1.0.0 renders via its display link; this session stays the delegate.
         DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
+            guard let self, self.connection === connection else { return }
             let size = CGSize(width: CGFloat(framebuffer.size.width),
                               height: CGFloat(framebuffer.size.height))
             self.framebufferView = VNCCAFramebufferView(
                 frame: CGRect(origin: .zero, size: size),
                 framebuffer: framebuffer,
-                connection: connection,
-                connectionDelegate: self
+                connection: connection
             )
             self.objectWillChange.send()   // let the UI swap the placeholder for the screen
         }
@@ -127,7 +131,10 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
     // MARK: Helpers
 
     private func setStatus(_ new: SessionStatus) {
-        DispatchQueue.main.async { self.status = new }
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.connection != nil else { return }
+            self.status = new
+        }
     }
 }
 

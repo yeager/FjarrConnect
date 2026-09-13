@@ -31,6 +31,42 @@
 "transport.rdp"              = "RDP";
 "transport.ssh"              = "SSH";
 
-"backend.pending.hint"       = "Motoren til denne protokol er ikke tilsluttet i denne version endnu.";
-"backend.ssh.pending"        = "SSH-understøttelse er ikke implementeret endnu.";
-"backend.rdp.pending"        = "RDP-understøttelse er ikke implementeret endnu.";
+
+"group.ungrouped" = "Forbindelser";
+"status.idle" = "Klar";
+"status.connecting" = "Forbinder…";
+"status.connected" = "Forbundet";
+"status.running" = "Klienten kører";
+"status.disconnecting" = "Afbryder…";
+"status.disconnected" = "Afbrudt";
+"action.connect" = "Forbind";
+"action.reconnect" = "Forbind igen";
+"action.quickConnect" = "Hurtig forbindelse";
+"action.closeSession" = "Luk session";
+"action.copyAddress" = "Kopiér adresse";
+"action.refresh" = "Opdater netværk";
+"action.ok" = "OK";
+"error.title" = "Handlingen kunne ikke fuldføres";
+"welcome.title" = "Dine computere. Ét sted.";
+"search.placeholder" = "Søg forbindelser";
+"search.empty" = "Ingen matchende forbindelser";
+"field.changePassword" = "Skift gemt adgangskode";
+"field.password.hint" = "Gemmes i din Macs nøglering. Lad feltet være tomt for at fjerne den gemte adgangskode.";
+"auth.title" = "Log ind for at forbinde";
+"auth.remember" = "Husk i nøglering";
+"auth.hint" = "Til Mac-skærmdeling bruges kontoen på den eksterne Mac. Lad adgangskoden være tom, hvis serveren ikke kræver login.";
+"profile.delete.title" = "Slet den gemte forbindelse?";
+"quickconnect.invalid" = "Indtast et værtsnavn eller en vnc://-, ssh://- eller rdp://-adresse med port 1–65535. Indtast adgangskoden i loginvinduet.";
+"session.retry" = "Kontrollér adresse og loginoplysninger, og forbind igen.";
+"ssh.authentication" = "SSH bruger din Macs nøgler, ssh-agent og SSH-indstillinger. Indtast adgangskoder og bekræft nye værtsnøgler i terminalen.";
+"ssh.ended" = "SSH blev afsluttet. Læs terminalmeddelelsen, før du forbinder igen.";
+"rdp.install" = "RDP kræver FreeRDPs Mac-klient. Installer med ”brew install freerdp”, og forbind igen.";
+"rdp.invalid" = "RDP-loginoplysninger må ikke indeholde linjeskift.";
+"rdp.ended" = "RDP blev afsluttet. Kontrollér server, login og certifikat, og forbind igen.";
+"rdp.window.title" = "Skrivebordet åbnes i sit eget vindue";
+"rdp.window.description" = "Fuldfør eventuelt login eller certifikatkontrol i FreeRDP. Afbryd her for at lukke fjernskrivebordet.";
+"discovery.resolveFailed" = "Kunne ikke nå denne Mac. Kontrollér skærmdeling og adgang til lokalt netværk, og opdater.";
+
+"sidebar.favorites" = "Favoritter";
+"favorite.add" = "Føj til favoritter";
+"favorite.remove" = "Fjern fra favoritter";
