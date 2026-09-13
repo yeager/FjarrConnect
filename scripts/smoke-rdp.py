@@ -2,7 +2,7 @@
 """Verify the packaged FreeRDP executable consumes piped arguments and starts RDP.
 
 The loopback listener intentionally closes after the X.224 request. This checks
-launch/linking, stdin argument parsing, networking and failure exit, not server
+launch/linking, stdin argument parsing, networking and failure exit in authentication-only mode, not server
 interoperability or a successful remote Windows login.
 """
 import socket
@@ -32,10 +32,15 @@ with socket.socket() as listener:
     arguments = '\n'.join([
         f'/v:127.0.0.1:{listener.getsockname()[1]}', '/u:local-smoke-test',
         '/p:local-test-only', '/dynamic-resolution', '/size:1280x800',
-        '/title:FjärrConnect', '/log-level:ERROR', '/timeout:5000', '',
+        '/title:FjärrConnect', '/log-level:ERROR', '/timeout:5000', '+auth-only', '',
     ])
-    result = subprocess.run([sys.argv[1], '/args-from:stdin'], input=arguments,
-                            text=True, capture_output=True, timeout=20)
+    try:
+        result = subprocess.run([sys.argv[1], '/args-from:stdin'], input=arguments,
+                                text=True, capture_output=True, timeout=20)
+    except subprocess.TimeoutExpired as error:
+        raise AssertionError(
+            f'RDP timed out: packets={packets!r}, listener errors={failures!r}, '
+            f'stderr={error.stderr!r}') from error
     worker.join(timeout=16)
     assert not worker.is_alive(), 'RDP did not contact the local test listener'
     assert not failures, f'RDP test listener failed: {failures}'

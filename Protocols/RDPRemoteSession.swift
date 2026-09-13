@@ -69,7 +69,7 @@ final class RDPRemoteSession: NSObject, RemoteSession {
             Text("rdp.window.description").foregroundStyle(.secondary).multilineTextAlignment(.center)
             Button("rdp.showWindow") {
                 if let process = self.process, process.isRunning {
-                    NSRunningApplication(processIdentifier: process.processIdentifier)?.activate(options: [.activateIgnoringOtherApps])
+                    NSRunningApplication(processIdentifier: process.processIdentifier)?.activate(options: [])
                 }
             }.buttonStyle(.borderedProminent)
         }.padding(32).frame(maxWidth: .infinity, maxHeight: .infinity))
