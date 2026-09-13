@@ -9,6 +9,10 @@ final class ConnectionUITests: XCTestCase {
         app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = directory.appendingPathComponent("profiles.json").path
         app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        addUIInterruptionMonitor(withDescription: "Local network permission") { dialog in
+            if dialog.buttons["Allow"].exists { dialog.buttons["Allow"].click(); return true }
+            return false
+        }
         app.launch()
         XCTAssertTrue(app.buttons["newConnection"].firstMatch.waitForExistence(timeout: 15))
         capture(app, name: "Welcome")

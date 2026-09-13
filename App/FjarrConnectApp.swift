@@ -24,7 +24,8 @@ struct FjarrConnectApp: App {
                 .frame(minWidth: 900, minHeight: 560)
                 .onAppear {
                     #if DEBUG
-                    if ProcessInfo.processInfo.environment["FJARRCONNECT_DISABLE_DISCOVERY"] == "1" { return }
+                    if ProcessInfo.processInfo.environment["FJARRCONNECT_DISABLE_DISCOVERY"] == "1" ||
+                        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { return }
                     #endif
                     discovery.start()
                 }
