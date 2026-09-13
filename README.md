@@ -17,13 +17,12 @@ There are no Windows, Linux or mobile app targets.
 
 ## Version 0.2
 
-Version **0.2.0 is being prepared**. The release workflow is implemented; a release
-is published only after its gitleaks scan, Mac tests and universal packaging pass.
-Check [GitHub Releases](https://github.com/yeager/FjarrConnect/releases) for published
-builds and [Actions](https://github.com/yeager/FjarrConnect/actions) for current verification.
+**[Download version 0.2.0](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.0)**
+for Apple Silicon and Intel. Download `FjarrConnect-0.2.0-macOS-universal.zip` and
+`SHA256SUMS.txt`, unzip the archive and move FjärrConnect to Applications.
 
-The downloadable archive will be `FjarrConnect-0.2.0-macOS-universal.zip`, accompanied
-by `SHA256SUMS.txt`. Unzip the archive and move FjärrConnect to Applications.
+Every release passes gitleaks, Mac regression tests, universal packaging and
+checks of the downloaded app on both native Mac architectures before publication.
 
 The initial release uses **ad-hoc signing**, not Developer ID signing or Apple
 notarization. macOS may require approval under **System Settings → Privacy & Security**
@@ -43,7 +42,8 @@ on first launch. Never disable Gatekeeper globally to install the app.
 - **Quick connect:** press **⌘K**, enter an address, then press Return.
 - **New connection:** press **⌘N**. Leave the name blank to use the hostname.
 - **Bonjour discovery:** find Macs advertising Screen Sharing on the local network,
-  with refresh and visible connection errors.
+  with refresh and visible connection errors. Discovery uses `_rfb._tcp` (VNC);
+  SSH and RDP hosts are added manually, and hosts on other networks need an address.
 - **Keychain credentials:** save VNC and RDP passwords in the macOS Keychain. Quick
   connections can use a password without saving it.
 - **Localized interface:** English, Swedish, Danish and Norwegian Bokmål.
@@ -57,10 +57,10 @@ on first launch. Never disable Gatekeeper globally to install the app.
 | SSH | Embedded [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) terminal running macOS `/usr/bin/ssh` | Your SSH configuration, keys and ssh-agent; passwords and new host-key confirmation in the terminal |
 | RDP | Native [FreeRDP](https://github.com/FreeRDP/FreeRDP) SDL client in a separate desktop window, managed by FjärrConnect | Username/password; FreeRDP handles certificate prompts |
 
-**RDP packaging is currently being verified.** The CI/release pipeline builds a
-self-contained FreeRDP runtime for both Mac architectures and bundles it into the
-app. The app also detects a locally installed SDL client from `brew install freerdp`
-for developer builds. A release must pass the bundled-runtime checks before publishing.
+**RDP is bundled:** no Homebrew installation is needed for the downloaded app.
+The CI/release pipeline builds a self-contained FreeRDP runtime for both Mac
+architectures. Developer builds also detect a locally installed SDL client from
+`brew install freerdp`.
 
 SSH passwords are entered directly in the terminal and are **not** saved by
 FjärrConnect. SSH private keys remain managed by OpenSSH and your ssh-agent.
@@ -154,7 +154,9 @@ Development is on **`main`**.
 - **CI:** checks localizations and icons, runs macOS regression tests, builds both RDP
   runtime slices and packages the universal app. Packaging verifies architecture
   slices in the app and embedded native code, checks ad-hoc signatures, and creates
-  a ZIP archive with a SHA-256 checksum.
+  a ZIP archive with a SHA-256 checksum. Separate Apple Silicon and Intel jobs
+  download the ZIP, verify it and exercise the bundled RDP client against a local
+  negotiation fixture in authentication-only mode.
 - **gitleaks:** scans the complete repository history on pushes to `main` and pull
   requests. The release workflow also requires a clean full-history scan.
 - **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.0`**, triggers a
@@ -192,7 +194,8 @@ An optional pre-commit hook is configured in `.pre-commit-config.yaml`.
 | `Views` | Connection list, tabs, profile editor and sign-in UI |
 | `Discovery` | Bonjour browsing and endpoint resolution |
 | `Resources` | Mac app icon and four localization tables |
-| `Tests` | Regression tests for addresses, credentials, profiles and favorites |
+| `Tests` | Regression tests for profiles, favorites, sessions, VNC and SSH |
+| `UITests` | Native Mac UI tests for saving and persisting favorites |
 | `scripts` | Resource validation, icon generation and release/runtime builds |
 
 `RemoteSession` is the common backend interface. `ConnectionManager` owns session
