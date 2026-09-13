@@ -10,18 +10,18 @@ final class ConnectionUITests: XCTestCase {
         app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = directory.appendingPathComponent("profiles.json").path
         app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
         app.launch()
-        XCTAssertTrue(app.buttons["newConnection"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["newConnection"].firstMatch.waitForExistence(timeout: 15))
         capture(app, name: "Welcome")
-        app.buttons["newConnection"].click()
-        let name = app.textFields["profile.name"]
+        app.buttons["newConnection"].firstMatch.click()
+        let name = app.textFields["profile.name"].firstMatch
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         name.click()
         name.typeText("Studio Mac")
-        app.textFields["profile.host"].click()
-        app.textFields["profile.host"].typeText("studio.local")
-        XCTAssertTrue(app.buttons["profile.save"].isEnabled)
-        app.buttons["profile.save"].click()
-        let favorite = app.buttons["favorite.Studio Mac"]
+        app.textFields["profile.host"].firstMatch.click()
+        app.textFields["profile.host"].firstMatch.typeText("studio.local")
+        XCTAssertTrue(app.buttons["profile.save"].firstMatch.isEnabled)
+        app.buttons["profile.save"].firstMatch.click()
+        let favorite = app.buttons["favorite.Studio Mac"].firstMatch
         XCTAssertTrue(favorite.waitForExistence(timeout: 5))
         favorite.click()
         XCTAssertTrue(app.staticTexts["Favorites"].waitForExistence(timeout: 5))
@@ -29,12 +29,12 @@ final class ConnectionUITests: XCTestCase {
         app.terminate()
         app.launch()
         XCTAssertTrue(app.staticTexts["Favorites"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.buttons["favorite.Studio Mac"].exists)
-        app.buttons["favorite.Studio Mac"].click()
+        XCTAssertTrue(app.buttons["favorite.Studio Mac"].firstMatch.exists)
+        app.buttons["favorite.Studio Mac"].firstMatch.click()
         let removed = NSPredicate(format: "exists == false")
         expectation(for: removed, evaluatedWith: app.staticTexts["Favorites"])
         waitForExpectations(timeout: 5)
-        XCTAssertTrue(app.buttons["favorite.Studio Mac"].exists)
+        XCTAssertTrue(app.buttons["favorite.Studio Mac"].firstMatch.exists)
         app.terminate()
     }
 
