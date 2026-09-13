@@ -9,7 +9,10 @@ options:
 packages:
   RoyalVNCKit:
     url: https://github.com/royalapplications/royalvnc
-    from: "1.0.0"
+    exactVersion: "1.0.0"
+  SwiftTerm:
+    url: https://github.com/migueldeicaza/SwiftTerm
+    exactVersion: "1.10.1"
 
 targets:
   FjarrConnect:
@@ -25,6 +28,7 @@ targets:
       - Resources
     dependencies:
       - package: RoyalVNCKit
+      - package: SwiftTerm
     info:
       path: Generated/Info.plist
       properties:
@@ -45,15 +49,32 @@ targets:
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "5.0"
+        ARCHS: "arm64 x86_64"
+        ONLY_ACTIVE_ARCH: NO
+        ENABLE_APP_SANDBOX: NO
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_STYLE: Automatic
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+  FjarrConnectTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources: [Tests]
+    dependencies:
+      - target: FjarrConnect
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.0"
 
 schemes:
   FjarrConnect:
     build:
       targets:
         FjarrConnect: all
+    test:
+      targets: [FjarrConnectTests]
     run:
       config: Debug
     archive:

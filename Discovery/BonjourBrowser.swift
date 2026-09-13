@@ -2,75 +2,84 @@ import Foundation
 import Network
 import Combine
 
-/// A Mac advertising Screen Sharing on the LAN.
 struct DiscoveredHost: Identifiable, Hashable {
-    let id = UUID()
+    var id: NWEndpoint { endpoint }
     let name: String
     let endpoint: NWEndpoint
 }
 
-/// Discovers Macs running Screen Sharing the way Apple Remote Desktop does:
-/// they advertise the VNC/RFB service over Bonjour as `_rfb._tcp`.
-///
-/// Note: on macOS 15+, browsing the local network prompts the user for the
-/// Local Network privacy permission the first time.
 final class BonjourBrowser: ObservableObject {
     @Published private(set) var hosts: [DiscoveredHost] = []
-
+    @Published private(set) var errorMessage: String?
     private var browser: NWBrowser?
+    private var resolutions: [UUID: NWConnection] = [:]
 
     func start() {
         guard browser == nil else { return }
-
+        errorMessage = nil
         let params = NWParameters()
         params.includePeerToPeer = true
-
-        let browser = NWBrowser(
-            for: .bonjour(type: "_rfb._tcp", domain: nil),
-            using: params
-        )
-
-        browser.browseResultsChangedHandler = { [weak self] results, _ in
-            let found = results.compactMap { result -> DiscoveredHost? in
+        let browser = NWBrowser(for: .bonjour(type: "_rfb._tcp", domain: nil), using: params)
+        self.browser = browser
+        browser.browseResultsChangedHandler = { [weak self, weak browser] results, _ in
+            guard let self, let browser, self.browser === browser else { return }
+            self.hosts = results.compactMap { result in
                 guard case let .service(name, _, _, _) = result.endpoint else { return nil }
                 return DiscoveredHost(name: name, endpoint: result.endpoint)
-            }
-            DispatchQueue.main.async {
-                self?.hosts = found.sorted { $0.name < $1.name }
+            }.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        }
+        browser.stateUpdateHandler = { [weak self, weak browser] state in
+            guard let self, let browser, self.browser === browser else { return }
+            switch state {
+            case .failed(let error), .waiting(let error): self.errorMessage = error.localizedDescription
+            case .ready: self.errorMessage = nil
+            default: break
             }
         }
-
         browser.start(queue: .main)
-        self.browser = browser
     }
 
     func stop() {
         browser?.cancel()
         browser = nil
+        for connection in resolutions.values { connection.cancel() }
+        resolutions.removeAll()
         hosts = []
     }
 
-    /// RoyalVNCKit connects by hostname:port, not by an NWEndpoint.service, so we
-    /// resolve the Bonjour service to a concrete host/port before handing it off.
-    func resolve(_ host: DiscoveredHost,
-                 completion: @escaping (_ host: String, _ port: UInt16) -> Void) {
-        let connection = NWConnection(to: host.endpoint, using: .tcp)
+    struct Endpoint { let host: String; let port: UInt16 }
+    enum ResolveError: LocalizedError {
+        case timeout, unavailable
+        var errorDescription: String? { NSLocalizedString("discovery.resolveFailed", comment: "") }
+    }
 
+    /// Every attempt has one completion, a deadline, and an owned connection.
+    func resolve(_ host: DiscoveredHost, completion: @escaping (Result<Endpoint, Error>) -> Void) {
+        let id = UUID()
+        let connection = NWConnection(to: host.endpoint, using: .tcp)
+        resolutions[id] = connection
+        var finished = false
+        func finish(_ result: Result<Endpoint, Error>) {
+            guard !finished else { return }
+            finished = true
+            connection.stateUpdateHandler = nil
+            connection.cancel()
+            self.resolutions.removeValue(forKey: id)
+            completion(result)
+        }
         connection.stateUpdateHandler = { state in
             switch state {
             case .ready:
-                if case let .hostPort(host: h, port: p)? = connection.currentPath?.remoteEndpoint {
-                    completion("\(h)".components(separatedBy: "%").first ?? "\(h)",
-                               p.rawValue)
-                }
-                connection.cancel()
-            case .failed, .cancelled:
-                connection.cancel()
-            default:
-                break
+                if case let .hostPort(h, p)? = connection.currentPath?.remoteEndpoint {
+                    // Keep IPv6 scope identifiers; link-local addresses need them.
+                    finish(.success(Endpoint(host: "\(h)", port: p.rawValue)))
+                } else { finish(.failure(ResolveError.unavailable)) }
+            case .failed(let error): finish(.failure(error))
+            case .cancelled: finish(.failure(ResolveError.unavailable))
+            default: break
             }
         }
-
-        connection.start(queue: .global())
+        connection.start(queue: .main)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { finish(.failure(ResolveError.timeout)) }
     }
 }

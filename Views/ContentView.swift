@@ -4,148 +4,227 @@ struct ContentView: View {
     @EnvironmentObject var profiles: ProfileStore
     @EnvironmentObject var discovery: BonjourBrowser
     @EnvironmentObject var connection: ConnectionManager
-
     @State private var quickConnect = ""
+    @State private var search = ""
     @State private var editing: ConnectionProfile?
     @State private var showingNew = false
+    @State private var credentials: ConnectionProfile?
+    @State private var deleting: ConnectionProfile?
+    @State private var errorMessage: String?
+    @FocusState private var quickFocused: Bool
 
     var body: some View {
         NavigationSplitView {
-            sidebar
-                .frame(minWidth: 240)
+            sidebar.navigationSplitViewColumnWidth(min: 250, ideal: 290, max: 400)
         } detail: {
-            detail
+            VStack(spacing: 0) {
+                if !connection.tabs.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(connection.tabs) { tab in
+                                SessionTabLabel(tab: tab, selected: connection.selectedID == tab.id,
+                                                select: { connection.selectedID = tab.id }, close: { connection.close(tab.id) })
+                            }
+                        }.padding(8)
+                    }.background(.bar)
+                    Divider()
+                    // Preserve each native view while changing tabs, without reconnecting.
+                    ZStack {
+                        ForEach(connection.tabs) { tab in
+                            SessionDetailView(tab: tab, reconnect: { requestConnect(tab.backend.profile, forcePrompt: true) },
+                                              close: { connection.close(tab.id) })
+                                .opacity(connection.selectedID == tab.id ? 1 : 0)
+                                .allowsHitTesting(connection.selectedID == tab.id)
+                                .accessibilityHidden(connection.selectedID != tab.id)
+                        }
+                    }
+                } else { welcome }
+            }
         }
-        .sheet(isPresented: $showingNew) {
-            ProfileEditorView(profile: nil)
+        .navigationTitle("FjärrConnect")
+        .toolbar {
+            ToolbarItemGroup {
+                Button { quickFocused = true } label: { Image(systemName: "bolt") }
+                    .help("action.quickConnect").keyboardShortcut("k")
+                Button { showingNew = true } label: { Image(systemName: "plus") }
+                    .help("profile.new").keyboardShortcut("n")
+            }
         }
-        .sheet(item: $editing) { profile in
-            ProfileEditorView(profile: profile)
+        .sheet(isPresented: $showingNew) { ProfileEditorView(profile: nil) }
+        .sheet(item: $editing) { ProfileEditorView(profile: $0) }
+        .sheet(item: $credentials) { profile in
+            CredentialsView(profile: profile, saved: profiles.profiles.contains { $0.id == profile.id }) { candidate, password, remember in
+                do {
+                    if remember { try profiles.save(candidate, password: password) }
+                    connection.connect(candidate, password: password)
+                } catch { errorMessage = error.localizedDescription }
+            }
         }
+        .alert("error.title", isPresented: Binding(get: { errorMessage != nil || profiles.errorMessage != nil },
+                                                  set: { if !$0 { errorMessage = nil; profiles.errorMessage = nil } })) {
+            Button("action.ok", role: .cancel) { errorMessage = nil; profiles.errorMessage = nil }
+        } message: { Text(errorMessage ?? profiles.errorMessage ?? "") }
+        .confirmationDialog("profile.delete.title", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), titleVisibility: .visible) {
+            Button("action.delete", role: .destructive) {
+                guard let profile = deleting else { return }
+                do { try profiles.remove(profile) } catch { errorMessage = error.localizedDescription }
+                deleting = nil
+            }
+        } message: { Text(deleting?.name ?? "") }
     }
-
-    // MARK: Sidebar
 
     private var sidebar: some View {
         List {
-            Section {
-                HStack {
+            Section("action.quickConnect") {
+                HStack(spacing: 8) {
                     TextField("quickconnect.placeholder", text: $quickConnect)
-                        .textFieldStyle(.roundedBorder)
-                        .onSubmit(runQuickConnect)
-                    Button(action: runQuickConnect) {
-                        Image(systemName: "arrow.right.circle.fill")
-                    }
-                    .buttonStyle(.borderless)
-                    .disabled(quickConnect.isEmpty)
-                }
+                        .textFieldStyle(.roundedBorder).focused($quickFocused).onSubmit(runQuickConnect)
+                    Button(action: runQuickConnect) { Image(systemName: "arrow.right.circle.fill").font(.title3) }
+                        .buttonStyle(.borderless).help("action.connect")
+                        .disabled(quickConnect.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }.padding(.vertical, 4)
             }
-
             Section("sidebar.saved") {
                 ForEach(profiles.grouped, id: \.group) { bucket in
-                    if profiles.grouped.count > 1 {
-                        Text(bucket.group).font(.caption).foregroundStyle(.secondary)
-                    }
-                    ForEach(bucket.profiles) { profile in
-                        profileRow(profile)
+                    let visible = bucket.profiles.filter { matches($0) }
+                    if !visible.isEmpty {
+                        if profiles.grouped.count > 1 { Text(bucket.group).font(.caption).foregroundStyle(.secondary) }
+                        ForEach(visible) { profile in profileRow(profile) }
                     }
                 }
-                if profiles.profiles.isEmpty {
-                    Text("sidebar.saved.empty").foregroundStyle(.secondary)
-                }
+                if profiles.profiles.isEmpty { Text("sidebar.saved.empty").foregroundStyle(.secondary) }
+                else if profiles.profiles.filter({ matches($0) }).isEmpty { Text("search.empty").foregroundStyle(.secondary) }
             }
-
             Section("sidebar.discovered") {
-                ForEach(discovery.hosts) { host in
+                ForEach(discovery.hosts.filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) }) { host in
                     Button {
-                        connectDiscovered(host)
+                        discovery.resolve(host) { result in
+                            switch result {
+                            case .success(let endpoint):
+                                requestConnect(ConnectionProfile(name: host.name, host: endpoint.host, port: endpoint.port))
+                            case .failure(let error): errorMessage = error.localizedDescription
+                            }
+                        }
                     } label: {
-                        Label(host.name, systemImage: "bonjour")
-                    }
-                    .buttonStyle(.plain)
+                        Label(host.name, systemImage: "bonjour").padding(.vertical, 3)
+                    }.buttonStyle(.plain)
                 }
                 if discovery.hosts.isEmpty {
-                    Text("sidebar.discovered.empty").foregroundStyle(.secondary)
+                    Text(discovery.errorMessage ?? NSLocalizedString("sidebar.discovered.empty", comment: ""))
+                        .font(.caption).foregroundStyle(.secondary)
                 }
+                Button("action.refresh") { discovery.stop(); discovery.start() }.font(.caption)
             }
-        }
-        .listStyle(.sidebar)
-        .toolbar {
-            ToolbarItem {
-                Button { showingNew = true } label: { Image(systemName: "plus") }
-                    .help("profile.new")
-            }
-        }
+        }.listStyle(.sidebar).searchable(text: $search, prompt: Text("search.placeholder"))
     }
 
     private func profileRow(_ profile: ConnectionProfile) -> some View {
-        Button {
-            connection.connect(profile)
-        } label: {
-            Label {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(profile.name)
-                    Text(profile.uri)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+        Button { requestConnect(profile) } label: {
+            HStack(spacing: 10) {
+                Image(systemName: profile.transport.symbol).foregroundStyle(.tint).frame(width: 24)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(profile.name).font(.body.weight(.medium))
+                    Text(profile.uri).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
-            } icon: {
-                Image(systemName: icon(for: profile.transport))
-            }
-        }
-        .buttonStyle(.plain)
-        .contextMenu {
+            }.padding(.vertical, 5).contentShape(Rectangle())
+        }.buttonStyle(.plain).contextMenu {
+            Button("action.connect") { requestConnect(profile) }
             Button("action.edit") { editing = profile }
-            Button("action.delete", role: .destructive) { profiles.remove(profile) }
+            Button("action.copyAddress") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(profile.uri, forType: .string) }
+            Divider()
+            Button("action.delete", role: .destructive) { deleting = profile }
         }
     }
 
-    // MARK: Detail
-
-    @ViewBuilder
-    private var detail: some View {
-        if let session = connection.session {
-            VStack(spacing: 0) {
-                HStack {
-                    Text(session.profile.name).font(.headline)
-                    Spacer()
-                    Text(session.status.label).foregroundStyle(.secondary)
-                    Button("action.disconnect") { connection.disconnect() }
-                }
-                .padding(8)
-                Divider()
-                session.makeScreenView()
+    private var welcome: some View {
+        VStack(spacing: 22) {
+            Image(nsImage: NSApplication.shared.applicationIconImage).resizable().frame(width: 108, height: 108)
+            VStack(spacing: 10) {
+                Text("welcome.title").font(.system(size: 30, weight: .bold, design: .rounded))
+                Text("detail.empty.description").foregroundStyle(.secondary).multilineTextAlignment(.center).frame(maxWidth: 430)
             }
-        } else {
-            ContentUnavailableView(
-                "detail.empty.title",
-                systemImage: "display.2",
-                description: Text("detail.empty.description")
-            )
-        }
+            HStack(spacing: 12) {
+                Button("profile.new") { showingNew = true }.buttonStyle(.borderedProminent)
+                Button("action.quickConnect") { quickFocused = true }.buttonStyle(.bordered)
+            }.controlSize(.large)
+            HStack(spacing: 22) {
+                Label("VNC", systemImage: "display")
+                Label("SSH", systemImage: "terminal")
+                Label("RDP", systemImage: "pc")
+            }.font(.caption.weight(.medium)).foregroundStyle(.secondary)
+        }.padding(40).frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(LinearGradient(colors: [Color.accentColor.opacity(0.08), Color(nsColor: .windowBackgroundColor)], startPoint: .topLeading, endPoint: .bottomTrailing))
     }
 
-    // MARK: Actions
-
+    private func matches(_ profile: ConnectionProfile) -> Bool {
+        search.isEmpty || [profile.name, profile.host, profile.group ?? "", profile.transport.rawValue]
+            .contains { $0.localizedCaseInsensitiveContains(search) }
+    }
     private func runQuickConnect() {
-        guard let profile = ConnectionURI.profile(from: quickConnect) else { return }
-        connection.connect(profile)
-        quickConnect = ""
+        guard let profile = ConnectionURI.profile(from: quickConnect) else {
+            errorMessage = NSLocalizedString("quickconnect.invalid", comment: ""); return
+        }
+        requestConnect(profile)
     }
+    private func requestConnect(_ profile: ConnectionProfile, forcePrompt: Bool = false) {
+        if profile.transport == .ssh { connection.connect(profile); return }
+        if profile.transport == .rdp && RDPRemoteSession.executable == nil {
+            errorMessage = NSLocalizedString("rdp.install", comment: ""); return
+        }
+        do {
+            if !forcePrompt, let password = try KeychainStore.password(for: profile.id) {
+                connection.connect(profile, password: password)
+            } else { credentials = profile }
+        } catch { errorMessage = error.localizedDescription }
+    }
+}
 
-    private func connectDiscovered(_ host: DiscoveredHost) {
-        discovery.resolve(host) { resolvedHost, port in
-            let profile = ConnectionProfile(name: host.name, transport: .vnc,
-                                            host: resolvedHost, port: port)
-            DispatchQueue.main.async { connection.connect(profile) }
+private struct SessionTabLabel: View {
+    @ObservedObject var tab: SessionTab
+    let selected: Bool
+    let select: () -> Void
+    let close: () -> Void
+    var body: some View {
+        HStack(spacing: 8) {
+            Button(action: select) {
+                Label(tab.backend.profile.name, systemImage: tab.backend.profile.transport.symbol).lineLimit(1)
+            }.buttonStyle(.plain)
+            Button(action: close) { Image(systemName: "xmark").font(.caption) }.buttonStyle(.plain).help("action.closeSession")
+        }.padding(.horizontal, 12).padding(.vertical, 8)
+            .background(selected ? Color.accentColor.opacity(0.15) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+private struct SessionDetailView: View {
+    @ObservedObject var tab: SessionTab
+    let reconnect: () -> Void
+    let close: () -> Void
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(tab.backend.profile.name).font(.headline)
+                    Text(tab.backend.profile.uri).font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text(tab.backend.status.label).font(.callout).foregroundStyle(.secondary)
+                if tab.backend.status.isFinished { Button("action.reconnect", action: reconnect) }
+                Button("action.disconnect", action: close)
+            }.padding(12).background(.bar)
+            Divider()
+            if let error = tab.backend.status.error {
+                Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+                    .textSelection(.enabled).padding().frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if tab.backend.status.isFinished && tab.backend.profile.transport != .ssh {
+                ContentUnavailableView("status.disconnected", systemImage: "network.slash", description: Text("session.retry"))
+            } else { tab.backend.makeScreenView() }
         }
     }
+}
 
-    private func icon(for transport: RemoteTransport) -> String {
-        switch transport {
-        case .vnc: return "display"
-        case .rdp: return "pc"
-        case .ssh: return "terminal"
-        }
+extension RemoteTransport {
+    var symbol: String {
+        switch self { case .vnc: return "display"; case .rdp: return "pc"; case .ssh: return "terminal" }
     }
 }

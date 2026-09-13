@@ -1,65 +1,48 @@
 name: CI
-
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
   workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   build:
-    name: Build universal (arm64 + x86_64)
+    name: Test and build macOS universal
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v6
-
-      # Pin Xcode for reproducible builds. macos-15 ships 16.4 by default; this
-      # makes the version explicit so a runner-image change can't move it silently.
-      - name: Select Xcode
-        uses: maxim-lobanov/setup-xcode@v1
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: "16.4"
-
-      - name: Install XcodeGen
+          xcode-version: '16.4'
+      - name: Install build tools
         run: brew install xcodegen
-
-      - name: Generate Xcode project
+      - name: Check resources
+        run: python3 scripts/check-resources.py
+      - name: Generate project
         run: xcodegen generate
-
-      # Runners are Apple Silicon, so we force both slices for a universal binary.
-      - name: Build
+      - name: Test
         run: |
           set -o pipefail
-          xcodebuild \
-            -project FjarrConnect.xcodeproj \
-            -scheme FjarrConnect \
-            -configuration Release \
-            -destination 'generic/platform=macOS' \
-            ARCHS="arm64 x86_64" \
-            ONLY_ACTIVE_ARCH=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            clean build \
-          | xcbeautify
-
-      - name: Verify & package
-        run: |
-          APP=$(find ~/Library/Developer/Xcode/DerivedData -name 'FjarrConnect.app' -type d | head -1)
-          test -n "$APP" || { echo "::error::FjarrConnect.app not found"; exit 1; }
-          echo "Built: $APP"
-          echo "Architectures:"
-          lipo -info "$APP/Contents/MacOS/FjarrConnect"
-          ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/FjarrConnect.zip"
-
-      - name: Upload app artifact
-        uses: actions/upload-artifact@v4
+          xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
+            -configuration Debug -destination 'platform=macOS' \
+            -derivedDataPath build/test -resultBundlePath build/TestResults.xcresult \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO test | tee build-test.log | xcbeautify
+      - name: Build universal app
+        run: bash scripts/build-release.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macOS-test-results
+          path: |
+            build/TestResults.xcresult
+            build-test.log
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
         with:
           name: FjarrConnect-universal
-          path: ${{ runner.temp }}/FjarrConnect.zip
+          path: dist/*
           if-no-files-found: error

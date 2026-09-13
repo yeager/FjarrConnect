@@ -1,0 +1,40 @@
+import SwiftUI
+
+struct CredentialsView: View {
+    let profile: ConnectionProfile
+    let saved: Bool
+    let connect: (ConnectionProfile, String, Bool) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var username: String
+    @State private var password = ""
+    @State private var remember = false
+
+    init(profile: ConnectionProfile, saved: Bool, connect: @escaping (ConnectionProfile, String, Bool) -> Void) {
+        self.profile = profile
+        self.saved = saved
+        self.connect = connect
+        _username = State(initialValue: profile.username ?? "")
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Label("auth.title", systemImage: "lock.shield").font(.title2.bold())
+            Text(profile.uri).foregroundStyle(.secondary).textSelection(.enabled)
+            TextField("field.username", text: $username)
+            SecureField("field.password", text: $password)
+            Text("auth.hint").font(.caption).foregroundStyle(.secondary)
+            if saved { Toggle("auth.remember", isOn: $remember) }
+            HStack {
+                Button("action.cancel") { dismiss() }.keyboardShortcut(.cancelAction)
+                Spacer()
+                Button("action.connect") {
+                    var candidate = profile
+                    let user = username.trimmingCharacters(in: .whitespacesAndNewlines)
+                    candidate.username = user.isEmpty ? nil : user
+                    connect(candidate, password, remember)
+                    password = ""
+                    dismiss()
+                }.keyboardShortcut(.defaultAction)
+            }
+        }.textFieldStyle(.roundedBorder).padding(24).frame(width: 420)
+    }
+}

@@ -1,64 +1,66 @@
 import Foundation
 import Combine
 
-/// Holds and persists saved connection profiles.
-///
-/// Remmina keeps one `.remmina` file per connection under its config dir; here we
-/// keep a single JSON document under Application Support for simplicity. Swapping to
-/// one-file-per-profile later is a drop-in change behind this type.
 final class ProfileStore: ObservableObject {
     @Published private(set) var profiles: [ConnectionProfile] = []
-
+    @Published var errorMessage: String?
     private let fileURL: URL
+    private var loadFailed = false
 
-    init() {
-        let dir = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("FjarrConnect", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        self.fileURL = dir.appendingPathComponent("profiles.json")
-        load()
+    init(fileURL: URL? = nil) {
+        self.fileURL = fileURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("FjarrConnect/profiles.json")
+        do {
+            if FileManager.default.fileExists(atPath: self.fileURL.path) {
+                let decoded = try JSONDecoder().decode([ConnectionProfile].self, from: Data(contentsOf: self.fileURL))
+                guard decoded.allSatisfy(\.isValid), Set(decoded.map(\.id)).count == decoded.count else {
+                    throw CocoaError(.fileReadCorruptFile)
+                }
+                profiles = decoded
+            }
+        } catch {
+            loadFailed = true // Preserve the original file; never overwrite corrupt data with an empty list.
+            errorMessage = error.localizedDescription
+        }
     }
 
-    // MARK: CRUD
-
-    func add(_ profile: ConnectionProfile, password: String?) {
-        profiles.append(profile)
-        KeychainStore.setPassword(password, for: profile.id)
-        save()
+    func save(_ profile: ConnectionProfile, password: String?) throws {
+        guard profile.isValid else { throw CocoaError(.validationMissingMandatoryProperty) }
+        var next = profiles
+        if let index = next.firstIndex(where: { $0.id == profile.id }) { next[index] = profile }
+        else { next.append(profile) }
+        try persist(next, credentialID: profile.id, password: password)
     }
 
-    func update(_ profile: ConnectionProfile, password: String?) {
-        guard let idx = profiles.firstIndex(where: { $0.id == profile.id }) else { return }
-        profiles[idx] = profile
-        if let password { KeychainStore.setPassword(password, for: profile.id) }
-        save()
+    func remove(_ profile: ConnectionProfile) throws {
+        try persist(profiles.filter { $0.id != profile.id }, credentialID: profile.id, password: "")
     }
 
-    func remove(_ profile: ConnectionProfile) {
-        profiles.removeAll { $0.id == profile.id }
-        KeychainStore.deletePassword(for: profile.id)
-        save()
-    }
-
-    /// Profiles bucketed by their optional group, for a Remmina-style sidebar.
     var grouped: [(group: String, profiles: [ConnectionProfile])] {
-        Dictionary(grouping: profiles) { $0.group ?? "Ungrouped" }
-            .map { (group: $0.key, profiles: $0.value.sorted { $0.name < $1.name }) }
-            .sorted { $0.group < $1.group }
+        Dictionary(grouping: profiles) { $0.group ?? NSLocalizedString("group.ungrouped", comment: "") }
+            .map { (group: $0.key, profiles: $0.value.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }) }
+            .sorted { $0.group.localizedStandardCompare($1.group) == .orderedAscending }
     }
 
-    // MARK: Persistence
-
-    private func load() {
-        guard let data = try? Data(contentsOf: fileURL),
-              let decoded = try? JSONDecoder().decode([ConnectionProfile].self, from: data)
-        else { return }
-        profiles = decoded
-    }
-
-    private func save() {
-        guard let data = try? JSONEncoder().encode(profiles) else { return }
-        try? data.write(to: fileURL, options: .atomic)
+    private func persist(_ next: [ConnectionProfile], credentialID: UUID, password: String?) throws {
+        guard !loadFailed else { throw CocoaError(.fileReadCorruptFile) }
+        let data = try JSONEncoder().encode(next)
+        try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        // Stage the file before touching credentials; failures remain visible to the caller.
+        let staged = fileURL.deletingLastPathComponent().appendingPathComponent(".\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: staged) }
+        try data.write(to: staged, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: staged.path)
+        let previous = password == nil ? nil : try KeychainStore.password(for: credentialID)
+        try KeychainStore.setPassword(password, for: credentialID)
+        do {
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                _ = try FileManager.default.replaceItemAt(fileURL, withItemAt: staged)
+            } else { try FileManager.default.moveItem(at: staged, to: fileURL) }
+        } catch {
+            if password != nil { try? KeychainStore.setPassword(previous ?? "", for: credentialID) }
+            throw error
+        }
+        profiles = next
     }
 }

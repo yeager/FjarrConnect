@@ -1,7 +1,6 @@
 import Foundation
 
-/// Supported transports. VNC is implemented; RDP and SSH are scaffolded behind the
-/// same `RemoteSession` seam (FreeRDP for RDP, SwiftTerm + an SSH lib for SSH).
+/// The three supported remote transports.
 enum RemoteTransport: String, Codable, CaseIterable, Identifiable {
     case vnc
     case rdp
@@ -68,10 +67,17 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
 
     /// A Remmina-style URI, e.g. `vnc://admin@studio.local:5900`.
     var uri: String {
-        var s = "\(transport.uriScheme)://"
-        if let u = username, !u.isEmpty { s += "\(u)@" }
-        s += host
-        if port != transport.defaultPort { s += ":\(port)" }
-        return s
+        var components = URLComponents()
+        components.scheme = transport.uriScheme
+        components.host = host.contains(":") ? "[\(host)]" : host
+        components.user = username.flatMap { $0.isEmpty ? nil : $0 }
+        if port != transport.defaultPort { components.port = Int(port) }
+        return components.string ?? "\(transport.uriScheme)://\(host)"
+    }
+
+    var isValid: Bool {
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        ConnectionURI.validHost(host) && port > 0 &&
+        username?.contains(where: { $0.isNewline || $0.asciiValue == 0 }) != true
     }
 }

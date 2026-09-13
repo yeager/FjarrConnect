@@ -1,28 +1,44 @@
 import SwiftUI
 import Combine
 
-/// Owns the currently active session and bridges its `objectWillChange` up to the
-/// UI, so `ContentView` can observe status/screen without knowing the concrete
-/// backend type (VNC/RDP/SSH all arrive as `any RemoteSession`).
+/// Each tab owns a backend and a subscription. Selecting a tab never restarts it.
+final class SessionTab: ObservableObject, Identifiable {
+    let id = UUID()
+    let backend: any RemoteSession
+    private var subscription: AnyCancellable?
+    init(backend: any RemoteSession) {
+        self.backend = backend
+        subscription = backend.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
+    }
+}
+
 final class ConnectionManager: ObservableObject {
-    @Published private(set) var session: (any RemoteSession)?
+    @Published private(set) var tabs: [SessionTab] = []
+    @Published var selectedID: UUID?
+    var selected: SessionTab? { tabs.first { $0.id == selectedID } }
 
-    private var cancellable: AnyCancellable?
-
-    func connect(_ profile: ConnectionProfile) {
-        let password = KeychainStore.password(for: profile.id)
-        guard let session = ProtocolRegistry.makeSession(for: profile, password: password) else { return }
-
-        self.session = session
-        cancellable = session.objectWillChange.sink { [weak self] _ in
-            self?.objectWillChange.send()
+    func connect(_ profile: ConnectionProfile, password: String? = nil) {
+        guard profile.isValid else { return }
+        if let tab = tabs.first(where: { $0.backend.profile == profile && !$0.backend.status.isFinished }) {
+            selectedID = tab.id
+            return
         }
-        session.start()
+        let tab = SessionTab(backend: ProtocolRegistry.makeSession(for: profile, password: password))
+        tabs.append(tab)
+        selectedID = tab.id
+        tab.backend.start()
     }
 
-    func disconnect() {
-        session?.stop()
-        session = nil
-        cancellable = nil
+    func close(_ id: UUID) {
+        guard let index = tabs.firstIndex(where: { $0.id == id }) else { return }
+        tabs[index].backend.stop()
+        tabs.remove(at: index)
+        if selectedID == id { selectedID = tabs.isEmpty ? nil : tabs[min(index, tabs.count - 1)].id }
+    }
+
+    func disconnectAll() {
+        tabs.forEach { $0.backend.stop() }
+        tabs.removeAll()
+        selectedID = nil
     }
 }
