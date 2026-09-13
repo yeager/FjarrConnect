@@ -66,3 +66,7 @@
 "rdp.window.title" = "Your desktop opens in its own window";
 "rdp.window.description" = "Complete any sign-in or certificate prompt in FreeRDP. Disconnect here to close the remote desktop.";
 "discovery.resolveFailed" = "Could not reach this Mac. Check Screen Sharing and Local Network permission, then refresh.";
+
+"sidebar.favorites" = "Favorites";
+"favorite.add" = "Add to favorites";
+"favorite.remove" = "Remove from favorites";

@@ -66,3 +66,7 @@
 "rdp.window.title" = "Skrivbordet öppnas i ett eget fönster";
 "rdp.window.description" = "Slutför eventuell inloggning eller certifikatkontroll i FreeRDP. Koppla från här för att stänga fjärrskrivbordet.";
 "discovery.resolveFailed" = "Kunde inte nå Macen. Kontrollera skärmdelning och behörighet till lokalt nätverk och uppdatera sedan.";
+
+"sidebar.favorites" = "Favoriter";
+"favorite.add" = "Lägg till som favorit";
+"favorite.remove" = "Ta bort från favoriter";

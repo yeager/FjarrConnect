@@ -49,13 +49,21 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
     /// Optional Remmina-style organisation.
     var group: String?
 
+    // Optional on disk so profiles created before favorites decode unchanged.
+    private var favorite: Bool?
+    var isFavorite: Bool {
+        get { favorite ?? false }
+        set { favorite = newValue }
+    }
+
     init(id: UUID = UUID(),
          name: String,
          transport: RemoteTransport = .vnc,
          host: String,
          port: UInt16? = nil,
          username: String? = nil,
-         group: String? = nil) {
+         group: String? = nil,
+         isFavorite: Bool = false) {
         self.id = id
         self.name = name
         self.transport = transport
@@ -63,6 +71,7 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
         self.port = port ?? transport.defaultPort
         self.username = username
         self.group = group
+        self.favorite = isFavorite ? true : nil
     }
 
     /// A Remmina-style URI, e.g. `vnc://admin@studio.local:5900`.

@@ -72,7 +72,8 @@ struct ProfileEditorView: View {
         let cleanGroup = group.trimmingCharacters(in: .whitespacesAndNewlines)
         let result = ConnectionProfile(id: existing?.id ?? UUID(), name: cleanName.isEmpty ? cleanHost : cleanName,
                                        transport: transport, host: cleanHost, port: port,
-                                       username: cleanUser.isEmpty ? nil : cleanUser, group: cleanGroup.isEmpty ? nil : cleanGroup)
+                                       username: cleanUser.isEmpty ? nil : cleanUser, group: cleanGroup.isEmpty ? nil : cleanGroup,
+                                       isFavorite: existing?.isFavorite ?? false)
         return result.isValid ? result : nil
     }
 

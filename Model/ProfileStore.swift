@@ -36,8 +36,18 @@ final class ProfileStore: ObservableObject {
         try persist(profiles.filter { $0.id != profile.id }, credentialID: profile.id, password: "")
     }
 
+    func toggleFavorite(_ id: UUID) throws {
+        guard var profile = profiles.first(where: { $0.id == id }) else { return }
+        profile.isFavorite.toggle()
+        try save(profile, password: nil)
+    }
+
+    var favorites: [ConnectionProfile] {
+        profiles.filter(\.isFavorite).sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
     var grouped: [(group: String, profiles: [ConnectionProfile])] {
-        Dictionary(grouping: profiles) { $0.group ?? NSLocalizedString("group.ungrouped", comment: "") }
+        Dictionary(grouping: profiles.filter { !$0.isFavorite }) { $0.group ?? NSLocalizedString("group.ungrouped", comment: "") }
             .map { (group: $0.key, profiles: $0.value.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }) }
             .sorted { $0.group.localizedStandardCompare($1.group) == .orderedAscending }
     }

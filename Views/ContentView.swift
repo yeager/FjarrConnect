@@ -84,6 +84,11 @@ struct ContentView: View {
                         .disabled(quickConnect.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }.padding(.vertical, 4)
             }
+            if !profiles.favorites.isEmpty {
+                Section("sidebar.favorites") {
+                    ForEach(profiles.favorites.filter { matches($0) }) { profile in profileRow(profile) }
+                }
+            }
             Section("sidebar.saved") {
                 ForEach(profiles.grouped, id: \.group) { bucket in
                     let visible = bucket.profiles.filter { matches($0) }
@@ -119,21 +124,37 @@ struct ContentView: View {
     }
 
     private func profileRow(_ profile: ConnectionProfile) -> some View {
-        Button { requestConnect(profile) } label: {
-            HStack(spacing: 10) {
-                Image(systemName: profile.transport.symbol).foregroundStyle(.tint).frame(width: 24)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(profile.name).font(.body.weight(.medium))
-                    Text(profile.uri).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                }
-            }.padding(.vertical, 5).contentShape(Rectangle())
-        }.buttonStyle(.plain).contextMenu {
+        HStack(spacing: 6) {
+            Button { requestConnect(profile) } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: profile.transport.symbol).foregroundStyle(.tint).frame(width: 24)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(profile.name).font(.body.weight(.medium))
+                        Text(profile.uri).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                }.padding(.vertical, 5).contentShape(Rectangle())
+            }.buttonStyle(.plain)
+            Button { toggleFavorite(profile) } label: {
+                Image(systemName: profile.isFavorite ? "star.fill" : "star")
+                    .foregroundStyle(profile.isFavorite ? Color.yellow : Color.secondary)
+            }
+            .buttonStyle(.borderless)
+            .help(profile.isFavorite ? "favorite.remove" : "favorite.add")
+            .accessibilityLabel(Text(profile.isFavorite ? "favorite.remove" : "favorite.add"))
+            .accessibilityValue(Text(profile.name))
+        }.contextMenu {
             Button("action.connect") { requestConnect(profile) }
+            Button(profile.isFavorite ? "favorite.remove" : "favorite.add") { toggleFavorite(profile) }
             Button("action.edit") { editing = profile }
             Button("action.copyAddress") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(profile.uri, forType: .string) }
             Divider()
             Button("action.delete", role: .destructive) { deleting = profile }
         }
+    }
+
+    private func toggleFavorite(_ profile: ConnectionProfile) {
+        do { try profiles.toggleFavorite(profile.id) } catch { errorMessage = error.localizedDescription }
     }
 
     private var welcome: some View {

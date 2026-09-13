@@ -2,6 +2,36 @@ import XCTest
 @testable import FjarrConnect
 
 final class ConnectionTests: XCTestCase {
+    func testLegacyProfileDefaultsToNotFavorite() throws {
+        let json = """
+        {"id":"11111111-1111-1111-1111-111111111111","name":"Studio","transport":"vnc","host":"studio.local","port":5900}
+        """
+        let profile = try JSONDecoder().decode(ConnectionProfile.self, from: Data(json.utf8))
+        XCTAssertFalse(profile.isFavorite)
+    }
+
+    func testFavoritesPersistAndDoNotDuplicateGroupedProfiles() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let store = ProfileStore(fileURL: file)
+        let profile = ConnectionProfile(name: "Studio", host: "studio.local")
+        try store.save(profile, password: nil)
+        try store.toggleFavorite(profile.id)
+        XCTAssertEqual(store.favorites.map(\.id), [profile.id])
+        XCTAssertTrue(store.grouped.isEmpty)
+        let reloaded = ProfileStore(fileURL: file)
+        XCTAssertEqual(reloaded.favorites.map(\.id), [profile.id])
+        var edited = try XCTUnwrap(reloaded.profiles.first)
+        edited.name = "Office"
+        try reloaded.save(edited, password: nil)
+        XCTAssertTrue(try XCTUnwrap(reloaded.profiles.first).isFavorite)
+        try reloaded.toggleFavorite(profile.id)
+        XCTAssertTrue(reloaded.favorites.isEmpty)
+        XCTAssertEqual(reloaded.grouped.flatMap(\.profiles).map(\.id), [profile.id])
+        XCTAssertFalse(try XCTUnwrap(ProfileStore(fileURL: file).profiles.first).isFavorite)
+    }
+
     func testQuickConnectDefaultsAndProtocols() {
         XCTAssertEqual(ConnectionURI.profile(from: " studio.local ")?.port, 5900)
         XCTAssertEqual(ConnectionURI.profile(from: "ssh://user@host")?.port, 22)
