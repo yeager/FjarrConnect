@@ -67,3 +67,8 @@ jobs:
           name: FjarrConnect-universal
           path: dist/*
           if-no-files-found: error
+  verify-download:
+    needs: build
+    uses: ./.github/workflows/verify-bundle.yml
+    with:
+      artifact-name: FjarrConnect-universal

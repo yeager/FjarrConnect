@@ -59,9 +59,14 @@ jobs:
           name: release-assets
           path: dist/*
           if-no-files-found: error
+  verify-download:
+    needs: build
+    uses: ./.github/workflows/verify-bundle.yml
+    with:
+      artifact-name: release-assets
   publish:
     name: Publish verified release
-    needs: build
+    needs: verify-download
     runs-on: ubuntu-latest
     permissions:
       contents: write
