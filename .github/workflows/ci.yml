@@ -30,6 +30,12 @@ jobs:
             -derivedDataPath build/test -resultBundlePath build/TestResults.xcresult \
             ARCHS="$(uname -m)" ONLY_ACTIVE_ARCH=YES \
             CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO test | tee build-test.log | xcbeautify
+      - name: Export UI screenshots
+        if: always()
+        run: |
+          if [ -d build/TestResults.xcresult ]; then
+            xcrun xcresulttool export attachments --path build/TestResults.xcresult --output-path build/screenshots
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -37,6 +43,7 @@ jobs:
           path: |
             build/TestResults.xcresult
             build-test.log
+            build/screenshots
           if-no-files-found: ignore
   build:
     name: Package macOS universal
