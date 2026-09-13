@@ -70,3 +70,5 @@
 "sidebar.favorites" = "Favoritter";
 "favorite.add" = "Legg til som favoritt";
 "favorite.remove" = "Fjern fra favoritter";
+
+"session.timeout" = "Tilkoblingen tok for lang tid. Kontroller adresse, skjermdeling og brannmur, og prøv igjen.";

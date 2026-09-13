@@ -42,7 +42,7 @@ struct ContentView: View {
                 Button { quickFocused = true } label: { Image(systemName: "bolt") }
                     .help("action.quickConnect").keyboardShortcut("k")
                 Button { showingNew = true } label: { Image(systemName: "plus") }
-                    .help("profile.new").keyboardShortcut("n")
+                    .help("profile.new").keyboardShortcut("n").accessibilityIdentifier("newConnection")
             }
         }
         .sheet(isPresented: $showingNew) { ProfileEditorView(profile: nil) }
@@ -138,6 +138,7 @@ struct ContentView: View {
             .help(profile.isFavorite ? "favorite.remove" : "favorite.add")
             .accessibilityLabel(Text(profile.isFavorite ? "favorite.remove" : "favorite.add"))
             .accessibilityValue(Text(profile.name))
+            .accessibilityIdentifier("favorite.\(profile.name)")
         }.contextMenu {
             Button("action.connect") { requestConnect(profile) }
             Button(profile.isFavorite ? "favorite.remove" : "favorite.add") { toggleFavorite(profile) }

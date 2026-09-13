@@ -2,9 +2,18 @@ import SwiftUI
 
 @main
 struct FjarrConnectApp: App {
-    @StateObject private var profiles = ProfileStore()
+    @StateObject private var profiles = FjarrConnectApp.makeProfileStore()
     @StateObject private var discovery = BonjourBrowser()
     @StateObject private var connection = ConnectionManager()
+
+    private static func makeProfileStore() -> ProfileStore {
+        #if DEBUG
+        if let path = ProcessInfo.processInfo.environment["FJARRCONNECT_TEST_PROFILE_PATH"] {
+            return ProfileStore(fileURL: URL(fileURLWithPath: path))
+        }
+        #endif
+        return ProfileStore()
+    }
 
     var body: some Scene {
         Window("FjärrConnect", id: "main") {
@@ -13,7 +22,12 @@ struct FjarrConnectApp: App {
                 .environmentObject(discovery)
                 .environmentObject(connection)
                 .frame(minWidth: 900, minHeight: 560)
-                .onAppear { discovery.start() }
+                .onAppear {
+                    #if DEBUG
+                    if ProcessInfo.processInfo.environment["FJARRCONNECT_DISABLE_DISCOVERY"] == "1" { return }
+                    #endif
+                    discovery.start()
+                }
                 .onDisappear { connection.disconnectAll(); discovery.stop() }
                 .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                     connection.disconnectAll()

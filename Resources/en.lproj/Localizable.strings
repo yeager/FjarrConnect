@@ -70,3 +70,5 @@
 "sidebar.favorites" = "Favorites";
 "favorite.add" = "Add to favorites";
 "favorite.remove" = "Remove from favorites";
+
+"session.timeout" = "The connection timed out. Check the address, Screen Sharing and firewall, then try again.";

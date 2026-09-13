@@ -70,3 +70,5 @@
 "sidebar.favorites" = "Favoritter";
 "favorite.add" = "Føj til favoritter";
 "favorite.remove" = "Fjern fra favoritter";
+
+"session.timeout" = "Forbindelsen fik timeout. Kontrollér adresse, skærmdeling og firewall, og prøv igen.";

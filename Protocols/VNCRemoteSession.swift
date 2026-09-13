@@ -9,7 +9,8 @@ import RoyalVNCKit
 /// local mouse/keyboard events to the server, so we don't inject input by hand.
 final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
     let profile: ConnectionProfile
-    private let password: String?
+    private var password: String?
+    private var connectionDeadline: DispatchWorkItem?
 
     @Published private(set) var status: SessionStatus = .idle
 
@@ -49,9 +50,20 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
 
         setStatus(.connecting)
         connection.connect()
+        let deadline = DispatchWorkItem { [weak self, weak connection] in
+            guard let self, let connection, self.connection === connection,
+                  self.status == .connecting else { return }
+            self.stop()
+            self.status = .disconnected(reason: NSLocalizedString("session.timeout", comment: ""))
+        }
+        connectionDeadline = deadline
+        DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: deadline)
     }
 
     func stop() {
+        connectionDeadline?.cancel()
+        connectionDeadline = nil
+        password = nil
         let old = connection
         connection = nil
         old?.delegate = nil
@@ -78,12 +90,20 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
 
     func connection(_ connection: VNCConnection,
                     stateDidChange connectionState: VNCConnection.ConnectionState) {
-        guard self.connection === connection else { return }
-        switch connectionState.status {
-        case .connecting:    setStatus(.connecting)
-        case .connected:     setStatus(.connected)
-        case .disconnecting: setStatus(.disconnecting)
-        case .disconnected:  setStatus(.disconnected(reason: connectionState.error?.localizedDescription))
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.connection === connection else { return }
+            switch connectionState.status {
+            case .connecting: self.status = .connecting
+            case .connected:
+                self.connectionDeadline?.cancel()
+                self.password = nil
+                self.status = .connected
+            case .disconnecting: self.status = .disconnecting
+            case .disconnected:
+                self.connectionDeadline?.cancel()
+                self.password = nil
+                self.status = .disconnected(reason: connectionState.error?.localizedDescription)
+            }
         }
     }
 

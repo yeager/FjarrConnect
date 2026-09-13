@@ -68,13 +68,25 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: "5.0"
 
+  FjarrConnectUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources: [UITests]
+    dependencies:
+      - target: FjarrConnect
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.0"
+
 schemes:
   FjarrConnect:
     build:
       targets:
         FjarrConnect: all
     test:
-      targets: [FjarrConnectTests]
+      targets: [FjarrConnectTests, FjarrConnectUITests]
     run:
       config: Debug
     archive:

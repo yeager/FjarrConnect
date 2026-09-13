@@ -30,14 +30,14 @@ struct ProfileEditorView: View {
                 .font(.title2.bold())
             Form {
                 Section {
-                    TextField("field.name", text: $name)
+                    TextField("field.name", text: $name).accessibilityIdentifier("profile.name")
                     Picker("field.protocol", selection: $transport) {
                         ForEach(ProtocolRegistry.available) { Text(LocalizedStringKey($0.displayNameKey)).tag($0) }
                     }
                     .onChange(of: transport) { old, new in
                         if portText.isEmpty || portText == String(old.defaultPort) { portText = String(new.defaultPort) }
                     }
-                    TextField("field.host", text: $host)
+                    TextField("field.host", text: $host).accessibilityIdentifier("profile.host")
                     TextField(String(format: NSLocalizedString("field.port.format", comment: ""), Int(transport.defaultPort)), text: $portText)
                     TextField("field.group", text: $group)
                 }
@@ -58,7 +58,7 @@ struct ProfileEditorView: View {
             HStack {
                 Spacer()
                 Button("action.cancel") { dismiss() }.keyboardShortcut(.cancelAction)
-                Button("action.save", action: save).keyboardShortcut(.defaultAction).disabled(candidate == nil)
+                Button("action.save", action: save).keyboardShortcut(.defaultAction).disabled(candidate == nil).accessibilityIdentifier("profile.save")
             }
         }.padding(24).frame(width: 480)
     }

@@ -15,6 +15,12 @@ final class SessionTab: ObservableObject, Identifiable {
 final class ConnectionManager: ObservableObject {
     @Published private(set) var tabs: [SessionTab] = []
     @Published var selectedID: UUID?
+    private let makeSession: (ConnectionProfile, String?) -> any RemoteSession
+
+    init(makeSession: @escaping (ConnectionProfile, String?) -> any RemoteSession = ProtocolRegistry.makeSession) {
+        self.makeSession = makeSession
+    }
+
     var selected: SessionTab? { tabs.first { $0.id == selectedID } }
 
     func connect(_ profile: ConnectionProfile, password: String? = nil) {
@@ -26,7 +32,7 @@ final class ConnectionManager: ObservableObject {
             selectedID = tab.id
             return
         }
-        let tab = SessionTab(backend: ProtocolRegistry.makeSession(for: profile, password: password))
+        let tab = SessionTab(backend: makeSession(profile, password))
         tabs.append(tab)
         selectedID = tab.id
         tab.backend.start()
