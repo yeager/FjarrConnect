@@ -21,7 +21,7 @@ fetch() {
 fetch openssl https://github.com/openssl/openssl.git f4dc4d58b48d346a8270183f89acf826d459b0ca
 fetch SDL https://github.com/libsdl-org/SDL.git fa2c02bb6e21974a89ea9824bc53c9932abe5f9c
 fetch SDL_ttf https://github.com/libsdl-org/SDL_ttf.git a1ce3670aec736ecbf0936c43f2f0cc53aa61e5b
-fetch FreeRDP https://github.com/FreeRDP/FreeRDP.git 7d4c92dc842ac71713095bcbac5d6c35611dcde7
+fetch FreeRDP https://github.com/FreeRDP/FreeRDP.git 63b948ca5cb94307fd5444ee6e73927a41ccdab4
 (
   cd "$STAGE/openssl"
   ./Configure "$SSL_TARGET" no-shared no-tests no-module --prefix="$PREFIX" --libdir=lib -mmacosx-version-min=14.0

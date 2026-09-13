@@ -1,7 +1,7 @@
 name: CI
 on:
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -12,34 +12,24 @@ concurrency:
 jobs:
   rdp:
     uses: ./.github/workflows/rdp-runtime.yml
-  build:
-    needs: rdp
-    name: Test and build macOS universal
+  tests:
+    name: macOS regression tests
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: '16.4'
-      - name: Install build tools
-        run: brew install xcodegen
-      - name: Check resources
-        run: python3 scripts/check-resources.py
-      - name: Generate project
-        run: xcodegen generate
+      - run: brew install xcodegen
+      - run: python3 scripts/check-resources.py && xcodegen generate
       - name: Test
         run: |
           set -o pipefail
           xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
             -configuration Debug -destination 'platform=macOS' \
             -derivedDataPath build/test -resultBundlePath build/TestResults.xcresult \
+            ARCHS="$(uname -m)" ONLY_ACTIVE_ARCH=YES \
             CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO test | tee build-test.log | xcbeautify
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: rdp-*
-          path: build/rdp-artifacts
-      - name: Build universal app
-        run: bash scripts/build-release.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -48,6 +38,23 @@ jobs:
             build/TestResults.xcresult
             build-test.log
           if-no-files-found: ignore
+  build:
+    name: Package macOS universal
+    needs: [tests, rdp]
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.4'
+      - run: brew install xcodegen
+      - run: xcodegen generate
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: rdp-*
+          path: build/rdp-artifacts
+      - name: Build universal app
+        run: bash scripts/build-release.sh
       - uses: actions/upload-artifact@v4
         with:
           name: FjarrConnect-universal
