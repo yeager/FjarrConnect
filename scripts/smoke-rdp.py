@@ -23,6 +23,9 @@ with socket.socket() as listener:
             with connection:
                 connection.settimeout(5)
                 packets.append(connection.recv(4096))
+            # Close the listening socket too: protocol fallback must get a
+            # refusal, not connect to an unattended accept queue.
+            listener.close()
         except OSError as error:
             failures.append(str(error))
 
