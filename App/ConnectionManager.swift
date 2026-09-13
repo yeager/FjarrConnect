@@ -19,7 +19,10 @@ final class ConnectionManager: ObservableObject {
 
     func connect(_ profile: ConnectionProfile, password: String? = nil) {
         guard profile.isValid else { return }
-        if let tab = tabs.first(where: { $0.backend.profile == profile && !$0.backend.status.isFinished }) {
+        if let tab = tabs.first(where: { $0.backend.profile.id == profile.id &&
+            $0.backend.profile.host == profile.host && $0.backend.profile.port == profile.port &&
+            $0.backend.profile.transport == profile.transport && $0.backend.profile.username == profile.username &&
+            !$0.backend.status.isFinished }) {
             selectedID = tab.id
             return
         }

@@ -28,15 +28,10 @@ struct ContentView: View {
                         }.padding(8)
                     }.background(.bar)
                     Divider()
-                    // Preserve each native view while changing tabs, without reconnecting.
-                    ZStack {
-                        ForEach(connection.tabs) { tab in
-                            SessionDetailView(tab: tab, reconnect: { requestConnect(tab.backend.profile, forcePrompt: true) },
-                                              close: { connection.close(tab.id) })
-                                .opacity(connection.selectedID == tab.id ? 1 : 0)
-                                .allowsHitTesting(connection.selectedID == tab.id)
-                                .accessibilityHidden(connection.selectedID != tab.id)
-                        }
+                    if let tab = connection.selected {
+                        SessionDetailView(tab: tab, reconnect: { requestConnect(tab.backend.profile, forcePrompt: true) },
+                                          close: { connection.close(tab.id) })
+                            .id(tab.id)
                     }
                 } else { welcome }
             }

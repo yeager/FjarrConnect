@@ -119,14 +119,27 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
     }
 
     func connection(_ connection: VNCConnection,
-                    didResizeFramebuffer framebuffer: VNCFramebuffer) { }
+                    didResizeFramebuffer framebuffer: VNCFramebuffer) {
+        self.connection(connection, didCreateFramebuffer: framebuffer)
+    }
 
     func connection(_ connection: VNCConnection,
                     didUpdateFramebuffer framebuffer: VNCFramebuffer,
-                    x: UInt16, y: UInt16, width: UInt16, height: UInt16) { }
+                    x: UInt16, y: UInt16, width: UInt16, height: UInt16) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.connection === connection else { return }
+            self.framebufferView?.connection(connection, didUpdateFramebuffer: framebuffer,
+                                            x: x, y: y, width: width, height: height)
+        }
+    }
 
     func connection(_ connection: VNCConnection,
-                    didUpdateCursor cursor: VNCCursor) { }
+                    didUpdateCursor cursor: VNCCursor) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.connection === connection else { return }
+            self.framebufferView?.connection(connection, didUpdateCursor: cursor)
+        }
+    }
 
     // MARK: Helpers
 

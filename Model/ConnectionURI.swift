@@ -17,7 +17,24 @@ enum ConnectionURI {
         let host = rawHost.hasPrefix("[") && rawHost.hasSuffix("]") ? String(rawHost.dropFirst().dropLast()) : rawHost
         guard validHost(host) else { return nil }
         // URLComponents can represent integers beyond UInt16. Never use a trapping conversion.
-        let rawPort = components.port ?? Int(transport.defaultPort)
+        guard let schemeRange = normalized.range(of: "://") else { return nil }
+        let authority = normalized[schemeRange.upperBound...].prefix { $0 != "/" && $0 != "?" && $0 != "#" }
+        let hostPort = authority.split(separator: "@", omittingEmptySubsequences: false).last ?? ""
+        let suffix: Substring
+        if hostPort.hasPrefix("[") {
+            guard let closing = hostPort.lastIndex(of: "]") else { return nil }
+            suffix = hostPort[hostPort.index(after: closing)...]
+        } else if let colon = hostPort.lastIndex(of: ":") {
+            suffix = hostPort[colon...]
+        } else { suffix = "" }
+        let rawPort: Int
+        if suffix.isEmpty { rawPort = Int(transport.defaultPort) }
+        else {
+            guard suffix.first == ":", !suffix.dropFirst().isEmpty,
+                  suffix.dropFirst().allSatisfy({ $0 >= "0" && $0 <= "9" }),
+                  let parsed = Int(suffix.dropFirst()) else { return nil }
+            rawPort = parsed
+        }
         guard (1...65535).contains(rawPort) else { return nil }
         let username = components.user.flatMap { $0.isEmpty ? nil : $0 }
         guard username?.contains(where: { $0.isNewline || $0.asciiValue == 0 }) != true else { return nil }
