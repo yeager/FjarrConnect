@@ -23,6 +23,7 @@ done < <(find "$APP/Contents" -type f)
 # This is NOT Developer ID signing or notarization.
 codesign --force --deep --sign - "$APP"
 codesign --verify --deep --strict "$APP"
+python3 scripts/smoke-rdp.py "$APP/Contents/Helpers/sdl-freerdp"
 VERSION=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$APP/Contents/Info.plist")
 ARCHIVE="FjarrConnect-${VERSION}-macOS-universal.zip"
 ditto -c -k --keepParent "$APP" "dist/$ARCHIVE"
