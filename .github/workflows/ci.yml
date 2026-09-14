@@ -79,4 +79,4 @@ jobs:
     needs: build
     uses: ./.github/workflows/verify-bundle.yml
     with:
-      artifact-name: FjarrConnect-${{ matrix.arch }}
+      artifact-prefix: FjarrConnect
