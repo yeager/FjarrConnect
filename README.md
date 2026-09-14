@@ -15,13 +15,18 @@ FjärrConnect brings **VNC / Mac Screen Sharing, SSH and RDP** into one connecti
 manager for **macOS 14 or later**, on **Apple Silicon (arm64) and Intel (x86_64)**.
 There are no Windows, Linux or mobile app targets.
 
-## Version 0.2
+## Version 0.2.1
 
-**[Download version 0.2.0](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.0)**
-for Apple Silicon and Intel. Download `FjarrConnect-0.2.0-macOS-universal.zip` and
-`SHA256SUMS.txt`, unzip the archive and move FjärrConnect to Applications.
+**[Download version 0.2.1](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.1)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.1-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.1-macOS-x86_64.zip` for Intel. Each app contains only its target
+architecture. Unzip the archive and move FjärrConnect to Applications.
+`SHA256SUMS.txt` contains both download checksums.
 
-Every release passes gitleaks, Mac regression tests, universal packaging and
+Version 0.2.1 fixes the missing RoyalVNCKit framework that prevented 0.2.0 from
+launching. Replace the old app; saved profiles and Keychain passwords are retained.
+
+Every release passes gitleaks, Mac regression tests, separate architecture packaging and
 checks of the downloaded app on both native Mac architectures before publication.
 
 The initial release uses **ad-hoc signing**, not Developer ID signing or Apple
@@ -125,12 +130,12 @@ xcodegen generate
 open FjarrConnect.xcodeproj
 ```
 
-Build the universal app:
+Build for your Mac (use `ARCHS=arm64` or `ARCHS=x86_64` to select explicitly):
 
 ```bash
 xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
   -configuration Release -destination 'generic/platform=macOS' \
-  ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO build
+  ARCHS="$(uname -m)" ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build
 ```
 
 Run Mac tests for the host architecture:
@@ -144,7 +149,8 @@ xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
 
 `scripts/build-rdp.sh arm64` and `scripts/build-rdp.sh x86_64` build the bundled RDP
 runtime from pinned FreeRDP, OpenSSL and SDL sources on a Mac with CMake available.
-CI combines both outputs and `scripts/build-release.sh` packages the app. A normal
+CI packages each output separately with `scripts/build-release.sh arm64` or
+`scripts/build-release.sh x86_64`. A normal
 Xcode build does not automatically compile or bundle the RDP runtime.
 
 ## GitHub Actions and releases
@@ -152,22 +158,24 @@ Xcode build does not automatically compile or bundle the RDP runtime.
 Development is on **`main`**.
 
 - **CI:** checks localizations and icons, runs macOS regression tests, builds both RDP
-  runtime slices and packages the universal app. Packaging verifies architecture
-  slices in the app and embedded native code, checks ad-hoc signatures, and creates
+  runtime slices and packages separate ARM64 and Intel apps. Packaging verifies the single
+  architecture of the app and all embedded native code, checks ad-hoc signatures, and creates
   a ZIP archive with a SHA-256 checksum. Separate Apple Silicon and Intel jobs
-  download the ZIP, verify it and exercise the bundled RDP client against a local
+  download their ZIP, verify it, start the actual app without Xcode search paths,
+  reproduce the missing-framework failure in a disposable copy, and exercise the
+  bundled RDP client against a local
   negotiation fixture in authentication-only mode.
 - **gitleaks:** scans the complete repository history on pushes to `main` and pull
   requests. The release workflow also requires a clean full-history scan.
-- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.0`**, triggers a
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.1`**, triggers a
   fresh scan, test and build. GitHub publishes the release assets only when these pass.
 
 For maintainers, after the current `main` revision passes verification:
 
 ```bash
 git pull --ff-only
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.2.1
+git push origin v0.2.1
 ```
 
 Do not reuse or move an already published release tag. Use a new version for fixes.

@@ -2,14 +2,14 @@ name: Verify downloadable Mac app
 on:
   workflow_call:
     inputs:
-      artifact-name:
+      artifact-prefix:
         required: true
         type: string
 permissions:
   contents: read
 jobs:
   verify:
-    name: Run packaged RDP on ${{ matrix.arch }}
+    name: Launch packaged app and RDP on ${{ matrix.arch }}
     strategy:
       fail-fast: false
       matrix:
@@ -23,17 +23,22 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.artifact-name }}
+          name: ${{ inputs.artifact-prefix }}-${{ matrix.arch }}
           path: dist
       - name: Verify checksum, architecture and signature
         run: |
           test "$(uname -m)" = '${{ matrix.arch }}'
-          (cd dist && shasum -a 256 -c SHA256SUMS.txt)
+          (cd dist && shasum -a 256 -c SHA256SUMS-${{ matrix.arch }}.txt)
           mkdir -p build/downloaded
-          ditto -xk dist/FjarrConnect-*-macOS-universal.zip build/downloaded
+          ditto -xk dist/FjarrConnect-*-macOS-${{ matrix.arch }}.zip build/downloaded
           APP=build/downloaded/FjarrConnect.app
-          lipo "$APP/Contents/MacOS/FjarrConnect" -verify_arch arm64 x86_64
-          lipo "$APP/Contents/Helpers/sdl-freerdp" -verify_arch arm64 x86_64
+          while IFS= read -r binary; do
+            if file "$binary" | grep -q 'Mach-O'; then
+              test "$(lipo -archs "$binary")" = '${{ matrix.arch }}'
+            fi
+          done < <(find "$APP/Contents" -type f)
+          test -f "$APP/Contents/Frameworks/RoyalVNCKit.framework/Versions/A/RoyalVNCKit"
           codesign --verify --deep --strict "$APP"
           "$APP/Contents/Helpers/sdl-freerdp" /version
+          python3 scripts/smoke-app.py "$APP" --check-missing-framework
           python3 scripts/smoke-rdp.py "$APP/Contents/Helpers/sdl-freerdp"

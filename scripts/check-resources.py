@@ -21,6 +21,7 @@ for entry in json.loads((icon_dir / 'Contents.json').read_text())['images']:
     expected = int(entry['size'].split('x')[0]) * int(entry['scale'][0])
     assert width == height == expected, entry['filename']
 spec = (root / 'project.yml').read_text()
-assert 'ARCHS: "arm64 x86_64"' in spec
+assert 'ARCHS: "$(NATIVE_ARCH_ACTUAL)"' in spec
+assert '- package: RoyalVNCKit\n        embed: true' in spec
 assert set(re.findall(r'platform: (\w+)', spec)) == {'macOS'}
 print('Localization, icon sizes, and macOS architecture settings are valid.')

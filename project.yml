@@ -28,14 +28,15 @@ targets:
       - Resources
     dependencies:
       - package: RoyalVNCKit
+        embed: true
       - package: SwiftTerm
     info:
       path: Generated/Info.plist
       properties:
         CFBundleDisplayName: FjärrConnect          # the ö lives here, in the display name
         CFBundleName: FjarrConnect
-        CFBundleShortVersionString: "0.2.0"
-        CFBundleVersion: "2"
+        CFBundleShortVersionString: "0.2.1"
+        CFBundleVersion: "3"
         LSMinimumSystemVersion: "14.0"
         LSApplicationCategoryType: public.app-category.utilities
         NSHumanReadableCopyright: "Copyright © 2026 yeager"
@@ -46,10 +47,10 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: se.fjarrconnect.app
         PRODUCT_NAME: FjarrConnect
-        MARKETING_VERSION: "0.2.0"
-        CURRENT_PROJECT_VERSION: "2"
+        MARKETING_VERSION: "0.2.1"
+        CURRENT_PROJECT_VERSION: "3"
         SWIFT_VERSION: "5.0"
-        ARCHS: "arm64 x86_64"
+        ARCHS: "$(NATIVE_ARCH_ACTUAL)"
         ONLY_ACTIVE_ARCH: NO
         ENABLE_APP_SANDBOX: NO
         ENABLE_HARDENED_RUNTIME: YES
