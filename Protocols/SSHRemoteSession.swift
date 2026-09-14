@@ -52,7 +52,10 @@ final class SSHRemoteSession: NSObject, RemoteSession, LocalProcessTerminalViewD
     func processTerminated(source: TerminalView, exitCode: Int32?) {
         DispatchQueue.main.async { [weak self] in
             guard let self, self.terminal === source, !self.status.isFinished else { return }
-            self.status = .disconnected(reason: exitCode == 0 ? nil : NSLocalizedString("ssh.ended", comment: ""))
+            // SwiftTerm 1.10.1 uses waitpid(WNOHANG) without checking its return
+            // value, so zero is not reliable proof of a clean SSH exit. Keep
+            // the terminal message available for every externally ended session.
+            self.status = .disconnected(reason: NSLocalizedString("ssh.ended", comment: ""))
         }
     }
 }

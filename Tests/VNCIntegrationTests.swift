@@ -13,17 +13,29 @@ final class VNCIntegrationTests: XCTestCase {
         server.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
         server.arguments = ["-c", Self.server, portFile.path]
         server.standardOutput = FileHandle.nullDevice
-        server.standardError = FileHandle.nullDevice
+        // XCTest injects libraries into its host; these must not leak into Python.
+        server.environment = ProcessInfo.processInfo.environment.filter {
+            !$0.key.hasPrefix("DYLD_") && !$0.key.hasPrefix("XCTest") && !$0.key.hasPrefix("XCInject")
+        }
+        let diagnostics = directory.appendingPathComponent("server.log")
+        FileManager.default.createFile(atPath: diagnostics.path, contents: nil)
+        let diagnosticHandle = try FileHandle(forWritingTo: diagnostics)
+        defer { try? diagnosticHandle.close() }
+        server.standardError = diagnosticHandle
         try server.run()
         defer { if server.isRunning { server.terminate(); server.waitUntilExit() } }
         let ready = expectation(description: "RFB server listening")
         DispatchQueue.global().async {
-            for _ in 0..<100 {
-                if FileManager.default.fileExists(atPath: portFile.path) { ready.fulfill(); return }
+            for _ in 0..<220 {
+                if FileManager.default.fileExists(atPath: portFile.path) || !server.isRunning { ready.fulfill(); return }
                 Thread.sleep(forTimeInterval: 0.05)
             }
         }
-        wait(for: [ready], timeout: 6)
+        wait(for: [ready], timeout: 12)
+        guard FileManager.default.fileExists(atPath: portFile.path) else {
+            XCTFail("RFB fixture did not start: " + ((try? String(contentsOf: diagnostics, encoding: .utf8)) ?? "No diagnostics"))
+            return
+        }
         let port = try XCTUnwrap(UInt16(String(contentsOf: portFile, encoding: .utf8)))
         let session = VNCRemoteSession(profile: ConnectionProfile(name: "Local RFB", host: "127.0.0.1", port: port), password: nil)
         let connected = expectation(description: "Authenticated RFB session")
