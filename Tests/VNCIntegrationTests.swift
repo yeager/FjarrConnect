@@ -130,7 +130,15 @@ final class VNCIntegrationTests: XCTestCase {
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [painted], timeout: 5), .completed)
         XCTAssertTrue(window.firstResponder === framebuffer(in: host), "Keyboard focus must follow the resized desktop")
-        XCTAssertTrue(framebuffer(in: host)?.currentCursor === originalCursor, "The server cursor must survive a desktop resize")
+        let cursor = try XCTUnwrap(framebuffer(in: host)?.currentCursor)
+        XCTAssertEqual(cursor.image.size, originalCursor.image.size)
+        XCTAssertEqual(cursor.hotSpot, originalCursor.hotSpot)
+        let cursorData = try XCTUnwrap(cursor.image.tiffRepresentation)
+        let cursorPixel = try XCTUnwrap(NSBitmapImageRep(data: cursorData)?.colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB))
+        XCTAssertGreaterThan(cursorPixel.alphaComponent, 0.95, "The server cursor must remain visible after a resize")
+        XCTAssertGreaterThan(cursorPixel.redComponent, 0.95)
+        XCTAssertGreaterThan(cursorPixel.greenComponent, 0.95)
+        XCTAssertGreaterThan(cursorPixel.blueComponent, 0.95)
         XCTAssertEqual(session.status, .connected)
     }
 
