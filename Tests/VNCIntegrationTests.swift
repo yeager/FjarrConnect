@@ -12,14 +12,18 @@ final class VNCIntegrationTests: XCTestCase {
         try exerciseServer(requiresUsername: true)
     }
 
-    private func exerciseServer(requiresUsername: Bool) throws {
+    func testVNCAuthenticatesWithPasswordAndReceivesDesktop() throws {
+        try exerciseServer(requiresUsername: false, requiresPassword: true)
+    }
+
+    private func exerciseServer(requiresUsername: Bool, requiresPassword: Bool = false) throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let portFile = directory.appendingPathComponent("port")
         let server = Process()
         server.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
-        server.arguments = ["-c", Self.server, portFile.path, requiresUsername ? "username" : "none"]
+        server.arguments = ["-c", Self.server, portFile.path, requiresUsername ? "username" : (requiresPassword ? "password" : "none")]
         server.standardOutput = FileHandle.nullDevice
         // XCTest injects libraries into its host; these must not leak into Python.
         server.environment = ProcessInfo.processInfo.environment.filter {
@@ -45,7 +49,7 @@ final class VNCIntegrationTests: XCTestCase {
             return
         }
         let port = try XCTUnwrap(UInt16(String(contentsOf: portFile, encoding: .utf8)))
-        let session = VNCRemoteSession(profile: ConnectionProfile(name: "Local RFB", host: "127.0.0.1", port: port), password: nil)
+        let session = VNCRemoteSession(profile: ConnectionProfile(name: "Local RFB", host: "127.0.0.1", port: port), password: requiresPassword ? "vnc-test" : nil)
         let connected = expectation(description: "Authenticated RFB session")
         var observed = false
         let subscription = session.$status.sink { state in
@@ -91,8 +95,15 @@ with socket.socket() as listener:
             client.sendall(struct.pack('!HH', 5, 512) + b'\xff' * 512 + b'\x01' * 512)
             assert client.recv(1) == b''
             sys.exit(0)
-        client.sendall(b'\x01\x01')
-        assert read(client, 1) == b'\x01'
+        if sys.argv[2] == 'password':
+            client.sendall(b'\x01\x02')
+            assert read(client, 1) == b'\x02'
+            client.sendall(bytes(range(16)))
+            # Fixed test-only challenge response for the dummy password vnc-test.
+            assert read(client, 16) == bytes.fromhex('6462c8f87dc31b5642d39beecb016a32')
+        else:
+            client.sendall(b'\x01\x01')
+            assert read(client, 1) == b'\x01'
         client.sendall(struct.pack('!I', 0))
         read(client, 1)
         name = b'FjarrConnect local test'
