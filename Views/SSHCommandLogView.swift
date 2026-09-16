@@ -33,7 +33,7 @@ struct SSHCommandLogView: View {
                 }
             }
             HStack {
-                Button("action.refresh") { load() }.disabled(busy)
+                Button("ssh.log.refresh") { load() }.disabled(busy)
                 if busy { ProgressView().controlSize(.small) }
                 Spacer()
                 Button("ssh.log.clear", role: .destructive) { confirmingClear = true }.disabled(busy)

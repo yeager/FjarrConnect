@@ -81,7 +81,7 @@ not claim that authentication succeeded.
 1. Create or edit a saved connection, choose **SSH**, and enable **Log SSH command names**.
 2. Save and connect. If the connection is already open, disconnect and connect again.
 3. Open **SSH command log** from the connection's context menu or the lock/document
-   button above its terminal. **Refresh** reads new entries.
+   button above its terminal. **Refresh log** reads new entries.
 
 Logging is **off by default** and independent for each saved connection. The terminal
 shows whether logging is active, waiting for a supported shell, or unavailable.

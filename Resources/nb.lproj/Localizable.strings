@@ -104,3 +104,4 @@
 "ssh.log.failed" = "Kommandologging stoppet: kryptert lagring eller Nøkkelring er ikke tilgjengelig. Koble til på nytt for å prøve igjen. Ingenting lagres i klartekst.";
 "ssh.log.readFailed" = "Den krypterte loggen kunne ikke åpnes eller slettes. Lås opp Nøkkelring og prøv igjen. Skadede logger beholdes; bruk Slett logg for å tilbakestille.";
 "ssh.log.disable" = "Stopp kommandologging";
+"ssh.log.refresh" = "Oppdater logg";
