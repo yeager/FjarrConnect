@@ -33,7 +33,7 @@ final class ProfileStore: ObservableObject {
     }
 
     func remove(_ profile: ConnectionProfile) throws {
-        if profile.transport == .ssh { try SSHCommandLogStore.shared.clear(for: profile.id) }
+        try SSHCommandLogStore.shared.clear(for: profile.id)
         try persist(profiles.filter { $0.id != profile.id }, credentialID: profile.id, password: "")
     }
 

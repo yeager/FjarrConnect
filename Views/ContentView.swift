@@ -30,7 +30,10 @@ struct ContentView: View {
                     }.background(.bar)
                     Divider()
                     if let tab = connection.selected {
-                        SessionDetailView(tab: tab, reconnect: { requestConnect(tab.backend.profile, forcePrompt: true) },
+                        SessionDetailView(tab: tab, reconnect: {
+                            let current = profiles.profiles.first { $0.id == tab.backend.profile.id } ?? tab.backend.profile
+                            requestConnect(current, forcePrompt: true)
+                        },
                                           close: { connection.close(tab.id) })
                             .id(tab.id)
                     }
