@@ -1,5 +1,7 @@
 import XCTest
 import Combine
+import SwiftUI
+import RoyalVNCKit
 @testable import FjarrConnect
 
 /// A local RFB server exercises the actual RoyalVNCKit handshake and session lifecycle.
@@ -16,14 +18,19 @@ final class VNCIntegrationTests: XCTestCase {
         try exerciseServer(requiresUsername: false, requiresPassword: true)
     }
 
-    private func exerciseServer(requiresUsername: Bool, requiresPassword: Bool = false) throws {
+    func testBlackDesktopHintClearsWhenServerStartsSendingContent() throws {
+        try exerciseServer(requiresUsername: false, blackInitially: true)
+    }
+
+    private func exerciseServer(requiresUsername: Bool, requiresPassword: Bool = false,
+                                blackInitially: Bool = false) throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let portFile = directory.appendingPathComponent("port")
         let server = Process()
         server.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
-        server.arguments = ["-c", Self.server, portFile.path, requiresUsername ? "username" : (requiresPassword ? "password" : "none")]
+        server.arguments = ["-c", Self.server, portFile.path, requiresUsername ? "username" : (requiresPassword ? "password" : (blackInitially ? "black" : "none"))]
         server.standardOutput = FileHandle.nullDevice
         // XCTest injects libraries into its host; these must not leak into Python.
         server.environment = ProcessInfo.processInfo.environment.filter {
@@ -61,14 +68,56 @@ final class VNCIntegrationTests: XCTestCase {
             XCTAssertEqual(session.status.error, NSLocalizedString("vnc.usernameRequired", comment: ""))
         } else {
             XCTAssertEqual(session.status, .connected)
+            try assertRenderedDesktop(session, isBlack: blackInitially)
+            if blackInitially {
+                let warning = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                    session.notice == NSLocalizedString("vnc.blackScreen", comment: "")
+                }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [warning], timeout: 12), .completed)
+                let recovered = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                    session.notice == nil
+                }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [recovered], timeout: 6), .completed)
+                XCTAssertEqual(session.status, .connected)
+            }
         }
         session.stop()
         XCTAssertEqual(session.status, .disconnected(reason: nil))
         subscription.cancel()
     }
 
+    private func assertRenderedDesktop(_ session: VNCRemoteSession, isBlack: Bool) throws {
+        // A successful handshake alone does not prove that the app shows pixels.
+        let host = NSHostingView(rootView: session.makeScreenView())
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { window.close() }
+        func framebuffer(in view: NSView) -> VNCCAFramebufferView? {
+            if let frame = view as? VNCCAFramebufferView { return frame }
+            return view.subviews.lazy.compactMap { framebuffer(in: $0) }.first
+        }
+        let rendered = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            framebuffer(in: host)?.layer?.contents != nil
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [rendered], timeout: 5), .completed)
+        let view = try XCTUnwrap(framebuffer(in: host))
+        let contents = try XCTUnwrap(view.layer?.contents)
+        XCTAssertEqual(CFGetTypeID(contents as CFTypeRef), CGImage.typeID)
+        let image = contents as! CGImage
+        XCTAssertEqual(image.width, 2)
+        XCTAssertEqual(image.height, 2)
+        let pixel = try XCTUnwrap(NSBitmapImageRep(cgImage: image).colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB))
+        if isBlack { XCTAssertLessThan(pixel.redComponent, 0.05) }
+        else { XCTAssertGreaterThan(pixel.redComponent, 0.95) }
+        XCTAssertLessThan(pixel.greenComponent, 0.05)
+        XCTAssertLessThan(pixel.blueComponent, 0.05)
+    }
+
     private static let server = #"""
-import os, socket, struct, sys
+import os, socket, struct, sys, time
 
 def read(client, count):
     data = b''
@@ -108,6 +157,7 @@ with socket.socket() as listener:
         read(client, 1)
         name = b'FjarrConnect local test'
         client.sendall(struct.pack('!HHBBBBHHHBBBxxxI', 2, 2, 32, 24, 0, 1, 255, 255, 255, 16, 8, 0, len(name)) + name)
+        first_frame = None
         try:
             while True:
                 kind = read(client, 1)[0]
@@ -117,7 +167,10 @@ with socket.socket() as listener:
                     read(client, count * 4)
                 elif kind == 3:
                     read(client, 9)
-                    client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 0, 0, 2, 2, 0) + b'\x00\x00\xff\x00' * 4)
+                    if first_frame is None: first_frame = time.monotonic()
+                    black = sys.argv[2] == 'black' and time.monotonic() - first_frame < 9
+                    pixel = b'\x00\x00\x00\x00' if black else b'\x00\x00\xff\x00'
+                    client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 0, 0, 2, 2, 0) + pixel * 4)
                 elif kind == 4: read(client, 7)
                 elif kind == 5: read(client, 5)
                 elif kind == 6:

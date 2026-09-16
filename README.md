@@ -15,16 +15,17 @@ FjärrConnect brings **VNC / Mac Screen Sharing, SSH and RDP** into one connecti
 manager for **macOS 14 or later**, on **Apple Silicon (arm64) and Intel (x86_64)**.
 There are no Windows, Linux or mobile app targets.
 
-## Version 0.2.1
+## Version 0.2.2
 
-**[Download version 0.2.1](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.1)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.1-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.1-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.2](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.2)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.2-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.2-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.1 fixes the missing RoyalVNCKit framework that prevented 0.2.0 from
-launching. Replace the old app; saved profiles and Keychain passwords are retained.
+Version 0.2.2 explains VNC sign-in requirements and reports useful RDP connection,
+account and TLS errors. It retains the startup fix from 0.2.1. Replace the old app;
+saved profiles and Keychain passwords are retained.
 
 Every release passes gitleaks, Mac regression tests, separate architecture packaging and
 checks of the downloaded app on both native Mac architectures before publication.
@@ -80,6 +81,23 @@ not claim that authentication succeeded.
 4. Enter the remote Mac account's username and password. For a saved profile, you can
    remember the password in Keychain.
 5. Save frequently used machines with **⌘N**, then click their star to make them favorites.
+
+If the remote Mac uses **Remote Management** instead of Screen Sharing, the account
+also needs **Observe** and **Control** rights in its Remote Management options.
+Membership in the Screen Sharing group alone is not sufficient. A server can report
+“Authentication or authorization failure” even when the password is correct.
+If authentication succeeds but the image stays black, macOS may still be denying
+screen capture or input to its sharing agent. Turn Remote Management off and on
+**locally on the remote Mac**, then approve any permission request. Apple documents
+this requirement in its [Remote Management setup guide](https://support.apple.com/guide/remote-desktop/apd8b1c65bd/mac).
+FjärrConnect displays a hint for a persistently black or missing initial image;
+the hint clears when desktop content arrives. It does not change the remote
+computer’s access permissions.
+
+RDP requires a listening Remote Desktop service on the destination port (normally
+3389). The app reports the destination, a recognized error category and the client
+exit code when a connection fails. Backend logs and passwords are not displayed
+or saved as diagnostics.
 
 Quick-connect examples:
 
@@ -157,7 +175,8 @@ Xcode build does not automatically compile or bundle the RDP runtime.
 
 Development is on **`main`**.
 
-- **CI:** checks localizations and icons, runs macOS regression tests, builds both RDP
+- **CI:** checks localizations and icons, runs macOS regression tests (including
+  password-authenticated VNC rendering and recovery from black frames), builds both RDP
   runtime slices and packages separate ARM64 and Intel apps. Packaging verifies the single
   architecture of the app and all embedded native code, checks ad-hoc signatures, and creates
   a ZIP archive with a SHA-256 checksum. Separate Apple Silicon and Intel jobs
@@ -167,15 +186,15 @@ Development is on **`main`**.
   negotiation fixture in authentication-only mode.
 - **gitleaks:** scans the complete repository history on pushes to `main` and pull
   requests. The release workflow also requires a clean full-history scan.
-- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.1`**, triggers a
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.2`**, triggers a
   fresh scan, test and build. GitHub publishes the release assets only when these pass.
 
 For maintainers, after the current `main` revision passes verification:
 
 ```bash
 git pull --ff-only
-git tag v0.2.1
-git push origin v0.2.1
+git tag v0.2.2
+git push origin v0.2.2
 ```
 
 Do not reuse or move an already published release tag. Use a new version for fixes.

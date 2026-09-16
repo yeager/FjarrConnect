@@ -76,3 +76,11 @@
 "rdp.showWindow" = "Visa fjärrskrivbord";
 
 "vnc.usernameRequired" = "Servern kräver ett användarnamn. Ange det korta användarnamnet och lösenordet för kontot på fjärr-Macen, och kontrollera att kontot är tillåtet under Skärmdelning.";
+
+"rdp.error.network" = "Servern kunde inte nås. Kontrollera att Fjärrskrivbord är aktiverat och att adressen och porten är tillgängliga.";
+"rdp.error.authentication" = "Servern avvisade inloggningen. Kontrollera användarnamn, lösenord och behörighet för Fjärrskrivbord.";
+"rdp.error.certificate" = "Den säkra anslutningen misslyckades. Kontrollera serverns certifikat och TLS-inställningar.";
+"rdp.error.account" = "Kontot behöver åtgärdas: det kan vara låst, inaktiverat, utgånget eller kräva lösenordsbyte. Kontrollera behörigheten för Fjärrskrivbord.";
+"rdp.exitCode" = "Klientens avslutskod:";
+"vnc.blackScreen" = "Servern skickar en svart bild. På en Mac: kontrollera Skärmdelning eller Fjärrhantering under Systeminställningar → Allmänt → Delning. Funktionen kan behöva slås av och på lokalt för att ge åtkomst till skärm och inmatning. Kontrollera också att fjärrskärmen är vaken.";
+"vnc.waitingForImage" = "Ansluten, men servern har ännu inte skickat någon skrivbordsbild. Kontrollera skärmdelningen på fjärrdatorn.";

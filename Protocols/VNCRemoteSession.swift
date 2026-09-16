@@ -2,8 +2,8 @@ import SwiftUI
 import RoyalVNCKit
 
 /// VNC/RFB backend built on RoyalVNCKit (MIT). RoyalVNCKit implements the standard
-/// VNC auth *and* Apple Remote Desktop auth, so this connects to any Mac with
-/// System Settings ▸ General ▸ Sharing ▸ Screen Sharing enabled.
+/// VNC auth and Apple Remote Desktop auth. The remote Mac must grant the account
+/// screen access and authorize its sharing agent to capture the screen.
 ///
 /// RoyalVNCKit's `VNCCAFramebufferView` both renders the framebuffer and forwards
 /// local mouse/keyboard events to the server, so we don't inject input by hand.
@@ -12,8 +12,10 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
     private var password: String?
     private var connectionDeadline: DispatchWorkItem?
     private var credentialFailure: String?
+    private var frameCheck: DispatchWorkItem?
 
     @Published private(set) var status: SessionStatus = .idle
+    @Published private(set) var notice: String?
 
     private var connection: VNCConnection?
     private let logger = VNCPrintLogger()
@@ -33,6 +35,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
     func start() {
         guard connection == nil else { return }
         credentialFailure = nil
+        notice = nil
         let settings = VNCConnection.Settings(
             isDebugLoggingEnabled: false,
             hostname: profile.host,
@@ -63,6 +66,9 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
     }
 
     func stop() {
+        frameCheck?.cancel()
+        frameCheck = nil
+        notice = nil
         connectionDeadline?.cancel()
         connectionDeadline = nil
         password = nil
@@ -100,8 +106,11 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
                 self.connectionDeadline?.cancel()
                 self.password = nil
                 self.status = .connected
+                self.checkInitialImage(connection, after: 8)
             case .disconnecting: self.status = .disconnecting
             case .disconnected:
+                self.frameCheck?.cancel()
+                self.notice = nil
                 self.connectionDeadline?.cancel()
                 self.password = nil
                 self.status = .disconnected(reason: self.credentialFailure ?? connectionState.error.map { error in
@@ -180,6 +189,24 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
     }
 
     // MARK: Helpers
+
+    private func checkInitialImage(_ connection: VNCConnection, after delay: TimeInterval) {
+        frameCheck?.cancel()
+        let check = DispatchWorkItem { [weak self, weak connection] in
+            guard let self, let connection, self.connection === connection,
+                  self.status == .connected else { return }
+            if let image = connection.framebuffer?.cgImage {
+                guard VNCFrameDiagnostics.isBlack(image) else { self.notice = nil; return }
+                self.notice = NSLocalizedString("vnc.blackScreen", comment: "")
+            } else {
+                self.notice = NSLocalizedString("vnc.waitingForImage", comment: "")
+            }
+            // Clear the hint automatically if the server starts sending content.
+            self.checkInitialImage(connection, after: 3)
+        }
+        frameCheck = check
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: check)
+    }
 
     private func setStatus(_ new: SessionStatus) {
         DispatchQueue.main.async { [weak self] in

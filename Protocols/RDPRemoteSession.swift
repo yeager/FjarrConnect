@@ -31,19 +31,14 @@ final class RDPRemoteSession: NSObject, RemoteSession {
         password = nil
         let task = Process()
         let pipe = Pipe()
+        let diagnosticsPipe = Pipe()
         task.executableURL = executable
         task.arguments = ["/args-from:stdin"]
         task.standardInput = pipe
-        // Do not capture backend diagnostics which could include credentials.
+        // stdout is unused. stderr is reduced to allowlisted error categories;
+        // raw diagnostics (which may contain credentials) are never displayed.
         task.standardOutput = FileHandle.nullDevice
-        task.standardError = FileHandle.nullDevice
-        task.terminationHandler = { [weak self] ended in
-            DispatchQueue.main.async {
-                guard let self, self.process === ended else { return }
-                self.process = nil
-                self.status = .disconnected(reason: ended.terminationStatus == 0 ? nil : NSLocalizedString("rdp.ended", comment: ""))
-            }
-        }
+        task.standardError = diagnosticsPipe
         do {
             try task.run()
             process = task
@@ -53,7 +48,29 @@ final class RDPRemoteSession: NSObject, RemoteSession {
                 try? pipe.fileHandleForWriting.write(contentsOf: input)
                 try? pipe.fileHandleForWriting.close()
             }
-        } catch { status = .disconnected(reason: error.localizedDescription) }
+            DispatchQueue.global(qos: .utility).async { [weak self] in
+                var diagnostics = RDPDiagnostics()
+                while true {
+                    let data = diagnosticsPipe.fileHandleForReading.availableData
+                    if data.isEmpty { break }
+                    diagnostics.consume(data)
+                }
+                try? diagnosticsPipe.fileHandleForReading.close()
+                task.waitUntilExit()
+                let result = diagnostics
+                DispatchQueue.main.async {
+                    guard let self, self.process === task else { return }
+                    self.process = nil
+                    self.status = .disconnected(reason: task.terminationStatus == 0 ? nil :
+                        result.message(host: self.profile.host, port: self.profile.port,
+                                       exitCode: task.terminationStatus))
+                }
+            }
+        } catch {
+            try? pipe.fileHandleForWriting.close()
+            try? diagnosticsPipe.fileHandleForReading.close()
+            status = .disconnected(reason: error.localizedDescription)
+        }
     }
     func stop() {
         process?.terminationHandler = nil

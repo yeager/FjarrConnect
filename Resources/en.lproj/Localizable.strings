@@ -76,3 +76,11 @@
 "rdp.showWindow" = "Show remote desktop";
 
 "vnc.usernameRequired" = "This server requires a username. Enter the remote Mac account’s short username and password, and check that the account is allowed under Screen Sharing.";
+
+"rdp.error.network" = "The server could not be reached. Check that Remote Desktop is enabled and that this address and port are reachable.";
+"rdp.error.authentication" = "The server rejected the sign-in. Check the username, password and permission to use Remote Desktop.";
+"rdp.error.certificate" = "The secure connection failed. Check the server certificate and TLS settings.";
+"rdp.error.account" = "The account needs attention: it may be locked, disabled, expired or require a password change. Check its Remote Desktop access.";
+"rdp.exitCode" = "Client exit code:";
+"vnc.blackScreen" = "The server is sending a black screen. On a Mac, check Screen Sharing or Remote Management under System Settings → General → Sharing. Turning it off and on locally may be required to grant screen and input access. Also check that the remote display is awake.";
+"vnc.waitingForImage" = "Connected, but the server has not sent a desktop image yet. Check screen sharing on the remote computer.";

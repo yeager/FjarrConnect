@@ -234,6 +234,11 @@ private struct SessionDetailView: View {
                     .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                     .padding().frame(maxWidth: .infinity, alignment: .leading)
             }
+            if let notice = tab.backend.notice {
+                Label(notice, systemImage: "info.circle").foregroundStyle(.secondary)
+                    .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                    .padding().frame(maxWidth: .infinity, alignment: .leading)
+            }
             if tab.backend.status.isFinished && tab.backend.profile.transport != .ssh {
                 ContentUnavailableView("status.disconnected", systemImage: "network.slash", description: Text("session.retry"))
             } else { tab.backend.makeScreenView() }

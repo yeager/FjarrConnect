@@ -76,3 +76,11 @@
 "rdp.showWindow" = "Vis eksternt skrivebord";
 
 "vnc.usernameRequired" = "Serveren krever et brukernavn. Oppgi det korte brukernavnet og passordet til kontoen på den eksterne Macen, og kontroller at kontoen har tilgang under Skjermdeling.";
+
+"rdp.error.network" = "Serveren kunne ikke nås. Kontroller at Eksternt skrivebord er aktivert og at adressen og porten er tilgjengelige.";
+"rdp.error.authentication" = "Serveren avviste innloggingen. Kontroller brukernavn, passord og tilgang til Eksternt skrivebord.";
+"rdp.error.certificate" = "Den sikre tilkoblingen mislyktes. Kontroller serverens sertifikat og TLS-innstillinger.";
+"rdp.error.account" = "Kontoen krever handling: den kan være låst, deaktivert, utløpt eller kreve et nytt passord. Kontroller tilgangen til Eksternt skrivebord.";
+"rdp.exitCode" = "Klientens avslutningskode:";
+"vnc.blackScreen" = "Serveren sender et svart bilde. På en Mac: kontroller Skjermdeling eller Ekstern administrering under Systeminnstillinger → Generelt → Deling. Funksjonen må kanskje slås av og på lokalt for å gi tilgang til skjerm og inndata. Kontroller også at den eksterne skjermen er våken.";
+"vnc.waitingForImage" = "Tilkoblet, men serveren har ikke sendt et skrivebordsbilde ennå. Kontroller skjermdeling på den eksterne datamaskinen.";

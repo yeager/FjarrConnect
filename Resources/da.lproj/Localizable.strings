@@ -76,3 +76,11 @@
 "rdp.showWindow" = "Vis fjernskrivebord";
 
 "vnc.usernameRequired" = "Serveren kræver et brugernavn. Angiv det korte brugernavn og adgangskoden til kontoen på den eksterne Mac, og kontrollér, at kontoen har adgang under Skærmdeling.";
+
+"rdp.error.network" = "Serveren kunne ikke nås. Kontrollér, at Fjernskrivebord er aktiveret, og at adressen og porten er tilgængelige.";
+"rdp.error.authentication" = "Serveren afviste login. Kontrollér brugernavn, adgangskode og tilladelse til Fjernskrivebord.";
+"rdp.error.certificate" = "Den sikre forbindelse mislykkedes. Kontrollér serverens certifikat og TLS-indstillinger.";
+"rdp.error.account" = "Kontoen kræver handling: den kan være låst, deaktiveret, udløbet eller kræve en ny adgangskode. Kontrollér adgangen til Fjernskrivebord.";
+"rdp.exitCode" = "Klientens afslutningskode:";
+"vnc.blackScreen" = "Serveren sender et sort billede. På en Mac: kontrollér Skærmdeling eller Ekstern administration under Systemindstillinger → Generelt → Deling. Det kan være nødvendigt at slå funktionen fra og til lokalt for at give adgang til skærm og input. Kontrollér også, at fjernskærmen er vågen.";
+"vnc.waitingForImage" = "Forbundet, men serveren har endnu ikke sendt et skrivebordsbillede. Kontrollér skærmdeling på den eksterne computer.";

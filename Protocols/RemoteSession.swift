@@ -22,9 +22,14 @@ enum SessionStatus: Equatable {
 protocol RemoteSession: ObservableObject, AnyObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     var profile: ConnectionProfile { get }
     var status: SessionStatus { get }
+    var notice: String? { get }
     func start()
     func stop()
     func makeScreenView() -> AnyView
+}
+
+extension RemoteSession {
+    var notice: String? { nil }
 }
 
 enum ProtocolRegistry {
