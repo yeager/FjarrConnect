@@ -17,7 +17,9 @@ def launch(app, should_start=True):
     environment = {k: v for k, v in os.environ.items()
                    if not k.startswith(('DYLD_', 'XCTest', 'XCInject'))}
     with tempfile.TemporaryDirectory(prefix='fjarrconnect-launch-') as directory:
-        environment['HOME'] = directory
+        # Foundation ignores HOME on macOS when resolving applicationSupportDirectory.
+        # Its per-process home override keeps startup checks away from saved profiles.
+        environment['CFFIXED_USER_HOME'] = directory
         with subprocess.Popen([str(executable)], cwd=directory, env=environment,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
             try:
