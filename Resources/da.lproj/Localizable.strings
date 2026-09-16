@@ -74,3 +74,5 @@
 "session.timeout" = "Forbindelsen fik timeout. Kontrollér adresse, skærmdeling og firewall, og prøv igen.";
 
 "rdp.showWindow" = "Vis fjernskrivebord";
+
+"vnc.usernameRequired" = "Serveren kræver et brugernavn. Angiv det korte brugernavn og adgangskoden til kontoen på den eksterne Mac, og kontrollér, at kontoen har adgang under Skærmdeling.";

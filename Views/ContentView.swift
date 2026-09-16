@@ -231,7 +231,8 @@ private struct SessionDetailView: View {
             Divider()
             if let error = tab.backend.status.error {
                 Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
-                    .textSelection(.enabled).padding().frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                    .padding().frame(maxWidth: .infinity, alignment: .leading)
             }
             if tab.backend.status.isFinished && tab.backend.profile.transport != .ssh {
                 ContentUnavailableView("status.disconnected", systemImage: "network.slash", description: Text("session.retry"))

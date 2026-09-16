@@ -5,13 +5,21 @@ import Combine
 /// A local RFB server exercises the actual RoyalVNCKit handshake and session lifecycle.
 final class VNCIntegrationTests: XCTestCase {
     func testVNCConnectsToLocalServerAndStops() throws {
+        try exerciseServer(requiresUsername: false)
+    }
+
+    func testAppleVNCExplainsMissingUsername() throws {
+        try exerciseServer(requiresUsername: true)
+    }
+
+    private func exerciseServer(requiresUsername: Bool) throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let portFile = directory.appendingPathComponent("port")
         let server = Process()
         server.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
-        server.arguments = ["-c", Self.server, portFile.path]
+        server.arguments = ["-c", Self.server, portFile.path, requiresUsername ? "username" : "none"]
         server.standardOutput = FileHandle.nullDevice
         // XCTest injects libraries into its host; these must not leak into Python.
         server.environment = ProcessInfo.processInfo.environment.filter {
@@ -41,11 +49,15 @@ final class VNCIntegrationTests: XCTestCase {
         let connected = expectation(description: "Authenticated RFB session")
         var observed = false
         let subscription = session.$status.sink { state in
-            if state == .connected && !observed { observed = true; connected.fulfill() }
+            if (requiresUsername ? state.isFinished : state == .connected) && !observed { observed = true; connected.fulfill() }
         }
         session.start()
         wait(for: [connected], timeout: 10)
-        XCTAssertEqual(session.status, .connected)
+        if requiresUsername {
+            XCTAssertEqual(session.status.error, NSLocalizedString("vnc.usernameRequired", comment: ""))
+        } else {
+            XCTAssertEqual(session.status, .connected)
+        }
         session.stop()
         XCTAssertEqual(session.status, .disconnected(reason: nil))
         subscription.cancel()
@@ -72,6 +84,13 @@ with socket.socket() as listener:
         client.settimeout(12)
         client.sendall(b'RFB 003.008\n')
         read(client, 12)
+        if sys.argv[2] == 'username':
+            client.sendall(b'\x01\x1e')
+            assert read(client, 1) == b'\x1e'
+            # No credentials are submitted: only the ARD challenge is needed.
+            client.sendall(struct.pack('!HH', 5, 512) + b'\xff' * 512 + b'\x01' * 512)
+            assert client.recv(1) == b''
+            sys.exit(0)
         client.sendall(b'\x01\x01')
         assert read(client, 1) == b'\x01'
         client.sendall(struct.pack('!I', 0))

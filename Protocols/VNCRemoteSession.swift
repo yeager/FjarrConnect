@@ -11,6 +11,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
     let profile: ConnectionProfile
     private var password: String?
     private var connectionDeadline: DispatchWorkItem?
+    private var credentialFailure: String?
 
     @Published private(set) var status: SessionStatus = .idle
 
@@ -31,6 +32,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
 
     func start() {
         guard connection == nil else { return }
+        credentialFailure = nil
         let settings = VNCConnection.Settings(
             isDebugLoggingEnabled: false,
             hostname: profile.host,
@@ -102,7 +104,10 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
             case .disconnected:
                 self.connectionDeadline?.cancel()
                 self.password = nil
-                self.status = .disconnected(reason: connectionState.error?.localizedDescription)
+                self.status = .disconnected(reason: self.credentialFailure ?? connectionState.error.map { error in
+                    let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                    return "VNC \(self.profile.host):\(self.profile.port)\n\(detail)"
+                })
             }
         }
     }
@@ -110,8 +115,21 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
     func connection(_ connection: VNCConnection,
                     credentialFor authenticationType: VNCAuthenticationType,
                     completion: @escaping ((any VNCCredential)?) -> Void) {
-        // Mac Screen Sharing uses Apple Remote Desktop auth (username + password);
-        // classic VNC servers want a password only.
+        // Credential checks run on the main queue with the session state.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.connection === connection else { completion(nil); return }
+            if authenticationType.requiresUsername,
+               self.profile.username?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false {
+                self.credentialFailure = NSLocalizedString("vnc.usernameRequired", comment: "")
+                completion(nil)
+                return
+            }
+            self.provideCredential(for: authenticationType, completion: completion)
+        }
+    }
+
+    private func provideCredential(for authenticationType: VNCAuthenticationType,
+                                   completion: @escaping ((any VNCCredential)?) -> Void) {
         if authenticationType.requiresUsername, authenticationType.requiresPassword {
             completion(VNCUsernamePasswordCredential(username: profile.username ?? "",
                                                      password: password ?? ""))

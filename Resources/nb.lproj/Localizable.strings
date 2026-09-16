@@ -74,3 +74,5 @@
 "session.timeout" = "Tilkoblingen tok for lang tid. Kontroller adresse, skjermdeling og brannmur, og prøv igjen.";
 
 "rdp.showWindow" = "Vis eksternt skrivebord";
+
+"vnc.usernameRequired" = "Serveren krever et brukernavn. Oppgi det korte brukernavnet og passordet til kontoen på den eksterne Macen, og kontroller at kontoen har tilgang under Skjermdeling.";

@@ -74,3 +74,5 @@
 "session.timeout" = "The connection timed out. Check the address, Screen Sharing and firewall, then try again.";
 
 "rdp.showWindow" = "Show remote desktop";
+
+"vnc.usernameRequired" = "This server requires a username. Enter the remote Mac account’s short username and password, and check that the account is allowed under Screen Sharing.";

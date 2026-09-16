@@ -74,3 +74,5 @@
 "session.timeout" = "Anslutningen tog för lång tid. Kontrollera adress, skärmdelning och brandvägg och försök igen.";
 
 "rdp.showWindow" = "Visa fjärrskrivbord";
+
+"vnc.usernameRequired" = "Servern kräver ett användarnamn. Ange det korta användarnamnet och lösenordet för kontot på fjärr-Macen, och kontrollera att kontot är tillåtet under Skärmdelning.";
