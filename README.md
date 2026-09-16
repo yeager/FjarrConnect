@@ -15,19 +15,19 @@ FjärrConnect brings **VNC / Mac Screen Sharing, SSH and RDP** into one connecti
 manager for **macOS 14 or later**, on **Apple Silicon (arm64) and Intel (x86_64)**.
 There are no Windows, Linux or mobile app targets.
 
-## Version 0.2.4
+## Version 0.2.5
 
-**[Download version 0.2.4](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.4)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.4-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.4-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.5](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.5)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.5-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.5-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.4 adds German, Finnish, French, Spanish and Japanese, bringing the interface
-to nine languages. Every language includes the latest SSH log and VNC/RDP messages,
-plus a localized macOS local-network permission prompt. It retains encrypted, opt-in
-SSH command-name logs and the VNC desktop-resizing fix from 0.2.3. Replace the old app; saved profiles
-and Keychain passwords are retained.
+Version 0.2.5 improves release verification: startup checks use a temporary macOS
+home directory so they do not read your saved connection profiles. It includes all
+nine interface languages from 0.2.4, encrypted opt-in SSH command-name logs, and the
+VNC desktop-resizing fix. Replace the old app; saved profiles and Keychain passwords
+are retained.
 
 Every release passes gitleaks, Mac regression tests, separate architecture packaging and
 checks of the downloaded app on both native Mac architectures before publication.
@@ -262,15 +262,15 @@ Development is on **`main`**.
   requests. The release workflow also requires a clean full-history scan.
   `.gitleaksignore` contains one exact historical finding for a removed, fictional
   README credential example. No scanner rule or source path is broadly excluded.
-- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.4`**, triggers a
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.5`**, triggers a
   fresh scan, test and build. GitHub publishes the release assets only when these pass.
 
 For maintainers, after the current `main` revision passes verification:
 
 ```bash
 git pull --ff-only
-git tag v0.2.4
-git push origin v0.2.4
+git tag v0.2.5
+git push origin v0.2.5
 ```
 
 Do not reuse or move an already published release tag. Use a new version for fixes.
