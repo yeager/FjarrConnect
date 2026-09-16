@@ -78,17 +78,21 @@ not claim that authentication succeeded.
 
 ## Private SSH command logs
 
-Edit a saved SSH connection and enable **Log SSH command names**, then reconnect.
-The setting is off by default and is independent for each saved connection. You can
-also toggle it in the connection's context menu. Turning it off stops accepting new
-log events in already open sessions; turning it on for an existing uninstrumented
-session requires reconnecting. The terminal shows whether logging is active,
-waiting for a supported shell, or unavailable.
+1. Create or edit a saved connection, choose **SSH**, and enable **Log SSH command names**.
+2. Save and connect. If the connection is already open, disconnect and connect again.
+3. Open **SSH command log** from the connection's context menu or the lock/document
+   button above its terminal. **Refresh** reads new entries.
 
-Open **SSH command log** from the connection's context menu or the lock/document
-button above its terminal. Use **Refresh** to read new entries or **Delete log** to
-remove that connection's history and encryption key. Deleting a saved SSH connection
-also closes its sessions and deletes its log.
+Logging is **off by default** and independent for each saved connection. The terminal
+shows whether logging is active, waiting for a supported shell, or unavailable.
+Choose **Stop command logging** in the connection's context menu to stop accepting
+new events in its open sessions immediately. Previously stored entries remain until
+you delete them or they expire. Reconnecting uses the latest saved preference.
+
+Use **Delete log** to remove that connection's history and encryption key. If logging
+is still enabled, subsequent commands start a new encrypted log. Deleting the saved
+connection closes its sessions and deletes its log, including a log left over after
+changing the connection's protocol.
 
 The log contains **timestamps and command names only**. It never records SSH/sudo
 password input, keystrokes, arguments, environment values, command output, or a
@@ -123,10 +127,17 @@ fails, logging stops with a visible message and never falls back to plaintext.
 This protects files at rest; it does not protect against someone controlling your
 unlocked macOS account.
 
-Each log retains at most **1,000 entries**. Entries older than **30 days** are
-removed when that log is read or written. Logs stay with their saved connection
-when its name/address is edited; delete the old log when repurposing a profile.
-There is no plaintext export.
+| Property | Behavior |
+|---|---|
+| Stored content | Time and a recognized command name; otherwise **Other command** |
+| Excluded content | Arguments, passwords, terminal input/output and environment values |
+| Storage | AES-256-GCM ciphertext on this Mac; separate Keychain key per saved connection |
+| Retention | At most 1,000 entries; entries older than 30 days removed on read/write |
+| Log deletion | Removes that connection's file and Keychain encryption key |
+| Export | No plaintext export |
+
+Logs stay with their saved connection when its name/address is edited; delete the
+old log when repurposing a profile.
 
 ## Connect to a Mac
 
@@ -231,6 +242,7 @@ Xcode build does not automatically compile or bundle the RDP runtime.
 Development is on **`main`**.
 
 - **CI:** checks localizations and icons, runs macOS regression tests (including
+  encrypted SSH logging, Bash/Zsh integration, Keychain access, native profile/log UI,
   password-authenticated VNC rendering, desktop resizing and recovery from black frames), builds both RDP
   runtime slices and packages separate ARM64 and Intel apps. Packaging verifies the single
   architecture of the app and all embedded native code, checks ad-hoc signatures, and creates
@@ -238,9 +250,12 @@ Development is on **`main`**.
   download their ZIP, verify it, start the actual app without Xcode search paths,
   reproduce the missing-framework failure in a disposable copy, and exercise the
   bundled RDP client against a local
-  negotiation fixture in authentication-only mode.
+  negotiation fixture in authentication-only mode. New commits automatically cancel
+  obsolete CI runs for the same branch; regression-test jobs have a 30-minute limit.
 - **gitleaks:** scans the complete repository history on pushes to `main` and pull
   requests. The release workflow also requires a clean full-history scan.
+  `.gitleaksignore` contains one exact historical finding for a removed, fictional
+  README credential example. No scanner rule or source path is broadly excluded.
 - **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.3`**, triggers a
   fresh scan, test and build. GitHub publishes the release assets only when these pass.
 
