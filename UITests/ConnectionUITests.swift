@@ -28,7 +28,7 @@ final class ConnectionUITests: XCTestCase {
         toggle.click()
         capture(app, name: "SSH log opt-in")
         app.buttons["profile.save"].firstMatch.click()
-        let row = app.staticTexts["Audit host"].firstMatch
+        let row = app.buttons["connect.Audit host"].firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 5))
         let saved = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [[String: Any]])
         XCTAssertEqual(saved.first?["sshCommandLogging"] as? Bool, true)
@@ -41,8 +41,8 @@ final class ConnectionUITests: XCTestCase {
         app.menuItems["Stop command logging"].firstMatch.click()
         app.terminate()
         app.launch()
-        XCTAssertTrue(app.staticTexts["Audit host"].firstMatch.waitForExistence(timeout: 15))
-        app.staticTexts["Audit host"].firstMatch.rightClick()
+        XCTAssertTrue(app.buttons["connect.Audit host"].firstMatch.waitForExistence(timeout: 15))
+        app.buttons["connect.Audit host"].firstMatch.rightClick()
         XCTAssertTrue(app.menuItems["Log SSH command names"].firstMatch.waitForExistence(timeout: 5))
         let disabled = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [[String: Any]])
         XCTAssertNotEqual(disabled.first?["sshCommandLogging"] as? Bool, true)

@@ -141,7 +141,7 @@ struct ContentView: View {
                     }
                     Spacer(minLength: 0)
                 }.padding(.vertical, 5).contentShape(Rectangle())
-            }.buttonStyle(.plain)
+            }.buttonStyle(.plain).accessibilityIdentifier("connect.\(profile.name)")
             Button { toggleFavorite(profile) } label: {
                 Image(systemName: profile.isFavorite ? "star.fill" : "star")
                     .foregroundStyle(profile.isFavorite ? Color.yellow : Color.secondary)
