@@ -1,5 +1,7 @@
-FjärrConnect 0.2.3 — VNC desktop resizing fix.
+FjärrConnect 0.2.3 — Private SSH command logs and VNC desktop resizing fix.
 
+- Added opt-in SSH command-name logging per saved connection, with AES-256-GCM encryption and separate Keychain keys. Password prompts, arguments and terminal output are never logged; unknown command names are replaced with a fixed label.
+- Added a log viewer and deletion control, live opt-out, bounded retention, and Bash/Zsh integration tests. Enable logging in an SSH profile and reconnect.
 - Fixed a frozen VNC display after the server changes its desktop resolution. The displayed AppKit framebuffer is now replaced when the remote framebuffer changes.
 - Preserved keyboard focus and the remote cursor through a resolution change.
 - Added an integration test that changes the RFB desktop size and pixel content, then verifies the displayed image, focus and cursor. The test reproduced the old failures before the fix.

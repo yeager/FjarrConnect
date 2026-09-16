@@ -66,6 +66,7 @@ targets:
       - target: FjarrConnect
       - package: RoyalVNCKit
         embed: false
+      - package: SwiftTerm
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES

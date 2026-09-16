@@ -23,7 +23,7 @@ for Apple Silicon and Intel. Choose `FjarrConnect-0.2.3-macOS-arm64.zip` for App
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.3 fixes a frozen VNC image when the remote desktop changes resolution,
+Version 0.2.3 adds encrypted, opt-in SSH command-name logs and fixes a frozen VNC image when the remote desktop changes resolution,
 while preserving keyboard focus and the remote cursor. It includes the connection
 diagnostics from 0.2.2 and startup fix from 0.2.1. Replace the old app; saved profiles
 and Keychain passwords are retained.
@@ -53,6 +53,8 @@ on first launch. Never disable Gatekeeper globally to install the app.
   SSH and RDP hosts are added manually, and hosts on other networks need an address.
 - **Keychain credentials:** save VNC and RDP passwords in the macOS Keychain. Quick
   connections can use a password without saving it.
+- **SSH command log:** enable separately for each saved SSH connection. Stores command
+  names and timestamps in an encrypted local log, with no arguments or terminal transcript.
 - **Localized interface:** English, Swedish, Danish and Norwegian Bokmål.
 - **Refreshed icon:** an editable SVG master with all required Mac icon sizes.
 
@@ -73,6 +75,58 @@ SSH passwords are entered directly in the terminal and are **not** saved by
 FjärrConnect. SSH private keys remain managed by OpenSSH and your ssh-agent.
 The status “Client running” for SSH/RDP means the client process started; it does
 not claim that authentication succeeded.
+
+## Private SSH command logs
+
+Edit a saved SSH connection and enable **Log SSH command names**, then reconnect.
+The setting is off by default and is independent for each saved connection. You can
+also toggle it in the connection's context menu. Turning it off stops accepting new
+log events in already open sessions; turning it on for an existing uninstrumented
+session requires reconnecting. The terminal shows whether logging is active,
+waiting for a supported shell, or unavailable.
+
+Open **SSH command log** from the connection's context menu or the lock/document
+button above its terminal. Use **Refresh** to read new entries or **Delete log** to
+remove that connection's history and encryption key. Deleting a saved SSH connection
+also closes its sessions and deletes its log.
+
+The log contains **timestamps and command names only**. It never records SSH/sudo
+password input, keystrokes, arguments, environment values, command output, or a
+terminal transcript. A fixed vocabulary recognizes common tools such as `ls`,
+`git`, `sudo` and `systemctl`; all other names become **Other command**. This also
+keeps an accidentally pasted password used as a command name out of the log.
+For example, `curl --user name:secret ...` is recorded only as `curl`.
+
+Logging uses temporary **Bash or Zsh shell hooks** after SSH authentication, not
+keyboard capture or screen scraping. It records the first command for each shell
+input, including commands recalled from history. Commands inside scripts, nested
+shells, `sudo -s`, and subsequent nested SSH connections are not traced. Complex
+shell input may be shown as Other command. Existing Bash DEBUG hooks are preserved
+and make logging unavailable. Custom startup files can also disable integration;
+check the session's logging status. The SSH connection remains usable. This is a
+personal history, not a tamper-proof server audit trail.
+
+The logging shell loads `.bashrc`, or `.zshenv` and `.zshrc` (respecting `ZDOTDIR`),
+as an interactive shell. Login-only files such as `.bash_profile` and `.zprofile`
+are not loaded in this mode. Startup wrappers contain fixed integration code in a
+private temporary directory on the server and are removed when the session ends;
+existing server configuration files are not edited. The server's own shell history
+and logging remain under its configuration; FjärrConnect does not manage them.
+
+Files under `~/Library/Application Support/FjarrConnect/SSHCommandLogs/` use
+**AES-256-GCM authenticated encryption**, with a separate random key per saved
+connection in the macOS Keychain. Keys are not written next to the logs or synced
+by this app. The directory is restricted to its owner (0700), and log files use
+0600 permissions. Reads validate the encrypted data and connection identity;
+corrupt files are preserved rather than overwritten. If Keychain or encryption
+fails, logging stops with a visible message and never falls back to plaintext.
+This protects files at rest; it does not protect against someone controlling your
+unlocked macOS account.
+
+Each log retains at most **1,000 entries**. Entries older than **30 days** are
+removed when that log is read or written. Logs stay with their saved connection
+when its name/address is edited; delete the old log when repurposing a profile.
+There is no plaintext export.
 
 ## Connect to a Mac
 

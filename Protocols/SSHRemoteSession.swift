@@ -6,10 +6,18 @@ import SwiftTerm
 final class SSHRemoteSession: NSObject, RemoteSession, LocalProcessTerminalViewDelegate {
     let profile: ConnectionProfile
     @Published private(set) var status: SessionStatus = .idle
+    @Published private(set) var notice: String?
     private var terminal: LocalProcessTerminalView?
+    private var loggingEnabled: Bool
+    private var loggingReady = false
+    private var loggingFailed = false
+    private let logStore: SSHCommandLogStore
+    private let logQueue = DispatchQueue(label: "se.fjarrconnect.ssh-command-log")
 
-    init(profile: ConnectionProfile, password: String?) {
+    init(profile: ConnectionProfile, password: String?, logStore: SSHCommandLogStore = .shared) {
         self.profile = profile
+        self.logStore = logStore
+        loggingEnabled = profile.logsSSHCommands
         super.init()
     }
 
@@ -19,7 +27,16 @@ final class SSHRemoteSession: NSObject, RemoteSession, LocalProcessTerminalViewD
         view.processDelegate = self
         view.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
         terminal = view
-        view.startProcess(executable: "/usr/bin/ssh", args: SSHArguments.make(profile),
+        var arguments = SSHArguments.make(profile)
+        if profile.logsSSHCommands {
+            notice = NSLocalizedString("ssh.log.waiting", comment: "")
+            arguments.append(SSHCommandLogging.remoteCommand)
+            view.getTerminal().registerOscHandler(code: SSHCommandLogging.oscCode) { [weak self] bytes in
+                guard let event = SSHCommandLogging.event(bytes) else { return }
+                self?.receiveLogEvent(event)
+            }
+        }
+        view.startProcess(executable: "/usr/bin/ssh", args: arguments,
                           environment: SSHArguments.environment())
         guard view.process.running else {
             status = .disconnected(reason: NSLocalizedString("ssh.ended", comment: ""))
@@ -27,6 +44,40 @@ final class SSHRemoteSession: NSObject, RemoteSession, LocalProcessTerminalViewD
         }
         // Process running is not proof of successful authentication.
         status = .running
+    }
+
+    func updateLoggingPreference(_ enabled: Bool) {
+        loggingEnabled = enabled
+        if !enabled { notice = nil }
+        else if !profile.logsSSHCommands { notice = NSLocalizedString("ssh.log.reconnect", comment: "") }
+        else if loggingFailed { notice = NSLocalizedString("ssh.log.failed", comment: "") }
+        else { notice = NSLocalizedString(loggingReady ? "ssh.log.active" : "ssh.log.waiting", comment: "") }
+    }
+
+    func receiveLogEvent(_ event: SSHCommandLogging.Event) {
+        guard profile.logsSSHCommands, loggingEnabled, !loggingFailed, !status.isFinished else { return }
+        switch event {
+        case .ready:
+            loggingReady = true
+            notice = NSLocalizedString("ssh.log.active", comment: "")
+        case .unavailable:
+            loggingReady = false
+            notice = NSLocalizedString("ssh.log.unavailable", comment: "")
+        case .command(let name):
+            guard loggingReady else { return }
+            let id = profile.id
+            let date = Date()
+            let store = logStore
+            logQueue.async { [weak self] in
+                do { try store.append(command: name, for: id, now: date) }
+                catch {
+                    DispatchQueue.main.async {
+                        self?.loggingFailed = true
+                        if self?.loggingEnabled == true { self?.notice = NSLocalizedString("ssh.log.failed", comment: "") }
+                    }
+                }
+            }
+        }
     }
     #if DEBUG
     var diagnosticText: String {
@@ -36,6 +87,8 @@ final class SSHRemoteSession: NSObject, RemoteSession, LocalProcessTerminalViewD
     #endif
 
     func stop() {
+        loggingEnabled = false
+        logQueue.sync {} // Finish already accepted events before profile/log deletion.
         terminal?.processDelegate = nil
         terminal?.terminate()
         terminal = nil

@@ -1,6 +1,52 @@
 import XCTest
 
 final class ConnectionUITests: XCTestCase {
+    func testSSHLogOptInViewerAndOptOutPersist() throws {
+        continueAfterFailure = false
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = file.path
+        app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        app.launch()
+        defer { app.terminate() }
+        XCTAssertTrue(app.buttons["newConnection"].firstMatch.waitForExistence(timeout: 15))
+        app.buttons["newConnection"].firstMatch.click()
+        let name = app.textFields["profile.name"].firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.click(); name.typeText("Audit host")
+        app.textFields["profile.host"].firstMatch.click()
+        app.textFields["profile.host"].firstMatch.typeText("audit.example")
+        app.popUpButtons["profile.transport"].firstMatch.click()
+        app.menuItems["SSH"].firstMatch.click()
+        let toggle = app.checkBoxes["profile.sshLogging"].firstMatch
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        XCTAssertEqual(toggle.value as? String, "0")
+        toggle.click()
+        capture(app, name: "SSH log opt-in")
+        app.buttons["profile.save"].firstMatch.click()
+        let row = app.staticTexts["Audit host"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        let saved = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [[String: Any]])
+        XCTAssertEqual(saved.first?["sshCommandLogging"] as? Bool, true)
+        row.rightClick()
+        app.menuItems["SSH command log"].firstMatch.click()
+        XCTAssertTrue(app.staticTexts["No commands logged"].firstMatch.waitForExistence(timeout: 5))
+        capture(app, name: "Encrypted SSH log viewer")
+        app.buttons["ssh.log.close"].firstMatch.click()
+        row.rightClick()
+        app.menuItems["Stop command logging"].firstMatch.click()
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Audit host"].firstMatch.waitForExistence(timeout: 15))
+        app.staticTexts["Audit host"].firstMatch.rightClick()
+        XCTAssertTrue(app.menuItems["Log SSH command names"].firstMatch.waitForExistence(timeout: 5))
+        let disabled = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [[String: Any]])
+        XCTAssertNotEqual(disabled.first?["sshCommandLogging"] as? Bool, true)
+    }
+
     func testCreateFavoriteAndPersistAcrossLaunches() throws {
         continueAfterFailure = false
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

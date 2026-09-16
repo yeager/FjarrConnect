@@ -84,3 +84,23 @@
 "rdp.exitCode" = "Client exit code:";
 "vnc.blackScreen" = "The server is sending a black screen. On a Mac, check Screen Sharing or Remote Management under System Settings → General → Sharing. Turning it off and on locally may be required to grant screen and input access. Also check that the remote display is awake.";
 "vnc.waitingForImage" = "Connected, but the server has not sent a desktop image yet. Check screen sharing on the remote computer.";
+
+// Private SSH command history
+"action.close" = "Close";
+"ssh.log.enable" = "Log SSH command names";
+"ssh.log.hint" = "Off by default. Saves names only, never arguments or terminal input/output. Bash and Zsh. Enable, then reconnect; disabling stops new logging immediately.";
+"ssh.log.title" = "SSH command log";
+"ssh.log.details" = "Encrypted on this Mac with a key in Keychain. Up to 1,000 entries; entries older than 30 days are removed on read/write. Unknown names appear as “Other command”. First command per shell input; nested shells and scripts are not traced.";
+"ssh.log.empty" = "No commands logged";
+"ssh.log.time" = "Time";
+"ssh.log.command" = "Command";
+"ssh.log.other" = "Other command";
+"ssh.log.clear" = "Delete log";
+"ssh.log.clear.confirm" = "Delete this connection’s command log and encryption key? New commands will still be logged while logging is enabled.";
+"ssh.log.waiting" = "Command log: waiting for supported shell. Password prompts and terminal input/output are never logged.";
+"ssh.log.active" = "Command logging enabled: names only, encrypted locally.";
+"ssh.log.reconnect" = "Reconnect to start command logging.";
+"ssh.log.unavailable" = "Command logging is unavailable for this shell or its existing hooks. SSH still works. Bash and Zsh are supported.";
+"ssh.log.failed" = "Command logging stopped: encrypted storage or Keychain is unavailable. Reconnect to retry. Nothing is saved as plaintext.";
+"ssh.log.readFailed" = "The encrypted log could not be opened or deleted. Unlock Keychain and try again. Damaged logs are preserved; use Delete log to reset.";
+"ssh.log.disable" = "Stop command logging";

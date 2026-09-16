@@ -84,3 +84,23 @@
 "rdp.exitCode" = "Klientens afslutningskode:";
 "vnc.blackScreen" = "Serveren sender et sort billede. På en Mac: kontrollér Skærmdeling eller Ekstern administration under Systemindstillinger → Generelt → Deling. Det kan være nødvendigt at slå funktionen fra og til lokalt for at give adgang til skærm og input. Kontrollér også, at fjernskærmen er vågen.";
 "vnc.waitingForImage" = "Forbundet, men serveren har endnu ikke sendt et skrivebordsbillede. Kontrollér skærmdeling på den eksterne computer.";
+
+// Private SSH command history
+"action.close" = "Luk";
+"ssh.log.enable" = "Log SSH-kommandonavne";
+"ssh.log.hint" = "Slået fra som standard. Gemmer kun navne, aldrig argumenter eller terminalens input/output. Bash og Zsh. Aktivér og forbind igen; deaktivering stopper ny logning straks.";
+"ssh.log.title" = "SSH-kommandolog";
+"ssh.log.details" = "Krypteret på denne Mac med nøgle i Nøglering. Højst 1.000 poster; poster ældre end 30 dage fjernes ved læsning/skrivning. Ukendte navne vises som “Anden kommando”. Første kommando pr. skalinput; indlejrede skaller og scripts spores ikke.";
+"ssh.log.empty" = "Ingen loggede kommandoer";
+"ssh.log.time" = "Tidspunkt";
+"ssh.log.command" = "Kommando";
+"ssh.log.other" = "Anden kommando";
+"ssh.log.clear" = "Slet log";
+"ssh.log.clear.confirm" = "Slet forbindelsens kommandolog og krypteringsnøgle? Nye kommandoer logges stadig, hvis funktionen er aktiveret.";
+"ssh.log.waiting" = "Kommandolog: venter på en understøttet skal. Adgangskodeforespørgsler og terminalens input/output logges aldrig.";
+"ssh.log.active" = "Kommandologning aktiv: kun navne, krypteret lokalt.";
+"ssh.log.reconnect" = "Forbind igen for at starte kommandologning.";
+"ssh.log.unavailable" = "Kommandologning er ikke tilgængelig for denne skal eller dens eksisterende hooks. SSH virker stadig. Bash og Zsh understøttes.";
+"ssh.log.failed" = "Kommandologning stoppet: krypteret lager eller Nøglering er ikke tilgængelig. Forbind igen for at prøve på ny. Intet gemmes i klartekst.";
+"ssh.log.readFailed" = "Den krypterede log kunne ikke åbnes eller slettes. Lås Nøglering op og prøv igen. Beskadigede logge bevares; brug Slet log for at nulstille.";
+"ssh.log.disable" = "Stop kommandologning";

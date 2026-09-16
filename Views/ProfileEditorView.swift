@@ -12,6 +12,7 @@ struct ProfileEditorView: View {
     @State private var password = ""
     @State private var changePassword = false
     @State private var group: String
+    @State private var logsSSHCommands: Bool
     @State private var errorMessage: String?
 
     init(profile: ConnectionProfile?) {
@@ -22,6 +23,7 @@ struct ProfileEditorView: View {
         _portText = State(initialValue: profile.map { String($0.port) } ?? "")
         _username = State(initialValue: profile?.username ?? "")
         _group = State(initialValue: profile?.group ?? "")
+        _logsSSHCommands = State(initialValue: profile?.logsSSHCommands ?? false)
     }
 
     var body: some View {
@@ -34,6 +36,7 @@ struct ProfileEditorView: View {
                     Picker("field.protocol", selection: $transport) {
                         ForEach(ProtocolRegistry.available) { Text(LocalizedStringKey($0.displayNameKey)).tag($0) }
                     }
+                    .accessibilityIdentifier("profile.transport")
                     .onChange(of: transport) { old, new in
                         if portText.isEmpty || portText == String(old.defaultPort) { portText = String(new.defaultPort) }
                     }
@@ -45,6 +48,10 @@ struct ProfileEditorView: View {
                     TextField("field.username", text: $username)
                     if transport == .ssh {
                         Text("ssh.authentication").font(.caption).foregroundStyle(.secondary)
+                        Toggle("ssh.log.enable", isOn: $logsSSHCommands)
+                            .toggleStyle(.checkbox)
+                            .accessibilityIdentifier("profile.sshLogging")
+                        Text("ssh.log.hint").font(.caption).foregroundStyle(.secondary)
                     } else {
                         if existing != nil { Toggle("field.changePassword", isOn: $changePassword) }
                         if existing == nil || changePassword {
@@ -73,7 +80,8 @@ struct ProfileEditorView: View {
         let result = ConnectionProfile(id: existing?.id ?? UUID(), name: cleanName.isEmpty ? cleanHost : cleanName,
                                        transport: transport, host: cleanHost, port: port,
                                        username: cleanUser.isEmpty ? nil : cleanUser, group: cleanGroup.isEmpty ? nil : cleanGroup,
-                                       isFavorite: existing?.isFavorite ?? false)
+                                       isFavorite: existing?.isFavorite ?? false,
+                                       logsSSHCommands: transport == .ssh && logsSSHCommands)
         return result.isValid ? result : nil
     }
 

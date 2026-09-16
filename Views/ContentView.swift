@@ -10,6 +10,7 @@ struct ContentView: View {
     @State private var showingNew = false
     @State private var credentials: ConnectionProfile?
     @State private var deleting: ConnectionProfile?
+    @State private var commandLog: ConnectionProfile?
     @State private var errorMessage: String?
     @FocusState private var quickFocused: Bool
 
@@ -47,6 +48,13 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingNew) { ProfileEditorView(profile: nil) }
         .sheet(item: $editing) { ProfileEditorView(profile: $0) }
+        .sheet(item: $commandLog) { SSHCommandLogView(profile: $0) }
+        .onChange(of: profiles.profiles) { _, saved in
+            for tab in connection.tabs {
+                guard let session = tab.backend as? SSHRemoteSession else { continue }
+                session.updateLoggingPreference(saved.first { $0.id == session.profile.id }?.logsSSHCommands ?? false)
+            }
+        }
         .sheet(item: $credentials) { profile in
             CredentialsView(profile: profile, saved: profiles.profiles.contains { $0.id == profile.id }) { candidate, password, remember in
                 do {
@@ -62,6 +70,7 @@ struct ContentView: View {
         .confirmationDialog("profile.delete.title", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), titleVisibility: .visible) {
             Button("action.delete", role: .destructive) {
                 guard let profile = deleting else { return }
+                for tab in connection.tabs.filter({ $0.backend.profile.id == profile.id }) { connection.close(tab.id) }
                 do { try profiles.remove(profile) } catch { errorMessage = error.localizedDescription }
                 deleting = nil
             }
@@ -143,6 +152,16 @@ struct ContentView: View {
             Button("action.connect") { requestConnect(profile) }
             Button(profile.isFavorite ? "favorite.remove" : "favorite.add") { toggleFavorite(profile) }
             Button("action.edit") { editing = profile }
+            if profile.transport == .ssh {
+                Button(profile.logsSSHCommands ? "ssh.log.disable" : "ssh.log.enable") {
+                    var updated = profile
+                    updated.logsSSHCommands.toggle()
+                    do { try profiles.save(updated, password: nil) } catch { errorMessage = error.localizedDescription }
+                }
+            }
+            if profile.transport == .ssh {
+                Button("ssh.log.title") { commandLog = profile }
+            }
             Button("action.copyAddress") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(profile.uri, forType: .string) }
             Divider()
             Button("action.delete", role: .destructive) { deleting = profile }
@@ -216,6 +235,7 @@ private struct SessionDetailView: View {
     @ObservedObject var tab: SessionTab
     let reconnect: () -> Void
     let close: () -> Void
+    @State private var showingCommandLog = false
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -225,6 +245,10 @@ private struct SessionDetailView: View {
                 }
                 Spacer()
                 Text(tab.backend.status.label).font(.callout).foregroundStyle(.secondary)
+                if tab.backend.profile.transport == .ssh {
+                    Button { showingCommandLog = true } label: { Image(systemName: "lock.doc") }
+                        .help("ssh.log.title")
+                }
                 if tab.backend.status.isFinished { Button("action.reconnect", action: reconnect) }
                 Button("action.disconnect", action: close)
             }.padding(12).background(.bar)
@@ -243,6 +267,7 @@ private struct SessionDetailView: View {
                 ContentUnavailableView("status.disconnected", systemImage: "network.slash", description: Text("session.retry"))
             } else { tab.backend.makeScreenView() }
         }
+        .sheet(isPresented: $showingCommandLog) { SSHCommandLogView(profile: tab.backend.profile) }
     }
 }
 

@@ -84,3 +84,23 @@
 "rdp.exitCode" = "Klientens avslutskod:";
 "vnc.blackScreen" = "Servern skickar en svart bild. På en Mac: kontrollera Skärmdelning eller Fjärrhantering under Systeminställningar → Allmänt → Delning. Funktionen kan behöva slås av och på lokalt för att ge åtkomst till skärm och inmatning. Kontrollera också att fjärrskärmen är vaken.";
 "vnc.waitingForImage" = "Ansluten, men servern har ännu inte skickat någon skrivbordsbild. Kontrollera skärmdelningen på fjärrdatorn.";
+
+// Private SSH command history
+"action.close" = "Stäng";
+"ssh.log.enable" = "Logga SSH-kommandonamn";
+"ssh.log.hint" = "Avstängt från början. Sparar bara namn, aldrig argument eller terminalens in- och utdata. Bash och Zsh. Aktivera och anslut på nytt; avstängning stoppar ny loggning direkt.";
+"ssh.log.title" = "SSH-kommandologg";
+"ssh.log.details" = "Krypterat på denna Mac med nyckel i Nyckelring. Högst 1 000 poster; poster äldre än 30 dagar tas bort vid läsning/skrivning. Okända namn visas som ”Annat kommando”. Första kommandot per skalinmatning; nästlade skal och skript spåras inte.";
+"ssh.log.empty" = "Inga loggade kommandon";
+"ssh.log.time" = "Tidpunkt";
+"ssh.log.command" = "Kommando";
+"ssh.log.other" = "Annat kommando";
+"ssh.log.clear" = "Radera logg";
+"ssh.log.clear.confirm" = "Radera anslutningens kommandologg och krypteringsnyckel? Nya kommandon loggas fortfarande om funktionen är aktiverad.";
+"ssh.log.waiting" = "Kommandologg: väntar på ett skal som stöds. Lösenordsfrågor och terminalens in- och utdata loggas aldrig.";
+"ssh.log.active" = "Kommandologgning aktiv: endast namn, krypterat lokalt.";
+"ssh.log.reconnect" = "Anslut på nytt för att starta kommandologgning.";
+"ssh.log.unavailable" = "Kommandologgning är inte tillgänglig för detta skal eller dess befintliga krokar. SSH fungerar fortfarande. Bash och Zsh stöds.";
+"ssh.log.failed" = "Kommandologgningen stoppades: krypterad lagring eller Nyckelring är inte tillgänglig. Anslut på nytt för att försöka igen. Inget sparas i klartext.";
+"ssh.log.readFailed" = "Den krypterade loggen kunde inte öppnas eller raderas. Lås upp Nyckelring och försök igen. Skadade loggar bevaras; använd Radera logg för att återställa.";
+"ssh.log.disable" = "Stäng av kommandologgning";

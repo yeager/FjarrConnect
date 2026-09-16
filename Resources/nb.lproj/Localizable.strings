@@ -84,3 +84,23 @@
 "rdp.exitCode" = "Klientens avslutningskode:";
 "vnc.blackScreen" = "Serveren sender et svart bilde. På en Mac: kontroller Skjermdeling eller Ekstern administrering under Systeminnstillinger → Generelt → Deling. Funksjonen må kanskje slås av og på lokalt for å gi tilgang til skjerm og inndata. Kontroller også at den eksterne skjermen er våken.";
 "vnc.waitingForImage" = "Tilkoblet, men serveren har ikke sendt et skrivebordsbilde ennå. Kontroller skjermdeling på den eksterne datamaskinen.";
+
+// Private SSH command history
+"action.close" = "Lukk";
+"ssh.log.enable" = "Logg SSH-kommandonavn";
+"ssh.log.hint" = "Av som standard. Lagrer bare navn, aldri argumenter eller terminalens inn- og utdata. Bash og Zsh. Aktiver og koble til på nytt; deaktivering stopper ny logging straks.";
+"ssh.log.title" = "SSH-kommandologg";
+"ssh.log.details" = "Kryptert på denne Macen med nøkkel i Nøkkelring. Maksimalt 1 000 oppføringer; oppføringer eldre enn 30 dager fjernes ved lesing/skriving. Ukjente navn vises som «Annen kommando». Første kommando per skallinndata; underordnede skall og skript spores ikke.";
+"ssh.log.empty" = "Ingen loggede kommandoer";
+"ssh.log.time" = "Tidspunkt";
+"ssh.log.command" = "Kommando";
+"ssh.log.other" = "Annen kommando";
+"ssh.log.clear" = "Slett logg";
+"ssh.log.clear.confirm" = "Slette tilkoblingens kommandologg og krypteringsnøkkel? Nye kommandoer logges fortsatt hvis funksjonen er aktivert.";
+"ssh.log.waiting" = "Kommandologg: venter på et støttet skall. Passordforespørsler og terminalens inn- og utdata logges aldri.";
+"ssh.log.active" = "Kommandologging aktiv: bare navn, kryptert lokalt.";
+"ssh.log.reconnect" = "Koble til på nytt for å starte kommandologging.";
+"ssh.log.unavailable" = "Kommandologging er ikke tilgjengelig for dette skallet eller dets eksisterende hooks. SSH fungerer fortsatt. Bash og Zsh støttes.";
+"ssh.log.failed" = "Kommandologging stoppet: kryptert lagring eller Nøkkelring er ikke tilgjengelig. Koble til på nytt for å prøve igjen. Ingenting lagres i klartekst.";
+"ssh.log.readFailed" = "Den krypterte loggen kunne ikke åpnes eller slettes. Lås opp Nøkkelring og prøv igjen. Skadede logger beholdes; bruk Slett logg for å tilbakestille.";
+"ssh.log.disable" = "Stopp kommandologging";

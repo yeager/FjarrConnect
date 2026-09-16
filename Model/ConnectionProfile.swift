@@ -51,6 +51,11 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
 
     // Optional on disk so profiles created before favorites decode unchanged.
     private var favorite: Bool?
+    private var sshCommandLogging: Bool?
+    var logsSSHCommands: Bool {
+        get { transport == .ssh && (sshCommandLogging ?? false) }
+        set { sshCommandLogging = newValue ? true : nil }
+    }
     var isFavorite: Bool {
         get { favorite ?? false }
         set { favorite = newValue }
@@ -63,7 +68,8 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
          port: UInt16? = nil,
          username: String? = nil,
          group: String? = nil,
-         isFavorite: Bool = false) {
+         isFavorite: Bool = false,
+         logsSSHCommands: Bool = false) {
         self.id = id
         self.name = name
         self.transport = transport
@@ -72,6 +78,7 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
         self.username = username
         self.group = group
         self.favorite = isFavorite ? true : nil
+        self.sshCommandLogging = logsSSHCommands ? true : nil
     }
 
     /// A Remmina-style URI, e.g. `vnc://admin@studio.local:5900`.
