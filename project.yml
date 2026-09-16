@@ -64,6 +64,8 @@ targets:
     sources: [Tests]
     dependencies:
       - target: FjarrConnect
+      - package: RoyalVNCKit
+        embed: false
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
