@@ -1,0 +1,4 @@
+# Confirmed documentation-only placeholder in the original SSH logging commit.
+# The literal example used name:secret; it was never a credential and is now removed.
+# Exclude this exact historical finding only, retaining all rules for every other finding.
+016a4ea421f2c29994ccf80a5b5ef84127756c1b:README.md:curl-auth-user:98

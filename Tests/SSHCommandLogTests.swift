@@ -116,6 +116,13 @@ final class SSHCommandLogTests: XCTestCase {
         XCTAssertNil(try SSHLogKeychain.key(id, create: false))
         let replacement = try XCTUnwrap(SSHLogKeychain.key(id, create: true))
         XCTAssertThrowsError(try AES.GCM.open(sealed, using: replacement))
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = SSHCommandLogStore(directory: directory)
+        try store.append(command: "systemctl", for: id)
+        XCTAssertEqual(try store.entries(for: id).map(\.command), ["systemctl"])
+        try store.clear(for: id)
+        XCTAssertNil(try SSHLogKeychain.key(id, create: false))
     }
 
     private func temporaryStore() -> (SSHCommandLogStore, URL) {

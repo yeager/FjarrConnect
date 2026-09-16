@@ -93,9 +93,9 @@ also closes its sessions and deletes its log.
 The log contains **timestamps and command names only**. It never records SSH/sudo
 password input, keystrokes, arguments, environment values, command output, or a
 terminal transcript. A fixed vocabulary recognizes common tools such as `ls`,
-`git`, `sudo` and `systemctl`; all other names become **Other command**. This also
-keeps an accidentally pasted password used as a command name out of the log.
-For example, `curl --user name:secret ...` is recorded only as `curl`.
+`git`, `sudo` and `systemctl`; all other names become **Other command**. This prevents arbitrary
+input, including an unrecognized pasted password, from becoming a stored name.
+For example, any invocation of `curl` is recorded only as `curl`, without its options or values.
 
 Logging uses temporary **Bash or Zsh shell hooks** after SSH authentication, not
 keyboard capture or screen scraping. It records the first command for each shell
@@ -255,7 +255,7 @@ git push origin v0.2.3
 Do not reuse or move an already published release tag. Use a new version for fixes.
 Release notes are maintained in `RELEASE_NOTES.md`.
 
-Local checks:
+Local checks (use Gitleaks **8.30.1**, matching CI):
 
 ```bash
 python3 scripts/check-resources.py

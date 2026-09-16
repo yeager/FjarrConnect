@@ -23,7 +23,8 @@ final class ConnectionUITests: XCTestCase {
         app.menuItems["SSH"].firstMatch.click()
         let toggle = app.checkBoxes["profile.sshLogging"].firstMatch
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
-        XCTAssertEqual(toggle.value as? String, "0")
+        let toggleState = (toggle.value as? NSNumber)?.intValue ?? (toggle.value as? String).flatMap(Int.init)
+        XCTAssertEqual(toggleState, 0)
         toggle.click()
         capture(app, name: "SSH log opt-in")
         app.buttons["profile.save"].firstMatch.click()
