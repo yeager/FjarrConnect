@@ -9,6 +9,7 @@ xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
   CODE_SIGNING_ALLOWED=NO build | xcbeautify
 APP="build/release-$ARCH/Build/Products/Release/FjarrConnect.app"
 test -d "$APP"
+python3 scripts/check-resources.py --app "$APP"
 mkdir -p "$APP/Contents/Helpers" "$APP/Contents/Resources/Licenses"
 cp "build/rdp-artifacts/rdp-$ARCH/sdl-freerdp" "$APP/Contents/Helpers/sdl-freerdp"
 chmod +x "$APP/Contents/Helpers/sdl-freerdp"

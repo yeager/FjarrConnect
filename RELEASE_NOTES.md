@@ -1,14 +1,14 @@
-FjärrConnect 0.2.3 — Private SSH command logs and VNC desktop resizing fix.
+FjärrConnect 0.2.4 — Nine complete interface languages.
 
-- Added opt-in SSH command-name logging per saved connection, with AES-256-GCM encryption and separate Keychain keys. Password prompts, arguments and terminal output are never logged; unknown command names are replaced with a fixed label.
-- Added a log viewer and deletion control, live opt-out, bounded retention, and Bash/Zsh integration tests. Enable logging in an SSH profile and reconnect.
-- Fixed a frozen VNC display after the server changes its desktop resolution. The displayed AppKit framebuffer is now replaced when the remote framebuffer changes.
-- Preserved keyboard focus and the remote cursor through a resolution change.
-- Added an integration test that changes the RFB desktop size and pixel content, then verifies the displayed image, focus and cursor. The test reproduced the old failures before the fix.
-- Includes the black-screen guidance and detailed RDP failure messages introduced in 0.2.2.
+- Added German, Finnish, French, Spanish and Japanese alongside English, Swedish, Danish and Norwegian Bokmål.
+- Synchronized all nine languages with the latest SSH command-log controls, privacy explanations and VNC/RDP diagnostics.
+- Localized the macOS local-network permission message in every supported language.
+- Added validation for missing, duplicate or empty translations, invalid syntax and mismatched format placeholders. Both architecture-specific downloads are checked against all source translations.
+- Added native UI coverage and screenshots of the SSH profile editor in every language.
+- Includes the encrypted, opt-in SSH command-name logs and VNC desktop-resizing, keyboard-focus and cursor fixes from 0.2.3.
 
-Download `FjarrConnect-0.2.3-macOS-arm64.zip` for Apple Silicon or `FjarrConnect-0.2.3-macOS-x86_64.zip` for Intel. Unzip and move FjärrConnect to Applications. Saved profiles and Keychain entries are retained. `SHA256SUMS.txt` contains the download checksums.
+The app follows your macOS language preference. You can select a language for FjärrConnect in System Settings → General → Language & Region → Applications, then relaunch the app.
 
-macOS must authorize screen capture and input on the remote Mac. If its sharing agent is denied those permissions, enable Remote Management locally in System Settings → General → Sharing and approve the OS prompt. A client update cannot grant those remote permissions.
+Download `FjarrConnect-0.2.4-macOS-arm64.zip` for Apple Silicon or `FjarrConnect-0.2.4-macOS-x86_64.zip` for Intel. These are separate apps, each containing one architecture. Unzip and move FjärrConnect to Applications. Saved profiles and Keychain entries are retained. `SHA256SUMS.txt` contains the download checksums.
 
 The apps are ad-hoc signed, not Developer ID signed or notarized. macOS may require approval in System Settings → Privacy & Security on first launch.

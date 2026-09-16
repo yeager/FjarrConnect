@@ -1,6 +1,43 @@
 import XCTest
 
 final class ConnectionUITests: XCTestCase {
+    func testLocalizedProfileEditorInEveryLanguage() throws {
+        continueAfterFailure = false
+        let languages = [
+            ("en", "en_US", "Log SSH command names", "Save"),
+            ("sv", "sv_SE", "Logga SSH-kommandonamn", "Spara"),
+            ("da", "da_DK", "Log SSH-kommandonavne", "Gem"),
+            ("nb", "nb_NO", "Logg SSH-kommandonavn", "Lagre"),
+            ("de", "de_DE", "SSH-Befehlsnamen protokollieren", "Sichern"),
+            ("fi", "fi_FI", "Kirjaa SSH-komentojen nimet", "Tallenna"),
+            ("fr", "fr_FR", "Journaliser les noms des commandes SSH", "Enregistrer"),
+            ("es", "es_ES", "Registrar nombres de comandos SSH", "Guardar"),
+            ("ja", "ja_JP", "SSHコマンド名を記録", "保存")
+        ]
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let app = XCUIApplication()
+        defer { app.terminate() }
+        for (language, locale, logLabel, saveLabel) in languages {
+            app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", locale]
+            app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = directory.appendingPathComponent("profiles.json").path
+            app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+            app.launch()
+            XCTAssertTrue(app.buttons["newConnection"].firstMatch.waitForExistence(timeout: 15), language)
+            app.buttons["newConnection"].firstMatch.click()
+            XCTAssertTrue(app.popUpButtons["profile.transport"].firstMatch.waitForExistence(timeout: 5), language)
+            app.popUpButtons["profile.transport"].firstMatch.click()
+            app.menuItems["SSH"].firstMatch.click()
+            let toggle = app.checkBoxes["profile.sshLogging"].firstMatch
+            XCTAssertTrue(toggle.waitForExistence(timeout: 5), language)
+            XCTAssertEqual(toggle.label, logLabel, language)
+            XCTAssertEqual(app.buttons["profile.save"].firstMatch.label, saveLabel, language)
+            XCTAssertTrue(toggle.isHittable, language)
+            capture(app, name: "Localized SSH profile — \(language)")
+            app.terminate()
+        }
+    }
+
     func testSSHLogOptInViewerAndOptOutPersist() throws {
         continueAfterFailure = false
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

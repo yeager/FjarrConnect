@@ -32,6 +32,7 @@ jobs:
           mkdir -p build/downloaded
           ditto -xk dist/FjarrConnect-*-macOS-${{ matrix.arch }}.zip build/downloaded
           APP=build/downloaded/FjarrConnect.app
+          python3 scripts/check-resources.py --app "$APP"
           while IFS= read -r binary; do
             if file "$binary" | grep -q 'Mach-O'; then
               test "$(lipo -archs "$binary")" = '${{ matrix.arch }}'

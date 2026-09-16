@@ -15,17 +15,18 @@ FjärrConnect brings **VNC / Mac Screen Sharing, SSH and RDP** into one connecti
 manager for **macOS 14 or later**, on **Apple Silicon (arm64) and Intel (x86_64)**.
 There are no Windows, Linux or mobile app targets.
 
-## Version 0.2.3
+## Version 0.2.4
 
-**[Download version 0.2.3](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.3)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.3-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.3-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.4](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.4)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.4-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.4-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.3 adds encrypted, opt-in SSH command-name logs and fixes a frozen VNC image when the remote desktop changes resolution,
-while preserving keyboard focus and the remote cursor. It includes the connection
-diagnostics from 0.2.2 and startup fix from 0.2.1. Replace the old app; saved profiles
+Version 0.2.4 adds German, Finnish, French, Spanish and Japanese, bringing the interface
+to nine languages. Every language includes the latest SSH log and VNC/RDP messages,
+plus a localized macOS local-network permission prompt. It retains encrypted, opt-in
+SSH command-name logs and the VNC desktop-resizing fix from 0.2.3. Replace the old app; saved profiles
 and Keychain passwords are retained.
 
 Every release passes gitleaks, Mac regression tests, separate architecture packaging and
@@ -55,7 +56,10 @@ on first launch. Never disable Gatekeeper globally to install the app.
   connections can use a password without saving it.
 - **SSH command log:** enable separately for each saved SSH connection. Stores command
   names and timestamps in an encrypted local log, with no arguments or terminal transcript.
-- **Localized interface:** English, Swedish, Danish and Norwegian Bokmål.
+- **Localized interface:** English, Swedish, Danish, Norwegian Bokmål, German, Finnish, French,
+  Spanish and Japanese. Follows your macOS language preference; a language can also be
+  selected for FjärrConnect in **System Settings → General → Language & Region → Applications**.
+  Relaunch the app after changing its language.
 - **Refreshed icon:** an editable SVG master with all required Mac icon sizes.
 
 ## Protocols
@@ -242,10 +246,12 @@ Xcode build does not automatically compile or bundle the RDP runtime.
 Development is on **`main`**.
 
 - **CI:** checks localizations and icons, runs macOS regression tests (including
-  encrypted SSH logging, Bash/Zsh integration, Keychain access, native profile/log UI,
+  encrypted SSH logging, Bash/Zsh integration, Keychain access, native profile/log UI
+  and profile controls in all nine languages,
   password-authenticated VNC rendering, desktop resizing and recovery from black frames), builds both RDP
   runtime slices and packages separate ARM64 and Intel apps. Packaging verifies the single
-  architecture of the app and all embedded native code, checks ad-hoc signatures, and creates
+  architecture of the app and all embedded native code, checks ad-hoc signatures, compares
+  all compiled translation tables against their source, and creates
   a ZIP archive with a SHA-256 checksum. Separate Apple Silicon and Intel jobs
   download their ZIP, verify it, start the actual app without Xcode search paths,
   reproduce the missing-framework failure in a disposable copy, and exercise the
@@ -256,15 +262,15 @@ Development is on **`main`**.
   requests. The release workflow also requires a clean full-history scan.
   `.gitleaksignore` contains one exact historical finding for a removed, fictional
   README credential example. No scanner rule or source path is broadly excluded.
-- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.3`**, triggers a
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.4`**, triggers a
   fresh scan, test and build. GitHub publishes the release assets only when these pass.
 
 For maintainers, after the current `main` revision passes verification:
 
 ```bash
 git pull --ff-only
-git tag v0.2.3
-git push origin v0.2.3
+git tag v0.2.4
+git push origin v0.2.4
 ```
 
 Do not reuse or move an already published release tag. Use a new version for fixes.
@@ -290,9 +296,9 @@ An optional pre-commit hook is configured in `.pre-commit-config.yaml`.
 | `Protocols` | VNC, SSH and RDP session implementations |
 | `Views` | Connection list, tabs, profile editor and sign-in UI |
 | `Discovery` | Bonjour browsing and endpoint resolution |
-| `Resources` | Mac app icon and four localization tables |
+| `Resources` | Mac app icon and nine interface/permission localizations |
 | `Tests` | Regression tests for profiles, favorites, sessions, VNC and SSH |
-| `UITests` | Native Mac UI tests for saving and persisting favorites |
+| `UITests` | Native Mac UI tests for favorites, private SSH logs and all nine languages |
 | `scripts` | Resource validation, icon generation and release/runtime builds |
 
 `RemoteSession` is the common backend interface. `ConnectionManager` owns session
@@ -309,8 +315,13 @@ python3 scripts/generate-icon.py
 python3 scripts/check-resources.py
 ```
 
-User-facing strings live in `Resources/{en,sv,da,nb}.lproj/Localizable.strings`.
-Keep the four tables in key-for-key parity; the resource check enforces this.
+User-facing strings live in `Resources/{en,sv,da,nb,de,fi,fr,es,ja}.lproj/Localizable.strings`.
+The matching `InfoPlist.strings` files translate the local-network permission message.
+When adding or changing a string, update all nine languages together. Run
+`python3 scripts/check-resources.py` to check syntax, duplicate or empty entries, key
+parity and format placeholders such as `%d`. The release and download checks also
+compare the compiled tables in each app with the source. Native UI tests launch the
+app in every language and capture the SSH profile editor.
 
 ## License
 
