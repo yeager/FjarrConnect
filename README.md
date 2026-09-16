@@ -15,17 +15,18 @@ FjärrConnect brings **VNC / Mac Screen Sharing, SSH and RDP** into one connecti
 manager for **macOS 14 or later**, on **Apple Silicon (arm64) and Intel (x86_64)**.
 There are no Windows, Linux or mobile app targets.
 
-## Version 0.2.2
+## Version 0.2.3
 
-**[Download version 0.2.2](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.2)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.2-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.2-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.3](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.3)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.3-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.3-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.2 explains VNC sign-in requirements and reports useful RDP connection,
-account and TLS errors. It retains the startup fix from 0.2.1. Replace the old app;
-saved profiles and Keychain passwords are retained.
+Version 0.2.3 fixes a frozen VNC image when the remote desktop changes resolution,
+while preserving keyboard focus and the remote cursor. It includes the connection
+diagnostics from 0.2.2 and startup fix from 0.2.1. Replace the old app; saved profiles
+and Keychain passwords are retained.
 
 Every release passes gitleaks, Mac regression tests, separate architecture packaging and
 checks of the downloaded app on both native Mac architectures before publication.
@@ -176,7 +177,7 @@ Xcode build does not automatically compile or bundle the RDP runtime.
 Development is on **`main`**.
 
 - **CI:** checks localizations and icons, runs macOS regression tests (including
-  password-authenticated VNC rendering and recovery from black frames), builds both RDP
+  password-authenticated VNC rendering, desktop resizing and recovery from black frames), builds both RDP
   runtime slices and packages separate ARM64 and Intel apps. Packaging verifies the single
   architecture of the app and all embedded native code, checks ad-hoc signatures, and creates
   a ZIP archive with a SHA-256 checksum. Separate Apple Silicon and Intel jobs
@@ -186,15 +187,15 @@ Development is on **`main`**.
   negotiation fixture in authentication-only mode.
 - **gitleaks:** scans the complete repository history on pushes to `main` and pull
   requests. The release workflow also requires a clean full-history scan.
-- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.2`**, triggers a
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.3`**, triggers a
   fresh scan, test and build. GitHub publishes the release assets only when these pass.
 
 For maintainers, after the current `main` revision passes verification:
 
 ```bash
 git pull --ff-only
-git tag v0.2.2
-git push origin v0.2.2
+git tag v0.2.3
+git push origin v0.2.3
 ```
 
 Do not reuse or move an already published release tag. Use a new version for fixes.

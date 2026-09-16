@@ -20,8 +20,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
     private var connection: VNCConnection?
     private let logger = VNCPrintLogger()
 
-    /// Built once, when the server hands us a framebuffer. Cached so SwiftUI
-    /// re-renders don't recreate the AppKit view.
+    /// Cached per remote framebuffer; a server resize replaces both buffer and view.
     private var framebufferView: VNCCAFramebufferView?
 
     init(profile: ConnectionProfile, password: String?) {
@@ -156,11 +155,15 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
             guard let self, self.connection === connection else { return }
             let size = CGSize(width: CGFloat(framebuffer.size.width),
                               height: CGFloat(framebuffer.size.height))
-            self.framebufferView = VNCCAFramebufferView(
+            let view = VNCCAFramebufferView(
                 frame: CGRect(origin: .zero, size: size),
                 framebuffer: framebuffer,
                 connection: connection
             )
+            if let cursor = self.framebufferView?.currentCursor {
+                view.currentCursor = cursor
+            }
+            self.framebufferView = view
             self.objectWillChange.send()   // let the UI swap the placeholder for the screen
         }
     }
@@ -219,6 +222,28 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
 /// Bridges the cached AppKit framebuffer view into SwiftUI.
 private struct FramebufferViewWrapper: NSViewRepresentable {
     let nsView: VNCCAFramebufferView
-    func makeNSView(context: Context) -> VNCCAFramebufferView { nsView }
-    func updateNSView(_ nsView: VNCCAFramebufferView, context: Context) { }
+    func makeNSView(context: Context) -> FramebufferContainer {
+        let container = FramebufferContainer(frame: nsView.frame)
+        container.show(nsView)
+        return container
+    }
+    func updateNSView(_ container: FramebufferContainer, context: Context) {
+        container.show(nsView)
+    }
+}
+
+/// SwiftUI retains the host while a server resize replaces its AppKit child.
+private final class FramebufferContainer: NSView {
+    private var framebufferView: VNCCAFramebufferView?
+
+    func show(_ view: VNCCAFramebufferView) {
+        guard framebufferView !== view else { return }
+        let restoreFocus = framebufferView != nil && window?.firstResponder === framebufferView
+        framebufferView?.removeFromSuperview()
+        framebufferView = view
+        view.frame = bounds
+        view.autoresizingMask = [.width, .height]
+        addSubview(view)
+        if restoreFocus { window?.makeFirstResponder(view) }
+    }
 }
