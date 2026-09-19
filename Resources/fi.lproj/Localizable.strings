@@ -18,6 +18,7 @@
 "field.protocol" = "Protokolla";
 "field.host" = "Palvelin";
 "field.username" = "Käyttäjätunnus";
+"field.vncUsername" = "Käyttäjätunnus (valinnainen VNC:ssä)";
 "field.password" = "Salasana";
 "field.group" = "Ryhmä";
 "field.port.format" = "Portti (oletus %d)";
@@ -46,7 +47,8 @@
 "field.password.hint" = "Tallennetaan Macin Avainnippuun. Jätä tyhjäksi, jos haluat poistaa tallennetun salasanan.";
 "auth.title" = "Kirjaudu muodostaaksesi yhteyden";
 "auth.remember" = "Muista Avainnipussa";
-"auth.hint" = "Käytä Macin näytönjakoon etä-Macin käyttäjätiliä. Jätä salasana tyhjäksi, jos palvelin ei vaadi tunnistautumista.";
+"auth.hint" = "Käytä RDP-yhteyteen tiliä, jolla on oikeus muodostaa yhteys etätietokoneeseen.";
+"auth.vnc.hint" = "Tavallinen VNC käyttää vain salasanaa; jätä käyttäjätunnus tyhjäksi. Anna käyttäjätunnus vain, jos palvelin vaatii käyttäjätilin, esimerkiksi Macin näytönjaossa. Jätä salasana tyhjäksi, jos kirjautumista ei tarvita.";
 "profile.delete.title" = "Poistetaanko tämä tallennettu yhteys?";
 "quickconnect.invalid" = "Anna palvelin tai vnc://-, ssh://- tai rdp://-osoite ja portti väliltä 1–65535. Kirjoita salasanat kirjautumisikkunaan.";
 "session.retry" = "Tarkista osoite ja kirjautumistiedot ja yhdistä uudelleen.";

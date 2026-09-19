@@ -19,9 +19,10 @@ struct CredentialsView: View {
         VStack(alignment: .leading, spacing: 18) {
             Label("auth.title", systemImage: "lock.shield").font(.title2.bold())
             Text(profile.uri).foregroundStyle(.secondary).textSelection(.enabled)
-            TextField("field.username", text: $username)
+            TextField(LocalizedStringKey(profile.transport == .vnc ? "field.vncUsername" : "field.username"), text: $username)
             SecureField("field.password", text: $password)
-            Text("auth.hint").font(.caption).foregroundStyle(.secondary)
+            Text(LocalizedStringKey(profile.transport == .vnc ? "auth.vnc.hint" : "auth.hint"))
+                .font(.caption).foregroundStyle(.secondary)
             if saved { Toggle("auth.remember", isOn: $remember) }
             HStack {
                 Button("action.cancel") { dismiss() }.keyboardShortcut(.cancelAction)

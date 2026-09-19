@@ -18,6 +18,7 @@
 "field.protocol" = "Protocolo";
 "field.host" = "Servidor";
 "field.username" = "Nombre de usuario";
+"field.vncUsername" = "Nombre de usuario (opcional para VNC)";
 "field.password" = "Contraseña";
 "field.group" = "Grupo";
 "field.port.format" = "Puerto (predeterminado: %d)";
@@ -46,7 +47,8 @@
 "field.password.hint" = "Se guarda en el Llavero del Mac. Déjalo vacío para eliminar la contraseña guardada.";
 "auth.title" = "Identifícate para conectarte";
 "auth.remember" = "Recordar en el Llavero";
-"auth.hint" = "Para compartir la pantalla de un Mac, usa la cuenta del Mac remoto. Deja la contraseña vacía si el servidor no requiere autenticación.";
+"auth.hint" = "Para RDP, usa una cuenta con permiso para conectarse al equipo remoto.";
+"auth.vnc.hint" = "VNC estándar solo usa una contraseña; deja el nombre de usuario vacío. Introduce un nombre de usuario solo si el servidor requiere una cuenta, como en Compartir pantalla de Mac. Deja la contraseña vacía si no se necesita autenticación.";
 "profile.delete.title" = "¿Eliminar esta conexión guardada?";
 "quickconnect.invalid" = "Introduce un servidor o una dirección vnc://, ssh:// o rdp:// con un puerto entre 1 y 65535. Escribe las contraseñas en el diálogo de identificación.";
 "session.retry" = "Comprueba la dirección y las credenciales y vuelve a conectarte.";

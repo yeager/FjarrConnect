@@ -18,6 +18,7 @@
 "field.protocol" = "Protocole";
 "field.host" = "Hôte";
 "field.username" = "Nom d’utilisateur";
+"field.vncUsername" = "Nom d’utilisateur (facultatif pour VNC)";
 "field.password" = "Mot de passe";
 "field.group" = "Groupe";
 "field.port.format" = "Port (par défaut : %d)";
@@ -46,7 +47,8 @@
 "field.password.hint" = "Stocké dans le trousseau de votre Mac. Laissez ce champ vide pour supprimer le mot de passe enregistré.";
 "auth.title" = "S’identifier pour se connecter";
 "auth.remember" = "Mémoriser dans le trousseau";
-"auth.hint" = "Pour le partage d’écran Mac, utilisez le compte du Mac distant. Laissez le mot de passe vide si le serveur ne demande aucune authentification.";
+"auth.hint" = "Pour RDP, utilisez un compte autorisé à se connecter à l’ordinateur distant.";
+"auth.vnc.hint" = "Le VNC standard utilise uniquement un mot de passe ; laissez le nom d’utilisateur vide. Indiquez un nom d’utilisateur uniquement si le serveur exige un compte, par exemple pour le partage d’écran Mac. Laissez le mot de passe vide si aucune authentification n’est nécessaire.";
 "profile.delete.title" = "Supprimer cette connexion enregistrée ?";
 "quickconnect.invalid" = "Saisissez un hôte ou une adresse vnc://, ssh:// ou rdp:// avec un port entre 1 et 65535. Saisissez les mots de passe dans la fenêtre d’identification.";
 "session.retry" = "Vérifiez l’adresse et les identifiants, puis reconnectez-vous.";

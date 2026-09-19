@@ -45,7 +45,10 @@ struct ProfileEditorView: View {
                     TextField("field.group", text: $group)
                 }
                 Section {
-                    TextField("field.username", text: $username)
+                    TextField(LocalizedStringKey(transport == .vnc ? "field.vncUsername" : "field.username"), text: $username)
+                    if transport == .vnc {
+                        Text("auth.vnc.hint").font(.caption).foregroundStyle(.secondary)
+                    }
                     if transport == .ssh {
                         Text("ssh.authentication").font(.caption).foregroundStyle(.secondary)
                         Toggle("ssh.log.enable", isOn: $logsSSHCommands)

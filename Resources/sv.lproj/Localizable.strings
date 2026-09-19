@@ -23,6 +23,7 @@
 "field.protocol"             = "Protokoll";
 "field.host"                 = "Värd";
 "field.username"             = "Användarnamn";
+"field.vncUsername" = "Användarnamn (valfritt för VNC)";
 "field.password"             = "Lösenord";
 "field.group"                = "Grupp";
 "field.port.format"          = "Port (standard %d)";
@@ -54,7 +55,8 @@
 "field.password.hint" = "Lagras i Macens nyckelring. Lämna tomt för att ta bort det sparade lösenordet.";
 "auth.title" = "Logga in för att ansluta";
 "auth.remember" = "Kom ihåg i nyckelringen";
-"auth.hint" = "För Mac-skärmdelning använder du kontot på fjärrdatorn. Lämna lösenordet tomt om servern inte kräver inloggning.";
+"auth.hint" = "För RDP använder du ett konto som har rätt att ansluta till fjärrdatorn.";
+"auth.vnc.hint" = "Vanlig VNC använder bara lösenord; lämna användarnamnet tomt. Ange användarnamn endast om servern kräver ett konto, exempelvis vid Mac-skärmdelning. Lämna lösenordet tomt om ingen inloggning behövs.";
 "profile.delete.title" = "Ta bort den sparade anslutningen?";
 "quickconnect.invalid" = "Ange ett värdnamn eller en vnc://-, ssh://- eller rdp://-adress med port 1–65535. Ange lösenord i inloggningsrutan.";
 "session.retry" = "Kontrollera adress och inloggningsuppgifter och anslut igen.";

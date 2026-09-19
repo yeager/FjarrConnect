@@ -23,6 +23,7 @@
 "field.protocol"             = "Protocol";
 "field.host"                 = "Host";
 "field.username"             = "Username";
+"field.vncUsername" = "Username (optional for VNC)";
 "field.password"             = "Password";
 "field.group"                = "Group";
 "field.port.format"          = "Port (default %d)";
@@ -54,7 +55,8 @@
 "field.password.hint" = "Stored in your Mac Keychain. Leave empty to remove the saved password.";
 "auth.title" = "Sign in to connect";
 "auth.remember" = "Remember in Keychain";
-"auth.hint" = "For Mac Screen Sharing, use the remote Mac account. Leave the password empty if the server needs no authentication.";
+"auth.hint" = "For RDP, use an account allowed to connect to the remote computer.";
+"auth.vnc.hint" = "Standard VNC uses only a password; leave Username empty. Enter a username only if the server requires an account, such as Mac Screen Sharing. Leave the password empty if no authentication is needed.";
 "profile.delete.title" = "Delete this saved connection?";
 "quickconnect.invalid" = "Enter a host or vnc://, ssh://, rdp:// address with a port between 1 and 65535. Enter passwords in the sign-in dialog.";
 "session.retry" = "Check the address and credentials, then reconnect.";

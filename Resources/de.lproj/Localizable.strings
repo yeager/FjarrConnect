@@ -18,6 +18,7 @@
 "field.protocol" = "Protokoll";
 "field.host" = "Host";
 "field.username" = "Benutzername";
+"field.vncUsername" = "Benutzername (optional für VNC)";
 "field.password" = "Passwort";
 "field.group" = "Gruppe";
 "field.port.format" = "Port (Standard: %d)";
@@ -46,7 +47,8 @@
 "field.password.hint" = "Wird im Schlüsselbund deines Mac gespeichert. Leer lassen, um das gespeicherte Passwort zu entfernen.";
 "auth.title" = "Zum Verbinden anmelden";
 "auth.remember" = "Im Schlüsselbund sichern";
-"auth.hint" = "Verwende für die Mac-Bildschirmfreigabe den Account auf dem entfernten Mac. Lass das Passwort leer, wenn der Server keine Authentifizierung benötigt.";
+"auth.hint" = "Verwende für RDP einen Account, der zum Zugriff auf den entfernten Computer berechtigt ist.";
+"auth.vnc.hint" = "Standard-VNC verwendet nur ein Passwort; lass den Benutzernamen leer. Gib nur dann einen Benutzernamen ein, wenn der Server einen Account erfordert, etwa bei der Mac-Bildschirmfreigabe. Lass das Passwort leer, wenn keine Anmeldung nötig ist.";
 "profile.delete.title" = "Diese gespeicherte Verbindung löschen?";
 "quickconnect.invalid" = "Gib einen Host oder eine vnc://-, ssh://- oder rdp://-Adresse mit einem Port zwischen 1 und 65535 ein. Passwörter gehören in den Anmeldedialog.";
 "session.retry" = "Prüfe Adresse und Anmeldedaten und verbinde dich erneut.";

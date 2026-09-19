@@ -70,6 +70,12 @@ on first launch. Never disable Gatekeeper globally to install the app.
 | SSH | Embedded [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) terminal running macOS `/usr/bin/ssh` | Your SSH configuration, keys and ssh-agent; passwords and new host-key confirmation in the terminal |
 | RDP | Native [FreeRDP](https://github.com/FreeRDP/FreeRDP) SDL client in a separate desktop window, managed by FjärrConnect | Username/password; FreeRDP handles certificate prompts |
 
+**Standard VNC uses only a password:** leave Username empty and enter the server's
+VNC password. A username is used only when the server requires account authentication,
+such as Apple Remote Desktop or UltraVNC MS Logon II. For a Mac using account
+authentication, enter that Mac account's short username and password. If the server
+requires no authentication, leave both fields empty.
+
 **RDP is bundled:** no Homebrew installation is needed for the downloaded app.
 The CI/release pipeline builds a self-contained FreeRDP runtime for both Mac
 architectures. Developer builds also detect a locally installed SDL client from
