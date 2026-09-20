@@ -1,94 +1,87 @@
 import SwiftUI
 
-/// Runs the native macOS SDL client. FreeRDP owns its graphical window and
-/// interactive certificate checks; this session owns and terminates the process.
+/// Owns one embedded desktop, including its native connection worker. Changing
+/// tabs detaches the view without stopping the connection.
 final class RDPRemoteSession: NSObject, RemoteSession {
     let profile: ConnectionProfile
-    private var password: String?
+    private var credentials: SessionCredentials
     @Published private(set) var status: SessionStatus = .idle
-    private var process: Process?
+    private var screen: NSView?
+    private var timer: Timer?
+    private var active = false
+    private let runtime: RDPRuntime?
 
-    static var executable: URL? {
-        let bundled = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/sdl-freerdp").path
-        let paths = [bundled, "/opt/homebrew/bin/sdl-freerdp", "/usr/local/bin/sdl-freerdp",
-                     "/opt/homebrew/bin/sdl-freerdp3", "/usr/local/bin/sdl-freerdp3"]
-        return paths.first(where: { FileManager.default.isExecutableFile(atPath: $0) }).map { URL(fileURLWithPath: $0) }
-    }
-
-    init(profile: ConnectionProfile, password: String?) {
+    static var isAvailable: Bool { RDPRuntime.shared != nil }
+    init(profile: ConnectionProfile, password: String?, gatewayPassword: String? = nil, runtime: RDPRuntime? = .shared) {
         self.profile = profile
-        self.password = password
+        self.credentials = SessionCredentials(password: password, gatewayPassword: gatewayPassword)
+        self.runtime = runtime
         super.init()
     }
+    private var pointer: UnsafeMutableRawPointer? { screen.map { Unmanaged.passUnretained($0).toOpaque() } }
     func start() {
-        guard process == nil else { return }
-        guard let executable = Self.executable else {
+        guard screen == nil else { return }
+        defer { credentials = SessionCredentials() }
+        guard let runtime else {
             status = .disconnected(reason: NSLocalizedString("rdp.install", comment: "")); return
         }
-        guard let input = RDPArguments.input(profile: profile, password: password) else {
+        guard let input = RDPArguments.input(profile: profile, password: credentials.password, gatewayPassword: credentials.gatewayPassword) else {
             status = .disconnected(reason: NSLocalizedString("rdp.invalid", comment: "")); return
         }
-        password = nil
-        let task = Process()
-        let pipe = Pipe()
-        let diagnosticsPipe = Pipe()
-        task.executableURL = executable
-        task.arguments = ["/args-from:stdin"]
-        task.standardInput = pipe
-        // stdout is unused. stderr is reduced to allowlisted error categories;
-        // raw diagnostics (which may contain credentials) are never displayed.
-        task.standardOutput = FileHandle.nullDevice
-        task.standardError = diagnosticsPipe
-        do {
-            try task.run()
-            process = task
-            status = .running
-            // Only the anonymous pipe contains credentials, never argv or a file.
-            DispatchQueue.global(qos: .userInitiated).async {
-                try? pipe.fileHandleForWriting.write(contentsOf: input)
-                try? pipe.fileHandleForWriting.close()
+        let arguments = String(decoding: input, as: UTF8.self)
+        let view = arguments.withCString { arguments in
+            RDPRuntime.translations.withCString { runtime.create(arguments, $0) }
+        }
+        guard let view else {
+            status = .disconnected(reason: NSLocalizedString("rdp.install", comment: "")); return
+        }
+        screen = Unmanaged<NSView>.fromOpaque(view).takeRetainedValue()
+        status = .connecting
+        runtime.activate(view, active ? 1 : 0)
+        runtime.start(view)
+        timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in self?.updateStatus() }
+    }
+    private func updateStatus() {
+        guard let pointer, let runtime else { return }
+        switch runtime.status(pointer) {
+        case 2: if status != .connected { status = .connected }
+        case 3:
+            timer?.invalidate(); timer = nil
+            let code = runtime.error(pointer)
+            if code == 0 { status = .disconnected(reason: nil); return }
+            let key: String
+            switch runtime.failure(pointer) {
+            case 1: key = "rdp.error.network"
+            case 2: key = "rdp.error.certificate"
+            case 3: key = "rdp.error.authentication"
+            case 4: key = "rdp.error.account"
+            case 5: key = "rdp.error.activationTimeout"
+            default: key = "rdp.ended"
             }
-            DispatchQueue.global(qos: .utility).async { [weak self] in
-                var diagnostics = RDPDiagnostics()
-                while true {
-                    let data = diagnosticsPipe.fileHandleForReading.availableData
-                    if data.isEmpty { break }
-                    diagnostics.consume(data)
-                }
-                try? diagnosticsPipe.fileHandleForReading.close()
-                task.waitUntilExit()
-                let result = diagnostics
-                DispatchQueue.main.async {
-                    guard let self, self.process === task else { return }
-                    self.process = nil
-                    self.status = .disconnected(reason: task.terminationStatus == 0 ? nil :
-                        result.message(host: self.profile.host, port: self.profile.port,
-                                       exitCode: task.terminationStatus))
-                }
-            }
-        } catch {
-            try? pipe.fileHandleForWriting.close()
-            try? diagnosticsPipe.fileHandleForReading.close()
-            status = .disconnected(reason: error.localizedDescription)
+            status = .disconnected(reason: "RDP \(profile.host):\(profile.port)\n" +
+                NSLocalizedString(key, comment: "") + "\n" + NSLocalizedString("rdp.exitCode", comment: "") + " " + String(format: "0x%08X", code))
+        default: break
         }
     }
+    func setActive(_ active: Bool) {
+        self.active = active
+        if let pointer { runtime?.activate(pointer, active ? 1 : 0) }
+    }
     func stop() {
-        process?.terminationHandler = nil
-        if process?.isRunning == true { process?.terminate() }
-        process = nil
-        password = nil
+        timer?.invalidate(); timer = nil
+        if let pointer { runtime?.stop(pointer) }
+        credentials = SessionCredentials()
         status = .disconnected(reason: nil)
     }
+    deinit { timer?.invalidate(); if let pointer { runtime?.stop(pointer) } }
     func makeScreenView() -> AnyView {
-        AnyView(VStack(spacing: 16) {
-            Image(systemName: "rectangle.on.rectangle").font(.system(size: 48)).foregroundStyle(.tint)
-            Text("rdp.window.title").font(.title2.bold())
-            Text("rdp.window.description").foregroundStyle(.secondary).multilineTextAlignment(.center)
-            Button("rdp.showWindow") {
-                if let process = self.process, process.isRunning {
-                    NSRunningApplication(processIdentifier: process.processIdentifier)?.activate(options: [])
-                }
-            }.buttonStyle(.borderedProminent)
-        }.padding(32).frame(maxWidth: .infinity, maxHeight: .infinity))
+        guard let screen else { return AnyView(ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)) }
+        return AnyView(RDPDesktopView(screen: screen))
     }
+}
+
+private struct RDPDesktopView: NSViewRepresentable {
+    let screen: NSView
+    func makeNSView(context: Context) -> NSView { screen }
+    func updateNSView(_ view: NSView, context: Context) {}
 }

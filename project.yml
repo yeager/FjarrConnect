@@ -8,8 +8,9 @@ options:
 
 packages:
   RoyalVNCKit:
-    url: https://github.com/royalapplications/royalvnc
-    exactVersion: "1.0.0"
+    # Unicode clipboard and session policy submitted upstream as royalvnc#37.
+    url: https://github.com/yeager/royalvnc
+    revision: "03bf56cdd99292c466258c7b06d815bd47b3a57a"
   SwiftTerm:
     url: https://github.com/migueldeicaza/SwiftTerm
     exactVersion: "1.10.1"

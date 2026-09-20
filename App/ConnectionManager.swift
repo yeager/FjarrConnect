@@ -14,16 +14,30 @@ final class SessionTab: ObservableObject, Identifiable {
 
 final class ConnectionManager: ObservableObject {
     @Published private(set) var tabs: [SessionTab] = []
-    @Published var selectedID: UUID?
-    private let makeSession: (ConnectionProfile, String?) -> any RemoteSession
+    @Published var selectedID: UUID? {
+        didSet { tabs.forEach { $0.backend.setActive($0.id == selectedID) } }
+    }
+    private let makeSession: (ConnectionProfile, SessionCredentials) -> any RemoteSession
 
-    init(makeSession: @escaping (ConnectionProfile, String?) -> any RemoteSession = ProtocolRegistry.makeSession) {
+    init(makeSession: @escaping (ConnectionProfile, SessionCredentials) -> any RemoteSession = ProtocolRegistry.makeSession) {
         self.makeSession = makeSession
     }
 
     var selected: SessionTab? { tabs.first { $0.id == selectedID } }
+    var activeSessions: [SessionTab] { tabs.filter { $0.backend.status.isActive } }
 
-    func connect(_ profile: ConnectionProfile, password: String? = nil) {
+    func requestClose(_ id: UUID, confirm: (String) -> Bool = CloseConfirmation.session) {
+        guard let tab = tabs.first(where: { $0.id == id }) else { return }
+        if tab.backend.status.isActive && !confirm(tab.backend.profile.name) { return }
+        close(id)
+    }
+
+    func confirmClosingAll() -> Bool {
+        let names = activeSessions.map { $0.backend.profile.name }
+        return names.isEmpty || CloseConfirmation.application(names)
+    }
+
+    func connect(_ profile: ConnectionProfile, password: String? = nil, gatewayPassword: String? = nil) {
         guard profile.isValid else { return }
         if let tab = tabs.first(where: { $0.backend.profile.id == profile.id &&
             $0.backend.profile.host == profile.host && $0.backend.profile.port == profile.port &&
@@ -32,7 +46,7 @@ final class ConnectionManager: ObservableObject {
             selectedID = tab.id
             return
         }
-        let tab = SessionTab(backend: makeSession(profile, password))
+        let tab = SessionTab(backend: makeSession(profile, SessionCredentials(password: password, gatewayPassword: gatewayPassword)))
         tabs.append(tab)
         selectedID = tab.id
         tab.backend.start()

@@ -54,17 +54,14 @@
 "session.retry" = "Prüfe Adresse und Anmeldedaten und verbinde dich erneut.";
 "ssh.authentication" = "SSH verwendet die Schlüssel, den ssh-agent und die SSH-Konfiguration deines Mac. Gib Passwörter im Terminal ein und bestätige dort neue Hostschlüssel.";
 "ssh.ended" = "SSH wurde beendet. Lies vor dem erneuten Verbinden die Meldung im Terminal.";
-"rdp.install" = "RDP benötigt den nativen Mac-Client von FreeRDP. Installiere ihn mit „brew install freerdp“ und verbinde dich erneut.";
+"rdp.install" = "Die integrierte RDP-Komponente fehlt oder konnte nicht geladen werden. Installieren Sie FjärrConnect für Ihre Mac-Architektur erneut.";
 "rdp.invalid" = "RDP-Anmeldedaten dürfen keine Zeilenumbrüche enthalten.";
 "rdp.ended" = "RDP wurde beendet. Prüfe Server, Anmeldedaten und Zertifikat und verbinde dich erneut.";
-"rdp.window.title" = "Dein Schreibtisch wird in einem eigenen Fenster geöffnet";
-"rdp.window.description" = "Bestätige Anmelde- und Zertifikatsabfragen in FreeRDP. Trenne die Verbindung hier, um den entfernten Schreibtisch zu schließen.";
 "discovery.resolveFailed" = "Dieser Mac ist nicht erreichbar. Prüfe die Bildschirmfreigabe und die Berechtigung für das lokale Netzwerk und aktualisiere die Suche.";
 "sidebar.favorites" = "Favoriten";
 "favorite.add" = "Zu Favoriten hinzufügen";
 "favorite.remove" = "Aus Favoriten entfernen";
 "session.timeout" = "Zeitüberschreitung beim Verbindungsaufbau. Prüfe Adresse, Bildschirmfreigabe und Firewall und versuche es erneut.";
-"rdp.showWindow" = "Entfernten Schreibtisch anzeigen";
 "vnc.usernameRequired" = "Dieser Server benötigt einen Benutzernamen. Gib den kurzen Benutzernamen und das Passwort des Accounts auf dem entfernten Mac ein. Prüfe, ob der Account zur Bildschirmfreigabe berechtigt ist.";
 "rdp.error.network" = "Der Server ist nicht erreichbar. Prüfe, ob Remotedesktop aktiviert ist und Adresse sowie Port erreichbar sind.";
 "rdp.error.authentication" = "Der Server hat die Anmeldung abgelehnt. Prüfe Benutzername, Passwort und die Berechtigung für Remotedesktop.";
@@ -92,3 +89,151 @@
 "ssh.log.readFailed" = "Das verschlüsselte Protokoll konnte nicht geöffnet oder gelöscht werden. Entsperre den Schlüsselbund und versuche es erneut. Beschädigte Protokolle bleiben erhalten; wähle „Protokoll löschen“, um neu zu beginnen.";
 "ssh.log.disable" = "Befehlsprotokollierung stoppen";
 "ssh.log.refresh" = "Protokoll aktualisieren";
+
+"rdp.cert.title" = "Serverzertifikat prüfen";
+
+"rdp.cert.message" = "Die Identität dieses Servers konnte nicht bestätigt werden. Vergleichen Sie den Fingerabdruck mit dem Serveradministrator, bevor Sie eine Verbindung herstellen.";
+
+"rdp.cert.changed.title" = "Das Serverzertifikat hat sich geändert";
+
+"rdp.cert.changed.message" = "Dieses Zertifikat unterscheidet sich vom zuvor akzeptierten. Es könnte erneuert worden sein oder die Verbindung wird abgefangen. Prüfen Sie den neuen Fingerabdruck mit dem Serveradministrator.";
+
+"rdp.cert.mismatch" = "Der Name im Zertifikat stimmt nicht mit der Serveradresse überein.";
+
+"rdp.cert.name" = "Zertifikatsname";
+
+"rdp.cert.subject" = "Inhaber";
+
+"rdp.cert.issuer" = "Aussteller";
+
+"rdp.cert.fingerprint" = "Fingerabdruck (SHA-256)";
+
+"rdp.cert.previous" = "Vorheriger Fingerabdruck";
+
+"rdp.cert.once" = "Einmal verbinden";
+
+"rdp.cert.trust" = "Vertrauen und verbinden";
+
+"rdp.gateway.message" = "Nachricht vom RDP-Gateway";
+
+"close.session.title" = "Diese Sitzung schließen?";
+
+"close.session.message" = "Die Verbindung zu %@ wird geschlossen. Laufende Dateiübertragungen werden unterbrochen.";
+
+"close.app.title" = "Aktive Sitzungen schließen?";
+
+"close.app.message" = "Sie haben %d aktive Sitzungen. Die Verbindungen werden getrennt und laufende Dateiübertragungen unterbrochen.";
+
+"close.confirm" = "Sitzungen schließen";
+
+"files.title" = "Dateien (SFTP)";
+
+"files.connection" = "Dateiverbindung (SSH)";
+
+"files.connection.hint" = "Dateiübertragungen benötigen SSH/SFTP auf dem Zielrechner. Leere Felder verwenden den gespeicherten Host und Benutzernamen mit Port 22.";
+
+"files.auth" = "Melden Sie sich unten an. Nach der SSH-Anmeldung öffnet sich die Dateiansicht.";
+
+"files.parent" = "Übergeordneter Ordner";
+
+"files.path" = "Entfernter Ordner";
+
+"files.upload" = "Hochladen…";
+
+"files.download" = "Herunterladen…";
+
+"files.newFolder" = "Neuer Ordner…";
+
+"files.rename" = "Umbenennen…";
+
+"files.size" = "Größe";
+
+"files.modified" = "Geändert";
+
+"files.cancelTransfer" = "Abbrechen und trennen";
+
+"files.replace" = "Vorhandene Datei ersetzen?";
+
+"files.delete" = "Auf dem entfernten Rechner löschen?";
+
+"files.delete.hint" = "Dies kann nicht rückgängig gemacht werden. Ordner müssen leer sein.";
+
+"files.startDirectory" = "SFTP-Startordner";
+
+"files.cancelled" = "Die Dateiübertragung wurde abgebrochen.";
+
+"files.error.protocol" = "Der SFTP-Server hat eine ungültige Antwort gesendet.";
+
+"files.error.connection" = "Die Dateiverbindung wurde geschlossen. Stellen Sie die Verbindung erneut her. SSH und SFTP müssen auf dem Zielrechner aktiviert sein.";
+
+"files.error.timeout" = "Der SFTP-Server hat nicht rechtzeitig geantwortet.";
+
+"files.error.unsupported" = "Der SFTP-Server unterstützt diesen Vorgang nicht.";
+
+"files.error.exists" = "Das Ziel existiert bereits. Nur reguläre Dateien können ersetzt werden; Ordner werden nicht zusammengeführt.";
+
+"files.error.fileType" = "Diese Übertragung enthält einen symbolischen Link oder einen anderen nicht unterstützten Dateityp.";
+
+"files.error.missing" = "Die entfernte Datei existiert nicht mehr.";
+
+"options.title" = "Erweiterte Einstellungen";
+
+"options.clipboard" = "Textzwischenablage mit der aktiven Sitzung teilen";
+
+"options.ssh" = "SSH-Verbindung";
+
+"options.port" = "Port";
+
+"options.choose" = "Auswählen…";
+
+"ssh.identity" = "Private Schlüsseldatei";
+
+"ssh.jump.host" = "Sprungserver";
+
+"ssh.jump.port" = "Port des Sprungservers (22)";
+
+"ssh.jump.username" = "Benutzername des Sprungservers";
+
+"ssh.forwards" = "Portweiterleitung";
+
+"ssh.forwards.hint" = "Listener binden an localhost. Lokale und entfernte Weiterleitungen benötigen ein Ziel; dynamische Weiterleitungen erstellen einen SOCKS-Proxy.";
+
+"ssh.forward.direction" = "Richtung";
+
+"ssh.forward.local" = "Lokal";
+
+"ssh.forward.remote" = "Entfernt";
+
+"ssh.forward.dynamic" = "Dynamisch (SOCKS)";
+
+"ssh.forward.listen" = "Lokaler Port";
+
+"ssh.forward.destination" = "Zielrechner";
+
+"ssh.forward.add" = "Weiterleitung hinzufügen";
+
+"rdp.gateway" = "RDP-Gateway";
+
+"rdp.gateway.port" = "Gateway-Port (443)";
+
+"rdp.gateway.username" = "Gateway-Benutzername (optional)";
+
+"rdp.gateway.password" = "Gateway-Passwort";
+
+"rdp.gateway.hint" = "Lassen Sie den Benutzernamen leer, um die Zugangsdaten des Remotedesktops zu verwenden. Ein separates Passwort wird beim Verbinden abgefragt.";
+
+"rdp.folders" = "Freigegebene Ordner";
+
+"rdp.folders.hint" = "Ausgewählte Ordner sind auf dem Remotedesktop les- und schreibbar. Ordnerpfade dürfen keine Kommas enthalten.";
+
+"rdp.folders.add" = "Ordner freigeben…";
+
+"links.title" = "Host-Verknüpfungen";
+
+"links.smb" = "Im Finder öffnen (SMB)";
+
+"links.web" = "Webverwaltung öffnen (HTTPS)";
+
+"transport.sftp" = "SFTP";
+
+"rdp.error.activationTimeout" = "Der Server hat geantwortet, den Remotedesktop aber nicht rechtzeitig gestartet. Prüfen Sie den Windows-Anmeldebildschirm und den Remotedesktopdienst und verbinden Sie sich erneut.";

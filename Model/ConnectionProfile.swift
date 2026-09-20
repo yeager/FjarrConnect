@@ -1,10 +1,11 @@
 import Foundation
 
-/// The three supported remote transports.
+/// Remote desktop, terminal and file-transfer transports.
 enum RemoteTransport: String, Codable, CaseIterable, Identifiable {
     case vnc
     case rdp
     case ssh
+    case sftp
 
     var id: String { rawValue }
 
@@ -14,6 +15,7 @@ enum RemoteTransport: String, Codable, CaseIterable, Identifiable {
         case .vnc: return "VNC / Screen Sharing"
         case .rdp: return "RDP"
         case .ssh: return "SSH"
+        case .sftp: return "SFTP"
         }
     }
 
@@ -24,14 +26,14 @@ enum RemoteTransport: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .vnc: return 5900
         case .rdp: return 3389
-        case .ssh: return 22
+        case .ssh, .sftp: return 22
         }
     }
 
     var uriScheme: String { rawValue }
 
     /// SSH is a terminal, not a framebuffer — the UI uses this to decide chrome.
-    var isGraphical: Bool { self != .ssh }
+    var isGraphical: Bool { self == .vnc || self == .rdp }
 }
 
 /// A saved machine — the app's analogue of a Remmina `.remmina` profile file.
@@ -48,6 +50,11 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
 
     /// Optional Remmina-style organisation.
     var group: String?
+    var ssh: SSHOptions?
+    var rdp: RDPOptions?
+    var links: HostLinks?
+    var clipboardEnabled: Bool?
+    var sharesClipboard: Bool { clipboardEnabled ?? true }
 
     // Optional on disk so profiles created before favorites decode unchanged.
     private var favorite: Bool?
@@ -94,6 +101,27 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
     var isValid: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         ConnectionURI.validHost(host) && port > 0 &&
-        username?.contains(where: { $0.isNewline || $0.asciiValue == 0 }) != true
+        username?.contains(where: { $0.isNewline || $0.asciiValue == 0 }) != true &&
+        (ssh?.isValid ?? true) && (rdp?.isValid ?? true) && (links?.isValid ?? true)
+    }
+
+    var fileProfile: ConnectionProfile {
+        var result = self
+        result.transport = .sftp
+        if transport != .ssh && transport != .sftp {
+            result.host = ssh?.host ?? host
+            result.port = ssh?.port ?? 22
+            result.username = ssh?.username ?? username
+        }
+        return result
+    }
+
+    func serviceURL(_ scheme: String) -> URL? {
+        let configured = scheme == "smb" ? links?.smb : links?.web
+        if let configured { return HostLinks.url(configured, scheme: scheme) }
+        var parts = URLComponents()
+        parts.scheme = scheme
+        parts.host = ConnectionOptions.bracketed(host)
+        return parts.url
     }
 }

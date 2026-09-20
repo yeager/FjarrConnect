@@ -24,17 +24,17 @@ final class ProfileStore: ObservableObject {
         }
     }
 
-    func save(_ profile: ConnectionProfile, password: String?) throws {
+    func save(_ profile: ConnectionProfile, password: String?, gatewayPassword: String? = nil) throws {
         guard profile.isValid else { throw CocoaError(.validationMissingMandatoryProperty) }
         var next = profiles
         if let index = next.firstIndex(where: { $0.id == profile.id }) { next[index] = profile }
         else { next.append(profile) }
-        try persist(next, credentialID: profile.id, password: password)
+        try persist(next, credentialID: profile.id, password: password, gatewayPassword: gatewayPassword)
     }
 
     func remove(_ profile: ConnectionProfile) throws {
         try SSHCommandLogStore.shared.clear(for: profile.id)
-        try persist(profiles.filter { $0.id != profile.id }, credentialID: profile.id, password: "")
+        try persist(profiles.filter { $0.id != profile.id }, credentialID: profile.id, password: "", gatewayPassword: "")
     }
 
     func toggleFavorite(_ id: UUID) throws {
@@ -53,7 +53,7 @@ final class ProfileStore: ObservableObject {
             .sorted { $0.group.localizedStandardCompare($1.group) == .orderedAscending }
     }
 
-    private func persist(_ next: [ConnectionProfile], credentialID: UUID, password: String?) throws {
+    private func persist(_ next: [ConnectionProfile], credentialID: UUID, password: String?, gatewayPassword: String?) throws {
         guard !loadFailed else { throw CocoaError(.fileReadCorruptFile) }
         let data = try JSONEncoder().encode(next)
         try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -63,13 +63,16 @@ final class ProfileStore: ObservableObject {
         try data.write(to: staged, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: staged.path)
         let previous = password == nil ? nil : try KeychainStore.password(for: credentialID)
-        try KeychainStore.setPassword(password, for: credentialID)
+        let previousGateway = gatewayPassword == nil ? nil : try KeychainStore.password(for: credentialID, purpose: .gateway)
         do {
+            try KeychainStore.setPassword(password, for: credentialID)
+            try KeychainStore.setPassword(gatewayPassword, for: credentialID, purpose: .gateway)
             if FileManager.default.fileExists(atPath: fileURL.path) {
                 _ = try FileManager.default.replaceItemAt(fileURL, withItemAt: staged)
             } else { try FileManager.default.moveItem(at: staged, to: fileURL) }
         } catch {
             if password != nil { try? KeychainStore.setPassword(previous ?? "", for: credentialID) }
+            if gatewayPassword != nil { try? KeychainStore.setPassword(previousGateway ?? "", for: credentialID, purpose: .gateway) }
             throw error
         }
         profiles = next

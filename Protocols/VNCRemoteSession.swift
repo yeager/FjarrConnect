@@ -7,12 +7,15 @@ import RoyalVNCKit
 ///
 /// RoyalVNCKit's `VNCCAFramebufferView` both renders the framebuffer and forwards
 /// local mouse/keyboard events to the server, so we don't inject input by hand.
-final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
+final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VNCClipboardDelegate {
     let profile: ConnectionProfile
     private var password: String?
     private var connectionDeadline: DispatchWorkItem?
     private var credentialFailure: String?
     private var frameCheck: DispatchWorkItem?
+    private var active = false
+    private var clipboardForeground = false
+    private var clipboardBaseline = 0
 
     @Published private(set) var status: SessionStatus = .idle
     @Published private(set) var notice: String?
@@ -43,14 +46,16 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
             isScalingEnabled: true,
             useDisplayLink: true,
             inputMode: .forwardKeyboardShortcutsIfNotInUseLocally,
-            isClipboardRedirectionEnabled: true,
+            isClipboardRedirectionEnabled: profile.sharesClipboard,
             colorDepth: .depth24Bit,
             frameEncodings: .default
         )
 
         let connection = VNCConnection(settings: settings, logger: logger)
         connection.delegate = self
+        connection.clipboardDelegate = self
         self.connection = connection
+        clipboardBaseline = NSPasteboard.general.changeCount
 
         setStatus(.connecting)
         connection.connect()
@@ -74,9 +79,41 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
         let old = connection
         connection = nil
         old?.delegate = nil
+        old?.clipboardDelegate = nil
         old?.disconnect()
         framebufferView = nil
         status = .disconnected(reason: nil)
+    }
+
+    func setActive(_ active: Bool) {
+        self.active = active
+        clipboardBaseline = NSPasteboard.general.changeCount
+        connection?.resetClipboardSynchronization()
+    }
+
+    private func acceptsClipboard(_ source: VNCConnection) -> Bool {
+        let foreground = active && NSApp.isActive && framebufferView?.window?.isKeyWindow == true
+        if foreground != clipboardForeground {
+            clipboardForeground = foreground
+            clipboardBaseline = NSPasteboard.general.changeCount
+            source.resetClipboardSynchronization()
+        }
+        return connection === source && profile.sharesClipboard && foreground
+    }
+
+    func connectionShouldSendClipboard(_ connection: VNCConnection) -> Bool {
+        acceptsClipboard(connection) && NSPasteboard.general.changeCount != clipboardBaseline
+    }
+
+    func connectionShouldReceiveClipboard(_ connection: VNCConnection) -> Bool {
+        acceptsClipboard(connection)
+    }
+
+    func connection(_ connection: VNCConnection, didReceiveClipboardText text: String) {
+        guard acceptsClipboard(connection) else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        clipboardBaseline = NSPasteboard.general.changeCount
     }
 
     func makeScreenView() -> AnyView {
@@ -150,7 +187,8 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
 
     func connection(_ connection: VNCConnection,
                     didCreateFramebuffer framebuffer: VNCFramebuffer) {
-        // RoyalVNCKit 1.0.0 renders via its display link; this session stays the delegate.
+        // Keep callbacks on this session so updates queued during a desktop resize
+        // reach the replacement view instead of the detached framebuffer view.
         DispatchQueue.main.async { [weak self] in
             guard let self, self.connection === connection else { return }
             let size = CGSize(width: CGFloat(framebuffer.size.width),
@@ -158,12 +196,14 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate {
             let view = VNCCAFramebufferView(
                 frame: CGRect(origin: .zero, size: size),
                 framebuffer: framebuffer,
-                connection: connection
+                connection: connection,
+                connectionDelegate: self
             )
             if let cursor = self.framebufferView?.currentCursor {
                 view.currentCursor = cursor
             }
             self.framebufferView = view
+            connection.delegate = self
             self.objectWillChange.send()   // let the UI swap the placeholder for the screen
         }
     }

@@ -62,11 +62,9 @@
 "session.retry" = "Kontrollera adress och inloggningsuppgifter och anslut igen.";
 "ssh.authentication" = "SSH använder Macens nycklar, ssh-agent och SSH-inställningar. Ange lösenord och verifiera nya värdnycklar i terminalen.";
 "ssh.ended" = "SSH avslutades. Läs meddelandet i terminalen innan du ansluter igen.";
-"rdp.install" = "RDP behöver FreeRDP:s Mac-klient. Installera med ”brew install freerdp” och anslut igen.";
+"rdp.install" = "Den inbyggda RDP-komponenten saknas eller kunde inte läsas in. Installera om FjärrConnect för din Mac-arkitektur.";
 "rdp.invalid" = "Inloggningsuppgifter för RDP får inte innehålla radbrytningar.";
 "rdp.ended" = "RDP avslutades. Kontrollera server, inloggning och certifikat och anslut igen.";
-"rdp.window.title" = "Skrivbordet öppnas i ett eget fönster";
-"rdp.window.description" = "Slutför eventuell inloggning eller certifikatkontroll i FreeRDP. Koppla från här för att stänga fjärrskrivbordet.";
 "discovery.resolveFailed" = "Kunde inte nå Macen. Kontrollera skärmdelning och behörighet till lokalt nätverk och uppdatera sedan.";
 
 "sidebar.favorites" = "Favoriter";
@@ -75,7 +73,6 @@
 
 "session.timeout" = "Anslutningen tog för lång tid. Kontrollera adress, skärmdelning och brandvägg och försök igen.";
 
-"rdp.showWindow" = "Visa fjärrskrivbord";
 
 "vnc.usernameRequired" = "Servern kräver ett användarnamn. Ange det korta användarnamnet och lösenordet för kontot på fjärr-Macen, och kontrollera att kontot är tillåtet under Skärmdelning.";
 
@@ -107,3 +104,151 @@
 "ssh.log.readFailed" = "Den krypterade loggen kunde inte öppnas eller raderas. Lås upp Nyckelring och försök igen. Skadade loggar bevaras; använd Radera logg för att återställa.";
 "ssh.log.disable" = "Stäng av kommandologgning";
 "ssh.log.refresh" = "Uppdatera logg";
+
+"rdp.cert.title" = "Kontrollera serverns certifikat";
+
+"rdp.cert.message" = "Serverns identitet kunde inte verifieras. Kontrollera fingeravtrycket med serverns administratör innan du ansluter.";
+
+"rdp.cert.changed.title" = "Serverns certifikat har ändrats";
+
+"rdp.cert.changed.message" = "Certifikatet skiljer sig från det du tidigare litade på. Det kan vara ett legitimt byte eller en kapad anslutning. Kontrollera det nya fingeravtrycket med serverns administratör.";
+
+"rdp.cert.mismatch" = "Namnet i certifikatet stämmer inte med serverns adress.";
+
+"rdp.cert.name" = "Certifikatnamn";
+
+"rdp.cert.subject" = "Innehavare";
+
+"rdp.cert.issuer" = "Utfärdare";
+
+"rdp.cert.fingerprint" = "Fingeravtryck (SHA-256)";
+
+"rdp.cert.previous" = "Tidigare fingeravtryck";
+
+"rdp.cert.once" = "Anslut en gång";
+
+"rdp.cert.trust" = "Lita på och anslut";
+
+"rdp.gateway.message" = "Meddelande från RDP-gatewayen";
+
+"close.session.title" = "Stäng sessionen?";
+
+"close.session.message" = "Anslutningen till %@ stängs. Pågående filöverföringar avbryts.";
+
+"close.app.title" = "Stäng aktiva sessioner?";
+
+"close.app.message" = "Du har %d aktiva sessioner. De kopplas från och pågående filöverföringar avbryts.";
+
+"close.confirm" = "Stäng sessioner";
+
+"files.title" = "Filer (SFTP)";
+
+"files.connection" = "Filanslutning (SSH)";
+
+"files.connection.hint" = "Filöverföring kräver SSH/SFTP på fjärrvärden. Tomma fält använder sparad värd och användarnamn, med port 22.";
+
+"files.auth" = "Logga in nedan. Filpanelen öppnas efter SSH-inloggningen.";
+
+"files.parent" = "Överordnad mapp";
+
+"files.path" = "Mapp på fjärrvärden";
+
+"files.upload" = "Skicka…";
+
+"files.download" = "Hämta…";
+
+"files.newFolder" = "Ny mapp…";
+
+"files.rename" = "Byt namn…";
+
+"files.size" = "Storlek";
+
+"files.modified" = "Ändrad";
+
+"files.cancelTransfer" = "Avbryt och koppla från";
+
+"files.replace" = "Ersätt den befintliga filen?";
+
+"files.delete" = "Radera från fjärrvärden?";
+
+"files.delete.hint" = "Detta kan inte ångras. Mappar måste vara tomma.";
+
+"files.startDirectory" = "Startmapp för SFTP";
+
+"files.cancelled" = "Filöverföringen avbröts.";
+
+"files.error.protocol" = "SFTP-servern skickade ett ogiltigt svar.";
+
+"files.error.connection" = "Filanslutningen stängdes. Anslut igen för att försöka på nytt. SSH och SFTP måste vara aktiverade på fjärrvärden.";
+
+"files.error.timeout" = "SFTP-servern svarade inte i tid.";
+
+"files.error.unsupported" = "SFTP-servern stöder inte denna åtgärd.";
+
+"files.error.exists" = "Målet finns redan. Endast vanliga filer kan ersättas; mappar slås aldrig ihop.";
+
+"files.error.fileType" = "Överföringen innehåller en symbolisk länk eller en annan filtyp som inte stöds.";
+
+"files.error.missing" = "Filen på fjärrvärden finns inte längre.";
+
+"options.title" = "Avancerade inställningar";
+
+"options.clipboard" = "Dela texturklipp med den aktiva sessionen";
+
+"options.ssh" = "SSH-anslutning";
+
+"options.port" = "Port";
+
+"options.choose" = "Välj…";
+
+"ssh.identity" = "Privat nyckelfil";
+
+"ssh.jump.host" = "Mellanvärd";
+
+"ssh.jump.port" = "Port för mellanvärd (22)";
+
+"ssh.jump.username" = "Användarnamn på mellanvärd";
+
+"ssh.forwards" = "Portvidarebefordran";
+
+"ssh.forwards.hint" = "Lyssnare binds till localhost. Lokal och fjärrvidarebefordran kräver ett mål; dynamisk vidarebefordran skapar en SOCKS-proxy.";
+
+"ssh.forward.direction" = "Riktning";
+
+"ssh.forward.local" = "Lokal";
+
+"ssh.forward.remote" = "Fjärr";
+
+"ssh.forward.dynamic" = "Dynamisk (SOCKS)";
+
+"ssh.forward.listen" = "Lyssningsport";
+
+"ssh.forward.destination" = "Målvärd";
+
+"ssh.forward.add" = "Lägg till vidarebefordran";
+
+"rdp.gateway" = "RDP-gateway";
+
+"rdp.gateway.port" = "Gatewayport (443)";
+
+"rdp.gateway.username" = "Gatewayens användarnamn (valfritt)";
+
+"rdp.gateway.password" = "Gatewayens lösenord";
+
+"rdp.gateway.hint" = "Lämna användarnamnet tomt för att använda samma inloggning som fjärrskrivbordet. Ett separat lösenord efterfrågas vid anslutning.";
+
+"rdp.folders" = "Delade mappar";
+
+"rdp.folders.hint" = "Valda mappar blir tillgängliga för fjärrskrivbordet med läs- och skrivåtkomst. Mappsökvägar får inte innehålla kommatecken.";
+
+"rdp.folders.add" = "Dela en mapp…";
+
+"links.title" = "Länkar till värden";
+
+"links.smb" = "Öppna i Finder (SMB)";
+
+"links.web" = "Öppna webbadministration (HTTPS)";
+
+"transport.sftp" = "SFTP";
+
+"rdp.error.activationTimeout" = "Servern svarade men startade inte fjärrskrivbordet i tid. Kontrollera Windows inloggningsskärm och tjänsten Fjärrskrivbord och anslut sedan igen.";

@@ -10,11 +10,9 @@ xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
 APP="build/release-$ARCH/Build/Products/Release/FjarrConnect.app"
 test -d "$APP"
 python3 scripts/check-resources.py --app "$APP"
-mkdir -p "$APP/Contents/Helpers" "$APP/Contents/Resources/Licenses"
-cp "build/rdp-artifacts/rdp-$ARCH/sdl-freerdp" "$APP/Contents/Helpers/sdl-freerdp"
-chmod +x "$APP/Contents/Helpers/sdl-freerdp"
+mkdir -p "$APP/Contents/Frameworks" "$APP/Contents/Resources/Licenses"
+cp "build/rdp-artifacts/rdp-$ARCH/libFjarrRDP.dylib" "$APP/Contents/Frameworks/libFjarrRDP.dylib"
 cp "build/rdp-artifacts/rdp-$ARCH/Licenses/"* "$APP/Contents/Resources/Licenses/"
-"$APP/Contents/Helpers/sdl-freerdp" /version
 # Every executable, including the required embedded VNC framework, is single-architecture.
 test -f "$APP/Contents/Frameworks/RoyalVNCKit.framework/Versions/A/RoyalVNCKit"
 while IFS= read -r binary; do
@@ -27,7 +25,7 @@ done < <(find "$APP/Contents" -type f)
 codesign --force --deep --sign - "$APP"
 codesign --verify --deep --strict "$APP"
 python3 scripts/smoke-app.py "$APP"
-python3 scripts/smoke-rdp.py "$APP/Contents/Helpers/sdl-freerdp"
+python3 scripts/smoke-rdp.py "$APP/Contents/Frameworks/libFjarrRDP.dylib"
 VERSION=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$APP/Contents/Info.plist")
 ARCHIVE="FjarrConnect-${VERSION}-macOS-${ARCH}.zip"
 ditto -c -k --keepParent "$APP" "dist/$ARCHIVE"

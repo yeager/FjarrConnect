@@ -118,13 +118,13 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertTrue(window.makeFirstResponder(originalView))
         try Data().write(to: trigger)
         let resized = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            framebuffer(in: host)?.framebufferSize == CGSize(width: 4, height: 3)
+            framebuffer(in: host)?.framebufferSize == CGSize(width: 5, height: 3)
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [resized], timeout: 5), .completed)
         let painted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             guard let contents = framebuffer(in: host)?.layer?.contents else { return false }
             let image = contents as! CGImage
-            guard image.width == 4, image.height == 3,
+            guard image.width == 5, image.height == 3,
                   let pixel = NSBitmapImageRep(cgImage: image).colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB) else { return false }
             return pixel.blueComponent > 0.95 && pixel.redComponent < 0.05
         }, object: nil)
@@ -229,13 +229,15 @@ with socket.socket() as listener:
                         client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 0, 0, 2, 2, -239) + b'\xff\xff\xff\x00' * 4 + b'\xc0\xc0')
                         sent_cursor = True
                     if sys.argv[2] == 'resize' and not resized and os.path.exists(sys.argv[1] + '.resize'):
-                        client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 0, 0, 4, 3, -223))
+                        # An unaligned width exercises the CALayer image path;
+                        # aligned IOSurfaces use Metal and have no layer.contents.
+                        client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 0, 0, 5, 3, -223))
                         resized = True
                         continue
                     if first_frame is None: first_frame = time.monotonic()
                     black = sys.argv[2] == 'black' and time.monotonic() - first_frame < 9
                     pixel = b'\xff\x00\x00\x00' if resized else (b'\x00\x00\x00\x00' if black else b'\x00\x00\xff\x00')
-                    width, height = (4, 3) if resized else (2, 2)
+                    width, height = (5, 3) if resized else (2, 2)
                     client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 0, 0, width, height, 0) + pixel * width * height)
                 elif kind == 4: read(client, 7)
                 elif kind == 5: read(client, 5)

@@ -3,13 +3,14 @@ import SwiftUI
 struct CredentialsView: View {
     let profile: ConnectionProfile
     let saved: Bool
-    let connect: (ConnectionProfile, String, Bool) -> Void
+    let connect: (ConnectionProfile, String, String?, Bool) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var username: String
     @State private var password = ""
+    @State private var gatewayPassword = ""
     @State private var remember = false
 
-    init(profile: ConnectionProfile, saved: Bool, connect: @escaping (ConnectionProfile, String, Bool) -> Void) {
+    init(profile: ConnectionProfile, saved: Bool, connect: @escaping (ConnectionProfile, String, String?, Bool) -> Void) {
         self.profile = profile
         self.saved = saved
         self.connect = connect
@@ -21,6 +22,10 @@ struct CredentialsView: View {
             Text(profile.uri).foregroundStyle(.secondary).textSelection(.enabled)
             TextField(LocalizedStringKey(profile.transport == .vnc ? "field.vncUsername" : "field.username"), text: $username)
             SecureField("field.password", text: $password)
+            if profile.rdp?.gatewayHost != nil, let gatewayUser = profile.rdp?.gatewayUsername {
+                Text(gatewayUser).font(.caption).foregroundStyle(.secondary)
+                SecureField("rdp.gateway.password", text: $gatewayPassword)
+            }
             Text(LocalizedStringKey(profile.transport == .vnc ? "auth.vnc.hint" : "auth.hint"))
                 .font(.caption).foregroundStyle(.secondary)
             if saved { Toggle("auth.remember", isOn: $remember) }
@@ -31,8 +36,8 @@ struct CredentialsView: View {
                     var candidate = profile
                     let user = username.trimmingCharacters(in: .whitespacesAndNewlines)
                     candidate.username = user.isEmpty ? nil : user
-                    connect(candidate, password, remember)
-                    password = ""
+                    connect(candidate, password, profile.rdp?.gatewayUsername == nil ? nil : gatewayPassword, remember)
+                    password = ""; gatewayPassword = ""
                     dismiss()
                 }.keyboardShortcut(.defaultAction)
             }

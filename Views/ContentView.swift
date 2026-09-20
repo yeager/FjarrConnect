@@ -24,17 +24,18 @@ struct ContentView: View {
                         HStack(spacing: 6) {
                             ForEach(connection.tabs) { tab in
                                 SessionTabLabel(tab: tab, selected: connection.selectedID == tab.id,
-                                                select: { connection.selectedID = tab.id }, close: { connection.close(tab.id) })
+                                                select: { connection.selectedID = tab.id }, close: { connection.requestClose(tab.id) })
                             }
                         }.padding(8)
                     }.background(.bar)
                     Divider()
                     if let tab = connection.selected {
                         SessionDetailView(tab: tab, reconnect: {
-                            let current = profiles.profiles.first { $0.id == tab.backend.profile.id } ?? tab.backend.profile
+                            let saved = profiles.profiles.first { $0.id == tab.backend.profile.id } ?? tab.backend.profile
+                            let current = tab.backend.profile.transport == .sftp ? saved.fileProfile : saved
                             requestConnect(current, forcePrompt: true)
                         },
-                                          close: { connection.close(tab.id) })
+                                          close: { connection.requestClose(tab.id) })
                             .id(tab.id)
                     }
                 } else { welcome }
@@ -59,10 +60,10 @@ struct ContentView: View {
             }
         }
         .sheet(item: $credentials) { profile in
-            CredentialsView(profile: profile, saved: profiles.profiles.contains { $0.id == profile.id }) { candidate, password, remember in
+            CredentialsView(profile: profile, saved: profiles.profiles.contains { $0.id == profile.id }) { candidate, password, gatewayPassword, remember in
                 do {
-                    if remember { try profiles.save(candidate, password: password) }
-                    connection.connect(candidate, password: password)
+                    if remember { try profiles.save(candidate, password: password, gatewayPassword: gatewayPassword) }
+                    connection.connect(candidate, password: password, gatewayPassword: gatewayPassword)
                 } catch { errorMessage = error.localizedDescription }
             }
         }
@@ -153,6 +154,9 @@ struct ContentView: View {
             .accessibilityIdentifier("favorite.\(profile.name)")
         }.contextMenu {
             Button("action.connect") { requestConnect(profile) }
+            Button("files.title") { connection.connect(profile.fileProfile) }
+            Button("links.smb") { if let url = profile.serviceURL("smb") { NSWorkspace.shared.open(url) } }
+            Button("links.web") { if let url = profile.serviceURL("https") { NSWorkspace.shared.open(url) } }
             Button(profile.isFavorite ? "favorite.remove" : "favorite.add") { toggleFavorite(profile) }
             Button("action.edit") { editing = profile }
             if profile.transport == .ssh {
@@ -206,13 +210,15 @@ struct ContentView: View {
         requestConnect(profile)
     }
     private func requestConnect(_ profile: ConnectionProfile, forcePrompt: Bool = false) {
-        if profile.transport == .ssh { connection.connect(profile); return }
-        if profile.transport == .rdp && RDPRemoteSession.executable == nil {
+        if profile.transport == .ssh || profile.transport == .sftp { connection.connect(profile); return }
+        if profile.transport == .rdp && !RDPRemoteSession.isAvailable {
             errorMessage = NSLocalizedString("rdp.install", comment: ""); return
         }
         do {
             if !forcePrompt, let password = try KeychainStore.password(for: profile.id) {
-                connection.connect(profile, password: password)
+                let gatewayPassword = profile.rdp?.gatewayUsername == nil ? nil : try KeychainStore.password(for: profile.id, purpose: .gateway)
+                if profile.rdp?.gatewayUsername != nil && gatewayPassword == nil { credentials = profile }
+                else { connection.connect(profile, password: password, gatewayPassword: gatewayPassword) }
             } else { credentials = profile }
         } catch { errorMessage = error.localizedDescription }
     }
@@ -276,6 +282,6 @@ private struct SessionDetailView: View {
 
 extension RemoteTransport {
     var symbol: String {
-        switch self { case .vnc: return "display"; case .rdp: return "pc"; case .ssh: return "terminal" }
+        switch self { case .vnc: return "display"; case .rdp: return "pc"; case .ssh: return "terminal"; case .sftp: return "folder" }
     }
 }

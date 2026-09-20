@@ -62,11 +62,9 @@
 "session.retry" = "Check the address and credentials, then reconnect.";
 "ssh.authentication" = "SSH uses your Mac’s keys, ssh-agent and SSH configuration. Enter passwords and verify new host keys in the terminal.";
 "ssh.ended" = "SSH ended. Read the terminal message for details before reconnecting.";
-"rdp.install" = "RDP needs FreeRDP’s native Mac client. Install it with “brew install freerdp”, then connect again.";
+"rdp.install" = "The embedded RDP component is missing or could not be loaded. Reinstall FjärrConnect for your Mac architecture.";
 "rdp.invalid" = "RDP credentials cannot contain line breaks.";
 "rdp.ended" = "RDP ended. Check the server, credentials and certificate, then reconnect.";
-"rdp.window.title" = "Your desktop opens in its own window";
-"rdp.window.description" = "Complete any sign-in or certificate prompt in FreeRDP. Disconnect here to close the remote desktop.";
 "discovery.resolveFailed" = "Could not reach this Mac. Check Screen Sharing and Local Network permission, then refresh.";
 
 "sidebar.favorites" = "Favorites";
@@ -75,7 +73,6 @@
 
 "session.timeout" = "The connection timed out. Check the address, Screen Sharing and firewall, then try again.";
 
-"rdp.showWindow" = "Show remote desktop";
 
 "vnc.usernameRequired" = "This server requires a username. Enter the remote Mac account’s short username and password, and check that the account is allowed under Screen Sharing.";
 
@@ -107,3 +104,151 @@
 "ssh.log.readFailed" = "The encrypted log could not be opened or deleted. Unlock Keychain and try again. Damaged logs are preserved; use Delete log to reset.";
 "ssh.log.disable" = "Stop command logging";
 "ssh.log.refresh" = "Refresh log";
+
+"rdp.cert.title" = "Verify the server certificate";
+
+"rdp.cert.message" = "The identity of this server could not be verified. Compare the fingerprint with the server administrator before connecting.";
+
+"rdp.cert.changed.title" = "The server certificate has changed";
+
+"rdp.cert.changed.message" = "This certificate differs from the one you previously trusted. This may be a legitimate replacement or an intercepted connection. Verify the new fingerprint with the server administrator.";
+
+"rdp.cert.mismatch" = "The certificate name does not match the server address.";
+
+"rdp.cert.name" = "Certificate name";
+
+"rdp.cert.subject" = "Subject";
+
+"rdp.cert.issuer" = "Issuer";
+
+"rdp.cert.fingerprint" = "Fingerprint (SHA-256)";
+
+"rdp.cert.previous" = "Previous fingerprint";
+
+"rdp.cert.once" = "Connect once";
+
+"rdp.cert.trust" = "Trust and connect";
+
+"rdp.gateway.message" = "Message from the RDP gateway";
+
+"close.session.title" = "Close this session?";
+
+"close.session.message" = "The connection to %@ will close. Any active file transfers will be interrupted.";
+
+"close.app.title" = "Close active sessions?";
+
+"close.app.message" = "You have %d active sessions. Closing will disconnect them and interrupt any active file transfers.";
+
+"close.confirm" = "Close sessions";
+
+"files.title" = "Files (SFTP)";
+
+"files.connection" = "File connection (SSH)";
+
+"files.connection.hint" = "File transfers require SSH/SFTP on the remote host. Leave these fields empty to use the saved host and username, with port 22.";
+
+"files.auth" = "Sign in below. The file browser opens after SSH authentication.";
+
+"files.parent" = "Parent folder";
+
+"files.path" = "Remote folder";
+
+"files.upload" = "Upload…";
+
+"files.download" = "Download…";
+
+"files.newFolder" = "New folder…";
+
+"files.rename" = "Rename…";
+
+"files.size" = "Size";
+
+"files.modified" = "Modified";
+
+"files.cancelTransfer" = "Cancel and disconnect";
+
+"files.replace" = "Replace the existing file?";
+
+"files.delete" = "Delete from the remote host?";
+
+"files.delete.hint" = "This cannot be undone. Folders must be empty.";
+
+"files.startDirectory" = "Initial SFTP folder";
+
+"files.cancelled" = "The file transfer was cancelled.";
+
+"files.error.protocol" = "The SFTP server sent an invalid response.";
+
+"files.error.connection" = "The file connection closed. Reconnect to try again. SSH and SFTP must be enabled on the remote host.";
+
+"files.error.timeout" = "The SFTP server did not respond in time.";
+
+"files.error.unsupported" = "The SFTP server does not support this operation.";
+
+"files.error.exists" = "The destination already exists. Only regular files can be replaced; folders are never merged.";
+
+"files.error.fileType" = "This transfer contains a symbolic link or another unsupported file type.";
+
+"files.error.missing" = "The remote file no longer exists.";
+
+"options.title" = "Advanced settings";
+
+"options.clipboard" = "Share text clipboard with the active session";
+
+"options.ssh" = "SSH connection";
+
+"options.port" = "Port";
+
+"options.choose" = "Choose…";
+
+"ssh.identity" = "Private key file";
+
+"ssh.jump.host" = "Jump host";
+
+"ssh.jump.port" = "Jump host port (22)";
+
+"ssh.jump.username" = "Jump host username";
+
+"ssh.forwards" = "Port forwarding";
+
+"ssh.forwards.hint" = "Listeners bind to localhost. Local and remote forwards need a destination; dynamic forwards create a SOCKS proxy.";
+
+"ssh.forward.direction" = "Direction";
+
+"ssh.forward.local" = "Local";
+
+"ssh.forward.remote" = "Remote";
+
+"ssh.forward.dynamic" = "Dynamic (SOCKS)";
+
+"ssh.forward.listen" = "Listen port";
+
+"ssh.forward.destination" = "Destination host";
+
+"ssh.forward.add" = "Add forwarding";
+
+"rdp.gateway" = "RDP gateway";
+
+"rdp.gateway.port" = "Gateway port (443)";
+
+"rdp.gateway.username" = "Gateway username (optional)";
+
+"rdp.gateway.password" = "Gateway password";
+
+"rdp.gateway.hint" = "Leave the username empty to use the same credentials as the remote desktop. A separate password is requested when connecting.";
+
+"rdp.folders" = "Shared folders";
+
+"rdp.folders.hint" = "Selected folders are available to the remote desktop with read and write access. Folder paths must not contain commas.";
+
+"rdp.folders.add" = "Share a folder…";
+
+"links.title" = "Host links";
+
+"links.smb" = "Open in Finder (SMB)";
+
+"links.web" = "Open web administration (HTTPS)";
+
+"transport.sftp" = "SFTP";
+
+"rdp.error.activationTimeout" = "The server answered but did not start the remote desktop in time. Check the Windows sign-in screen and Remote Desktop service, then reconnect.";

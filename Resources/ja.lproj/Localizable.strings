@@ -54,17 +54,14 @@
 "session.retry" = "アドレスと認証情報を確認してから、再接続してください。";
 "ssh.authentication" = "SSHはこのMacの鍵、ssh-agent、SSH設定を使用します。パスワードの入力と新しいホスト鍵の確認は、ターミナルで行ってください。";
 "ssh.ended" = "SSHが終了しました。再接続する前に、ターミナルのメッセージで詳細を確認してください。";
-"rdp.install" = "RDPにはFreeRDPのMac用ネイティブクライアントが必要です。「brew install freerdp」でインストールしてから、再接続してください。";
+"rdp.install" = "内蔵RDPコンポーネントがないか、読み込めませんでした。お使いのMacのアーキテクチャに対応するFjärrConnectを再インストールしてください。";
 "rdp.invalid" = "RDPの認証情報に改行を含めることはできません。";
 "rdp.ended" = "RDPが終了しました。サーバ、認証情報、証明書を確認してから、再接続してください。";
-"rdp.window.title" = "デスクトップは別のウインドウで開きます";
-"rdp.window.description" = "FreeRDPでサインインや証明書の確認を完了してください。リモートデスクトップを閉じるには、ここで接続を解除してください。";
 "discovery.resolveFailed" = "このMacに接続できませんでした。画面共有とローカルネットワークへのアクセス許可を確認してから、更新してください。";
 "sidebar.favorites" = "お気に入り";
 "favorite.add" = "お気に入りに追加";
 "favorite.remove" = "お気に入りから削除";
 "session.timeout" = "接続がタイムアウトしました。アドレス、画面共有、ファイアウォールを確認してから、もう一度お試しください。";
-"rdp.showWindow" = "リモートデスクトップを表示";
 "vnc.usernameRequired" = "このサーバにはユーザ名が必要です。接続先のMacのアカウントの短いユーザ名とパスワードを入力し、そのアカウントで画面共有が許可されていることを確認してください。";
 "rdp.error.network" = "サーバに接続できませんでした。リモートデスクトップが有効で、このアドレスとポートに接続できることを確認してください。";
 "rdp.error.authentication" = "サーバがサインインを拒否しました。ユーザ名、パスワード、リモートデスクトップのアクセス権を確認してください。";
@@ -92,3 +89,151 @@
 "ssh.log.readFailed" = "暗号化されたログを開くか削除することができませんでした。キーチェーンのロックを解除して、もう一度お試しください。破損したログは保持されます。「ログを削除」でリセットできます。";
 "ssh.log.disable" = "コマンドの記録を停止";
 "ssh.log.refresh" = "ログを更新";
+
+"rdp.cert.title" = "サーバー証明書の確認";
+
+"rdp.cert.message" = "このサーバーの身元を確認できませんでした。接続する前に、サーバー管理者にフィンガープリントを確認してください。";
+
+"rdp.cert.changed.title" = "サーバー証明書が変更されました";
+
+"rdp.cert.changed.message" = "この証明書は以前に信頼したものと異なります。正規の更新の場合もありますが、接続が傍受されている可能性もあります。新しいフィンガープリントをサーバー管理者に確認してください。";
+
+"rdp.cert.mismatch" = "証明書の名前がサーバーのアドレスと一致しません。";
+
+"rdp.cert.name" = "証明書名";
+
+"rdp.cert.subject" = "所有者";
+
+"rdp.cert.issuer" = "発行者";
+
+"rdp.cert.fingerprint" = "フィンガープリント（SHA-256）";
+
+"rdp.cert.previous" = "以前のフィンガープリント";
+
+"rdp.cert.once" = "今回のみ接続";
+
+"rdp.cert.trust" = "信頼して接続";
+
+"rdp.gateway.message" = "RDPゲートウェイからのメッセージ";
+
+"close.session.title" = "このセッションを閉じますか？";
+
+"close.session.message" = "%@ への接続が閉じられます。実行中のファイル転送は中断されます。";
+
+"close.app.title" = "接続中のセッションを閉じますか？";
+
+"close.app.message" = "接続中のセッションが %d 件あります。接続が切断され、実行中のファイル転送が中断されます。";
+
+"close.confirm" = "セッションを閉じる";
+
+"files.title" = "ファイル（SFTP）";
+
+"files.connection" = "ファイル接続（SSH）";
+
+"files.connection.hint" = "ファイル転送には接続先でSSH/SFTPが必要です。空欄の場合、保存済みのホストとユーザー名、およびポート22を使用します。";
+
+"files.auth" = "下の端末でログインしてください。SSH認証後にファイル一覧が開きます。";
+
+"files.parent" = "親フォルダ";
+
+"files.path" = "リモートフォルダ";
+
+"files.upload" = "アップロード…";
+
+"files.download" = "ダウンロード…";
+
+"files.newFolder" = "新規フォルダ…";
+
+"files.rename" = "名前を変更…";
+
+"files.size" = "サイズ";
+
+"files.modified" = "更新日時";
+
+"files.cancelTransfer" = "中止して切断";
+
+"files.replace" = "既存のファイルを置き換えますか？";
+
+"files.delete" = "接続先から削除しますか？";
+
+"files.delete.hint" = "この操作は取り消せません。フォルダは空である必要があります。";
+
+"files.startDirectory" = "SFTPの開始フォルダ";
+
+"files.cancelled" = "ファイル転送が中止されました。";
+
+"files.error.protocol" = "SFTPサーバーから無効な応答を受信しました。";
+
+"files.error.connection" = "ファイル接続が閉じられました。再接続してお試しください。接続先でSSHとSFTPが有効になっている必要があります。";
+
+"files.error.timeout" = "SFTPサーバーの応答がタイムアウトしました。";
+
+"files.error.unsupported" = "SFTPサーバーはこの操作に対応していません。";
+
+"files.error.exists" = "保存先はすでに存在します。通常のファイルのみ置換できます。フォルダは結合されません。";
+
+"files.error.fileType" = "転送対象にシンボリックリンクまたは未対応のファイル形式が含まれています。";
+
+"files.error.missing" = "リモートファイルは存在しなくなりました。";
+
+"options.title" = "詳細設定";
+
+"options.clipboard" = "アクティブなセッションとテキストのクリップボードを共有";
+
+"options.ssh" = "SSH接続";
+
+"options.port" = "ポート";
+
+"options.choose" = "選択…";
+
+"ssh.identity" = "秘密鍵ファイル";
+
+"ssh.jump.host" = "踏み台ホスト";
+
+"ssh.jump.port" = "踏み台ホストのポート（22）";
+
+"ssh.jump.username" = "踏み台ホストのユーザー名";
+
+"ssh.forwards" = "ポート転送";
+
+"ssh.forwards.hint" = "待受アドレスはlocalhostに限定されます。ローカル転送とリモート転送には転送先が必要です。動的転送はSOCKSプロキシを作成します。";
+
+"ssh.forward.direction" = "方向";
+
+"ssh.forward.local" = "ローカル";
+
+"ssh.forward.remote" = "リモート";
+
+"ssh.forward.dynamic" = "動的（SOCKS）";
+
+"ssh.forward.listen" = "待受ポート";
+
+"ssh.forward.destination" = "転送先ホスト";
+
+"ssh.forward.add" = "転送を追加";
+
+"rdp.gateway" = "RDPゲートウェイ";
+
+"rdp.gateway.port" = "ゲートウェイのポート（443）";
+
+"rdp.gateway.username" = "ゲートウェイのユーザー名（省略可）";
+
+"rdp.gateway.password" = "ゲートウェイのパスワード";
+
+"rdp.gateway.hint" = "ユーザー名を空欄にすると、リモートデスクトップと同じ認証情報を使います。別のユーザー名を指定した場合、接続時にパスワードを入力します。";
+
+"rdp.folders" = "共有フォルダ";
+
+"rdp.folders.hint" = "選択したフォルダはリモートデスクトップから読み書きできます。フォルダのパスにカンマは使用できません。";
+
+"rdp.folders.add" = "フォルダを共有…";
+
+"links.title" = "ホストのリンク";
+
+"links.smb" = "Finderで開く（SMB）";
+
+"links.web" = "Web管理画面を開く（HTTPS）";
+
+"transport.sftp" = "SFTP";
+
+"rdp.error.activationTimeout" = "サーバーは応答しましたが、時間内にリモートデスクトップが起動しませんでした。Windowsのサインイン画面とリモートデスクトップサービスを確認してから、再接続してください。";

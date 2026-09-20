@@ -11,7 +11,7 @@
   </p>
 </div>
 
-FjärrConnect brings **VNC / Mac Screen Sharing, SSH and RDP** into one connection
+FjärrConnect brings **VNC / Mac Screen Sharing, RDP, SSH and SFTP** into one connection
 manager for **macOS 14 or later**, on **Apple Silicon (arm64) and Intel (x86_64)**.
 There are no Windows, Linux or mobile app targets.
 
@@ -36,6 +36,13 @@ The initial release uses **ad-hoc signing**, not Developer ID signing or Apple
 notarization. macOS may require approval under **System Settings → Privacy & Security**
 on first launch. Never disable Gatekeeper globally to install the app.
 
+## Current development
+
+The features below describe `main`, including work for the next release. The latest
+published download remains 0.2.5. New in `main`: embedded RDP with translated
+certificate dialogs, a file-transfer panel, advanced connection options and
+confirmation before closing active sessions.
+
 ## Features
 
 - **Favorites:** click the star beside a saved connection to pin it to the Favorites
@@ -44,7 +51,8 @@ on first launch. Never disable Gatekeeper globally to install the app.
 - **Saved connections:** create, edit and delete profiles with a name, host, port,
   protocol, username and optional group. Right-click a connection for available actions.
 - **Session tabs:** keep multiple connections open and switch between them. Closing
-  a tab disconnects its session; closing the app disconnects all sessions.
+  a connected tab, the main window or the app asks for confirmation first. Cancel
+  leaves sessions and transfers running. RDP desktops stay inside their tabs.
 - **Search:** find saved connections by name, host, group or protocol, and filter
   discovered Macs by name.
 - **Quick connect:** press **⌘K**, enter an address, then press Return.
@@ -54,6 +62,13 @@ on first launch. Never disable Gatekeeper globally to install the app.
   SSH and RDP hosts are added manually, and hosts on other networks need an address.
 - **Keychain credentials:** save VNC and RDP passwords in the macOS Keychain. Quick
   connections can use a password without saving it.
+- **Files:** open an SFTP tab from a connection’s context menu. Browse, upload and
+  download files or folders, rename items, create folders and delete files or empty
+  folders. Transfers show progress and can be cancelled.
+- **Advanced options:** select an SSH identity, jump host and local/remote/SOCKS
+  forwards; configure an RDP gateway and explicitly shared folders.
+- **Host links:** open a configured SMB share in Finder or an HTTPS administration
+  page in your browser. These use the system apps’ authentication.
 - **SSH command log:** enable separately for each saved SSH connection. Stores command
   names and timestamps in an encrypted local log, with no arguments or terminal transcript.
 - **Localized interface:** English, Swedish, Danish, Norwegian Bokmål, German, Finnish, French,
@@ -68,7 +83,8 @@ on first launch. Never disable Gatekeeper globally to install the app.
 |---|---|---|
 | VNC / Mac Screen Sharing | Embedded desktop through [RoyalVNCKit](https://github.com/royalapplications/royalvnc), with keyboard, mouse and clipboard support | VNC password or remote Mac username/password; optional Keychain storage |
 | SSH | Embedded [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) terminal running macOS `/usr/bin/ssh` | Your SSH configuration, keys and ssh-agent; passwords and new host-key confirmation in the terminal |
-| RDP | Native [FreeRDP](https://github.com/FreeRDP/FreeRDP) SDL client in a separate desktop window, managed by FjärrConnect | Username/password; FreeRDP handles certificate prompts |
+| RDP | Embedded [FreeRDP](https://github.com/FreeRDP/FreeRDP) desktop, keyboard/mouse, resizing, text clipboard, shared folders and gateway settings | Username/password; localized certificate verification and separate gateway credentials |
+| SFTP | Built-in file panel using the authenticated OpenSSH connection | Keys/agent or interactive password and host-key prompts |
 
 **Standard VNC uses only a password:** leave Username empty and enter the server's
 VNC password. A username is used only when the server requires account authentication,
@@ -78,13 +94,60 @@ requires no authentication, leave both fields empty.
 
 **RDP is bundled:** no Homebrew installation is needed for the downloaded app.
 The CI/release pipeline builds a self-contained FreeRDP runtime for both Mac
-architectures. Developer builds also detect a locally installed SDL client from
-`brew install freerdp`.
+architectures. Each app loads its matching native library inside the app process;
+no separate client window or Homebrew installation is used. Unknown or changed
+certificates show the server identity and SHA-256 fingerprint with **Cancel**,
+**Connect once**, and **Trust and connect** in the chosen interface language.
+Certificate verification remains enabled.
 
 SSH passwords are entered directly in the terminal and are **not** saved by
 FjärrConnect. SSH private keys remain managed by OpenSSH and your ssh-agent.
-The status “Client running” for SSH/RDP means the client process started; it does
-not claim that authentication succeeded.
+The status “Client running” for SSH means the terminal process started; OpenSSH
+shows authentication in that terminal. RDP and SFTP report Connected only after
+their protocol connection is established.
+
+## Clipboard, files and connection options
+
+VNC and RDP have a per-profile **Share text clipboard with the active session**
+setting. Only the selected session in the foreground window may synchronize text.
+Switching tabs does not automatically send existing clipboard contents to another
+server. Copy again after activating the intended tab. RDP’s standard macOS Edit
+menu actions send the corresponding Ctrl shortcuts to the remote application.
+
+VNC negotiates Unicode text with Extended Clipboard peers, including TigerVNC;
+legacy VNC peers are limited to Latin-1. Text is bounded to 1 MiB. Clipboard images,
+rich text and clipboard file copying are not implemented. The VNC extension and
+session policy are pinned to a reviewed fork revision while
+[the upstream contribution](https://github.com/royalapplications/royalvnc/pull/37)
+is under review.
+
+For files, choose **Files (SFTP)** from a host’s context menu. VNC/RDP profiles can
+specify a separate SSH address, port, username and starting directory under
+Advanced options. The destination must run an SSH server with SFTP enabled.
+Authentication stays in an embedded terminal; the file panel opens after it succeeds.
+Uploads can also be started by dropping files onto the panel. Existing files require
+confirmation before replacement. Folders are transferred recursively without merging
+into existing folders; symbolic links and special files are rejected. Transfers use
+private staging files, and originals are preserved on failure. Cancelling disconnects
+the file session. An interrupted upload may leave a `.fjarrconnect-…partial` item on
+the server for manual removal; automatic resume is not supported.
+
+SSH forwards listen on loopback by default. A forwarding failure is reported by
+OpenSSH instead of silently opening a session without the requested tunnel. Identity
+files and SSH configuration remain on your Mac.
+
+RDP shared folders are explicitly selected in Advanced options and appear as
+`Shared1`, `Shared2`, etc. on the remote desktop. They grant read/write access to the
+selected directories. Paths containing commas are currently rejected by the native
+backend’s argument format. Remote Desktop server policy may disable drive or
+clipboard redirection. A gateway can reuse the desktop credentials or use a separate
+username/password, saved in a separate Keychain item when requested.
+
+RDP currently presents one desktop surface per tab. Multi-monitor layouts, RemoteApp,
+USB/printer redirection and clipboard file transfer are not exposed. RoyalVNCKit’s
+VNC authentication currently covers None, VNC password, Apple Remote Desktop and
+UltraVNC MS-Logon II; VeNCrypt/TLS and RSA-AES authentication remain unsupported.
+Use SFTP or a configured SMB share for files instead of a VNC-specific file protocol.
 
 ## Private SSH command logs
 
@@ -181,6 +244,7 @@ Quick-connect examples:
 studio.local
 vnc://admin@studio.local:5901
 ssh://deploy@server.local:2222
+sftp://deploy@server.local:2222
 rdp://user@workstation.local
 vnc://[::1]:5900
 ```
@@ -208,8 +272,10 @@ an empty connection list. Back up the file before repairing or removing it.
 
 VNC encryption depends on the server and authentication protocol; use a trusted
 network or VPN. SSH retains OpenSSH host-key checks, and RDP retains certificate
-verification. RDP credentials are passed through an anonymous pipe, not command-line
-arguments or temporary profile files.
+verification. RDP credentials are passed directly to the embedded library in memory;
+they are not operating-system process arguments or temporary profile files. Raw
+OpenSSL/FreeRDP logs are disabled. Gateway and desktop passwords use separate
+Keychain items.
 
 ## Build from source
 
@@ -242,7 +308,7 @@ xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
 ```
 
 `scripts/build-rdp.sh arm64` and `scripts/build-rdp.sh x86_64` build the bundled RDP
-runtime from pinned FreeRDP, OpenSSL and SDL sources on a Mac with CMake available.
+runtime from pinned FreeRDP and OpenSSL sources on a Mac with CMake available.
 CI packages each output separately with `scripts/build-release.sh arm64` or
 `scripts/build-release.sh x86_64`. A normal
 Xcode build does not automatically compile or bundle the RDP runtime.
@@ -261,8 +327,9 @@ Development is on **`main`**.
   a ZIP archive with a SHA-256 checksum. Separate Apple Silicon and Intel jobs
   download their ZIP, verify it, start the actual app without Xcode search paths,
   reproduce the missing-framework failure in a disposable copy, and exercise the
-  bundled RDP client against a local
-  negotiation fixture in authentication-only mode. New commits automatically cancel
+  embedded RDP library against a disposable TLS negotiation fixture. The test
+  checks the certificate dialog and rejection in all nine languages. This checks
+  TLS/UI integration, not a full Windows logon. New commits automatically cancel
   obsolete CI runs for the same branch; regression-test jobs have a 30-minute limit.
 - **gitleaks:** scans the complete repository history on pushes to `main` and pull
   requests. The release workflow also requires a clean full-history scan.
@@ -299,7 +366,8 @@ An optional pre-commit hook is configured in `.pre-commit-config.yaml`.
 |---|---|
 | `App` | App lifecycle and session ownership |
 | `Model` | Profiles, favorites, validation, persistence and Keychain access |
-| `Protocols` | VNC, SSH and RDP session implementations |
+| `Protocols` | VNC, RDP, SSH and SFTP session implementations |
+| `NativeRDP` | Embedded FreeRDP AppKit view and native integration probe |
 | `Views` | Connection list, tabs, profile editor and sign-in UI |
 | `Discovery` | Bonjour browsing and endpoint resolution |
 | `Resources` | Mac app icon and nine interface/permission localizations |
@@ -332,7 +400,7 @@ app in every language and capture the SSH profile editor.
 ## License
 
 FjärrConnect is [MIT licensed](LICENSE). Dependencies retain their own licenses:
-RoyalVNCKit (MIT), SwiftTerm (MIT), FreeRDP and OpenSSL (Apache-2.0), SDL and SDL_ttf
-(zlib), and FreeType (FreeType License). Bundled RDP dependency notices are copied
+RoyalVNCKit (MIT), SwiftTerm (MIT), and FreeRDP and OpenSSL (Apache-2.0). Bundled
+RDP dependency notices are copied
 into the app's `Contents/Resources/Licenses` directory by the packaging workflow.
 No Remmina source code is included.

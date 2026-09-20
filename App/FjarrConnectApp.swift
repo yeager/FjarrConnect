@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct FjarrConnectApp: App {
+    @NSApplicationDelegateAdaptor(FjarrConnectAppDelegate.self) private var appDelegate
     @StateObject private var profiles = FjarrConnectApp.makeProfileStore()
     @StateObject private var discovery = BonjourBrowser()
     @StateObject private var connection = ConnectionManager()
@@ -22,7 +23,9 @@ struct FjarrConnectApp: App {
                 .environmentObject(discovery)
                 .environmentObject(connection)
                 .frame(minWidth: 900, minHeight: 560)
+                .background(WindowCloseConfirmation(shouldClose: connection.confirmClosingAll))
                 .onAppear {
+                    appDelegate.shouldTerminate = connection.confirmClosingAll
                     #if DEBUG
                     if ProcessInfo.processInfo.environment["FJARRCONNECT_DISABLE_DISCOVERY"] == "1" ||
                         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { return }

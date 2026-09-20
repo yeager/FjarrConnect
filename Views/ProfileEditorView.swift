@@ -13,10 +13,20 @@ struct ProfileEditorView: View {
     @State private var changePassword = false
     @State private var group: String
     @State private var logsSSHCommands: Bool
+    @State private var ssh: SSHOptions
+    @State private var rdp: RDPOptions
+    @State private var links: HostLinks
+    @State private var clipboard: Bool
+    @State private var forwards: [SSHForward]
     @State private var errorMessage: String?
 
     init(profile: ConnectionProfile?) {
         existing = profile
+        _ssh = State(initialValue: profile?.ssh ?? SSHOptions())
+        _rdp = State(initialValue: profile?.rdp ?? RDPOptions())
+        _links = State(initialValue: profile?.links ?? HostLinks())
+        _clipboard = State(initialValue: profile?.sharesClipboard ?? true)
+        _forwards = State(initialValue: profile?.ssh?.forwards ?? [])
         _name = State(initialValue: profile?.name ?? "")
         _transport = State(initialValue: profile?.transport ?? .vnc)
         _host = State(initialValue: profile?.host ?? "")
@@ -49,12 +59,12 @@ struct ProfileEditorView: View {
                     if transport == .vnc {
                         Text("auth.vnc.hint").font(.caption).foregroundStyle(.secondary)
                     }
-                    if transport == .ssh {
+                    if transport == .ssh || transport == .sftp {
                         Text("ssh.authentication").font(.caption).foregroundStyle(.secondary)
-                        Toggle("ssh.log.enable", isOn: $logsSSHCommands)
+                        if transport == .ssh { Toggle("ssh.log.enable", isOn: $logsSSHCommands)
                             .toggleStyle(.checkbox)
                             .accessibilityIdentifier("profile.sshLogging")
-                        Text("ssh.log.hint").font(.caption).foregroundStyle(.secondary)
+                        Text("ssh.log.hint").font(.caption).foregroundStyle(.secondary) }
                     } else {
                         if existing != nil { Toggle("field.changePassword", isOn: $changePassword) }
                         if existing == nil || changePassword {
@@ -63,6 +73,7 @@ struct ProfileEditorView: View {
                         }
                     }
                 }
+                AdvancedConnectionOptions(transport: transport, ssh: $ssh, rdp: $rdp, links: $links, clipboard: $clipboard, forwards: $forwards)
             }.formStyle(.grouped)
             if let errorMessage { Text(errorMessage).foregroundStyle(.red).textSelection(.enabled) }
             HStack {
@@ -70,7 +81,7 @@ struct ProfileEditorView: View {
                 Button("action.cancel") { dismiss() }.keyboardShortcut(.cancelAction)
                 Button("action.save", action: save).keyboardShortcut(.defaultAction).disabled(candidate == nil).accessibilityIdentifier("profile.save")
             }
-        }.padding(24).frame(width: 480)
+        }.padding(24).frame(width: 540, height: 650)
     }
 
     private var candidate: ConnectionProfile? {
@@ -80,18 +91,23 @@ struct ProfileEditorView: View {
         guard let port = portValue.isEmpty ? transport.defaultPort : UInt16(portValue), port > 0 else { return nil }
         let cleanUser = username.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanGroup = group.trimmingCharacters(in: .whitespacesAndNewlines)
-        let result = ConnectionProfile(id: existing?.id ?? UUID(), name: cleanName.isEmpty ? cleanHost : cleanName,
+        var result = ConnectionProfile(id: existing?.id ?? UUID(), name: cleanName.isEmpty ? cleanHost : cleanName,
                                        transport: transport, host: cleanHost, port: port,
                                        username: cleanUser.isEmpty ? nil : cleanUser, group: cleanGroup.isEmpty ? nil : cleanGroup,
                                        isFavorite: existing?.isFavorite ?? false,
                                        logsSSHCommands: transport == .ssh && logsSSHCommands)
+        result.ssh = ssh
+        result.ssh?.forwards = forwards.isEmpty ? nil : forwards
+        result.rdp = rdp
+        result.links = links
+        result.clipboardEnabled = clipboard
         return result.isValid ? result : nil
     }
 
     private func save() {
         guard let profile = candidate else { return }
         do {
-            let credential: String? = transport == .ssh ? nil : (existing == nil || changePassword ? password : nil)
+            let credential: String? = (transport == .ssh || transport == .sftp) ? nil : (existing == nil || changePassword ? password : nil)
             try profiles.save(profile, password: credential)
             password = ""
             dismiss()

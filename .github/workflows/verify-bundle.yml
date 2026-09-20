@@ -40,6 +40,5 @@ jobs:
           done < <(find "$APP/Contents" -type f)
           test -f "$APP/Contents/Frameworks/RoyalVNCKit.framework/Versions/A/RoyalVNCKit"
           codesign --verify --deep --strict "$APP"
-          "$APP/Contents/Helpers/sdl-freerdp" /version
           python3 scripts/smoke-app.py "$APP" --check-missing-framework
-          python3 scripts/smoke-rdp.py "$APP/Contents/Helpers/sdl-freerdp"
+          python3 scripts/smoke-rdp.py "$APP/Contents/Frameworks/libFjarrRDP.dylib"

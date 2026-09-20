@@ -11,12 +11,20 @@ enum SSHArguments {
     }
 
     static func make(_ profile: ConnectionProfile) -> [String] {
-        var args = ["-tt", "-o", "ConnectTimeout=15", "-o", "ServerAliveInterval=30",
+        ["-tt"] + connection(profile, includeForwards: true) + ["--", profile.host]
+    }
+
+    static func connection(_ profile: ConnectionProfile, includeForwards: Bool = false) -> [String] {
+        var args = ["-o", "ConnectTimeout=15", "-o", "ServerAliveInterval=30",
                     "-o", "ServerAliveCountMax=3", "-o", "StrictHostKeyChecking=ask",
                     "-p", String(profile.port)]
         if let username = profile.username, !username.isEmpty { args += ["-l", username] }
-        // A host can never become a local command-line option.
-        args += ["--", profile.host]
+        if let identity = profile.ssh?.identityFile { args += ["-i", identity] }
+        if let jump = profile.ssh?.jumpDestination { args += ["-J", jump] }
+        if includeForwards {
+            for forward in profile.ssh?.forwards ?? [] { args += forward.arguments }
+            if profile.ssh?.forwards?.isEmpty == false { args += ["-o", "ExitOnForwardFailure=yes"] }
+        }
         return args
     }
 }

@@ -20,12 +20,12 @@ jobs:
         id: runtime-cache
         with:
           path: build/rdp-output/${{ matrix.arch }}
-          key: rdp-macos14-xcode16.4-${{ matrix.arch }}-${{ hashFiles('scripts/build-rdp.sh') }}
+          key: rdp-macos14-xcode16.4-${{ matrix.arch }}-${{ hashFiles('scripts/build-rdp.sh', 'NativeRDP/**') }}
       - uses: actions/cache/restore@v4
         id: dependencies
         with:
           path: build/rdp-${{ matrix.arch }}/install
-          key: rdp-deps-mac14-${{ matrix.arch }}-openssl358-sdl3416-ttf322-v1
+          key: rdp-deps-mac14-${{ matrix.arch }}-openssl358-native-v2
       - name: Build static runtime
         if: steps.runtime-cache.outputs.cache-hit != 'true'
         run: bash scripts/build-rdp.sh '${{ matrix.arch }}'
@@ -33,7 +33,7 @@ jobs:
         if: always() && steps.dependencies.outputs.cache-hit != 'true'
         with:
           path: build/rdp-${{ matrix.arch }}/install
-          key: rdp-deps-mac14-${{ matrix.arch }}-openssl358-sdl3416-ttf322-v1
+          key: rdp-deps-mac14-${{ matrix.arch }}-openssl358-native-v2
       - uses: actions/upload-artifact@v4
         with:
           name: rdp-${{ matrix.arch }}

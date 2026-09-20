@@ -54,17 +54,14 @@
 "session.retry" = "Vérifiez l’adresse et les identifiants, puis reconnectez-vous.";
 "ssh.authentication" = "SSH utilise les clés, ssh-agent et la configuration SSH de votre Mac. Saisissez les mots de passe et vérifiez les nouvelles clés d’hôte dans le terminal.";
 "ssh.ended" = "SSH s’est arrêté. Consultez le message du terminal avant de vous reconnecter.";
-"rdp.install" = "RDP nécessite le client Mac natif de FreeRDP. Installez-le avec « brew install freerdp », puis reconnectez-vous.";
+"rdp.install" = "Le composant RDP intégré est absent ou n’a pas pu être chargé. Réinstallez FjärrConnect pour l’architecture de votre Mac.";
 "rdp.invalid" = "Les identifiants RDP ne peuvent pas contenir de sauts de ligne.";
 "rdp.ended" = "RDP s’est arrêté. Vérifiez le serveur, les identifiants et le certificat, puis reconnectez-vous.";
-"rdp.window.title" = "Votre bureau s’ouvre dans sa propre fenêtre";
-"rdp.window.description" = "Répondez aux demandes d’identification ou de certificat dans FreeRDP. Déconnectez-vous ici pour fermer le bureau distant.";
 "discovery.resolveFailed" = "Impossible de joindre ce Mac. Vérifiez le partage d’écran et l’autorisation d’accès au réseau local, puis actualisez la recherche.";
 "sidebar.favorites" = "Favoris";
 "favorite.add" = "Ajouter aux favoris";
 "favorite.remove" = "Retirer des favoris";
 "session.timeout" = "Le délai de connexion a expiré. Vérifiez l’adresse, le partage d’écran et le pare-feu, puis réessayez.";
-"rdp.showWindow" = "Afficher le bureau distant";
 "vnc.usernameRequired" = "Ce serveur exige un nom d’utilisateur. Saisissez le nom court et le mot de passe du compte du Mac distant et vérifiez que le partage d’écran est autorisé pour ce compte.";
 "rdp.error.network" = "Impossible de joindre le serveur. Vérifiez que le bureau à distance est activé et que cette adresse et ce port sont accessibles.";
 "rdp.error.authentication" = "Le serveur a refusé l’identification. Vérifiez le nom d’utilisateur, le mot de passe et l’autorisation d’utiliser le bureau à distance.";
@@ -92,3 +89,151 @@
 "ssh.log.readFailed" = "Impossible d’ouvrir ou de supprimer le journal chiffré. Déverrouillez le trousseau et réessayez. Les journaux endommagés sont conservés ; utilisez Supprimer le journal pour repartir de zéro.";
 "ssh.log.disable" = "Arrêter la journalisation";
 "ssh.log.refresh" = "Actualiser le journal";
+
+"rdp.cert.title" = "Vérifier le certificat du serveur";
+
+"rdp.cert.message" = "L’identité de ce serveur n’a pas pu être vérifiée. Vérifiez l’empreinte auprès de l’administrateur du serveur avant de vous connecter.";
+
+"rdp.cert.changed.title" = "Le certificat du serveur a changé";
+
+"rdp.cert.changed.message" = "Ce certificat diffère de celui que vous aviez accepté. Il peut s’agir d’un renouvellement légitime ou d’une interception. Vérifiez la nouvelle empreinte auprès de l’administrateur du serveur.";
+
+"rdp.cert.mismatch" = "Le nom du certificat ne correspond pas à l’adresse du serveur.";
+
+"rdp.cert.name" = "Nom du certificat";
+
+"rdp.cert.subject" = "Titulaire";
+
+"rdp.cert.issuer" = "Émetteur";
+
+"rdp.cert.fingerprint" = "Empreinte (SHA-256)";
+
+"rdp.cert.previous" = "Empreinte précédente";
+
+"rdp.cert.once" = "Se connecter une fois";
+
+"rdp.cert.trust" = "Faire confiance et se connecter";
+
+"rdp.gateway.message" = "Message de la passerelle RDP";
+
+"close.session.title" = "Fermer cette session ?";
+
+"close.session.message" = "La connexion à %@ sera fermée. Les transferts de fichiers en cours seront interrompus.";
+
+"close.app.title" = "Fermer les sessions actives ?";
+
+"close.app.message" = "Vous avez %d sessions actives. Elles seront déconnectées et les transferts de fichiers en cours seront interrompus.";
+
+"close.confirm" = "Fermer les sessions";
+
+"files.title" = "Fichiers (SFTP)";
+
+"files.connection" = "Connexion aux fichiers (SSH)";
+
+"files.connection.hint" = "Les transferts nécessitent SSH/SFTP sur l’hôte distant. Les champs vides utilisent l’hôte et l’utilisateur enregistrés, avec le port 22.";
+
+"files.auth" = "Connectez-vous ci-dessous. L’explorateur de fichiers s’ouvre après l’authentification SSH.";
+
+"files.parent" = "Dossier parent";
+
+"files.path" = "Dossier distant";
+
+"files.upload" = "Envoyer…";
+
+"files.download" = "Télécharger…";
+
+"files.newFolder" = "Nouveau dossier…";
+
+"files.rename" = "Renommer…";
+
+"files.size" = "Taille";
+
+"files.modified" = "Modifié";
+
+"files.cancelTransfer" = "Annuler et déconnecter";
+
+"files.replace" = "Remplacer le fichier existant ?";
+
+"files.delete" = "Supprimer de l’hôte distant ?";
+
+"files.delete.hint" = "Cette action est irréversible. Les dossiers doivent être vides.";
+
+"files.startDirectory" = "Dossier initial SFTP";
+
+"files.cancelled" = "Le transfert de fichiers a été annulé.";
+
+"files.error.protocol" = "Le serveur SFTP a envoyé une réponse non valide.";
+
+"files.error.connection" = "La connexion aux fichiers a été fermée. Reconnectez-vous pour réessayer. SSH et SFTP doivent être activés sur l’hôte distant.";
+
+"files.error.timeout" = "Le serveur SFTP n’a pas répondu à temps.";
+
+"files.error.unsupported" = "Le serveur SFTP ne prend pas en charge cette opération.";
+
+"files.error.exists" = "La destination existe déjà. Seuls les fichiers ordinaires peuvent être remplacés ; les dossiers ne sont pas fusionnés.";
+
+"files.error.fileType" = "Ce transfert contient un lien symbolique ou un autre type de fichier non pris en charge.";
+
+"files.error.missing" = "Le fichier distant n’existe plus.";
+
+"options.title" = "Paramètres avancés";
+
+"options.clipboard" = "Partager le presse-papiers texte avec la session active";
+
+"options.ssh" = "Connexion SSH";
+
+"options.port" = "Port";
+
+"options.choose" = "Choisir…";
+
+"ssh.identity" = "Fichier de clé privée";
+
+"ssh.jump.host" = "Hôte de rebond";
+
+"ssh.jump.port" = "Port de l’hôte de rebond (22)";
+
+"ssh.jump.username" = "Utilisateur de l’hôte de rebond";
+
+"ssh.forwards" = "Redirection de ports";
+
+"ssh.forwards.hint" = "L’écoute est limitée à localhost. Les redirections locales et distantes nécessitent une destination ; une redirection dynamique crée un proxy SOCKS.";
+
+"ssh.forward.direction" = "Sens";
+
+"ssh.forward.local" = "Local";
+
+"ssh.forward.remote" = "Distant";
+
+"ssh.forward.dynamic" = "Dynamique (SOCKS)";
+
+"ssh.forward.listen" = "Port d’écoute";
+
+"ssh.forward.destination" = "Hôte de destination";
+
+"ssh.forward.add" = "Ajouter une redirection";
+
+"rdp.gateway" = "Passerelle RDP";
+
+"rdp.gateway.port" = "Port de la passerelle (443)";
+
+"rdp.gateway.username" = "Utilisateur de la passerelle (facultatif)";
+
+"rdp.gateway.password" = "Mot de passe de la passerelle";
+
+"rdp.gateway.hint" = "Laissez l’utilisateur vide pour utiliser les identifiants du bureau distant. Un mot de passe distinct sera demandé à la connexion.";
+
+"rdp.folders" = "Dossiers partagés";
+
+"rdp.folders.hint" = "Les dossiers sélectionnés sont accessibles en lecture et en écriture depuis le bureau distant. Les chemins ne doivent pas contenir de virgules.";
+
+"rdp.folders.add" = "Partager un dossier…";
+
+"links.title" = "Liens de l’hôte";
+
+"links.smb" = "Ouvrir dans le Finder (SMB)";
+
+"links.web" = "Ouvrir l’administration web (HTTPS)";
+
+"transport.sftp" = "SFTP";
+
+"rdp.error.activationTimeout" = "Le serveur a répondu, mais le bureau à distance ne s’est pas ouvert à temps. Vérifiez l’écran de connexion Windows et le service Bureau à distance, puis reconnectez-vous.";

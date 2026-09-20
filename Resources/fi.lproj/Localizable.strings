@@ -54,17 +54,14 @@
 "session.retry" = "Tarkista osoite ja kirjautumistiedot ja yhdistä uudelleen.";
 "ssh.authentication" = "SSH käyttää Macin avaimia, ssh-agentia ja SSH-asetuksia. Kirjoita salasanat ja vahvista uudet palvelinavaimet päätteessä.";
 "ssh.ended" = "SSH päättyi. Lue päätteen ilmoitus ennen kuin yhdistät uudelleen.";
-"rdp.install" = "RDP tarvitsee FreeRDP:n Mac-asiakasohjelman. Asenna se komennolla ”brew install freerdp” ja yhdistä uudelleen.";
+"rdp.install" = "Sisäinen RDP-komponentti puuttuu tai sitä ei voitu ladata. Asenna FjärrConnect uudelleen Macisi arkkitehtuurille.";
 "rdp.invalid" = "RDP-kirjautumistiedoissa ei saa olla rivinvaihtoja.";
 "rdp.ended" = "RDP päättyi. Tarkista palvelin, kirjautumistiedot ja varmenne ja yhdistä uudelleen.";
-"rdp.window.title" = "Työpöytä avautuu omaan ikkunaansa";
-"rdp.window.description" = "Vahvista kirjautumis- ja varmennepyynnöt FreeRDP:ssä. Sulje etätyöpöytä katkaisemalla yhteys tässä.";
 "discovery.resolveFailed" = "Tähän Maciin ei saatu yhteyttä. Tarkista Näytönjako ja lähiverkon käyttöoikeus ja päivitä haku.";
 "sidebar.favorites" = "Suosikit";
 "favorite.add" = "Lisää suosikkeihin";
 "favorite.remove" = "Poista suosikeista";
 "session.timeout" = "Yhteys aikakatkaistiin. Tarkista osoite, Näytönjako ja palomuuri ja yritä uudelleen.";
-"rdp.showWindow" = "Näytä etätyöpöytä";
 "vnc.usernameRequired" = "Palvelin vaatii käyttäjätunnuksen. Anna etä-Macin tilin lyhyt käyttäjätunnus ja salasana ja tarkista, että tilillä on Näytönjaon käyttöoikeus.";
 "rdp.error.network" = "Palvelimeen ei saatu yhteyttä. Tarkista, että etätyöpöytä on käytössä ja osoite ja portti ovat saavutettavissa.";
 "rdp.error.authentication" = "Palvelin hylkäsi kirjautumisen. Tarkista käyttäjätunnus, salasana ja etätyöpöydän käyttöoikeus.";
@@ -92,3 +89,151 @@
 "ssh.log.readFailed" = "Salattua lokia ei voitu avata tai poistaa. Avaa Avainnipun lukitus ja yritä uudelleen. Vioittuneet lokit säilytetään; aloita alusta valitsemalla Poista loki.";
 "ssh.log.disable" = "Lopeta komentojen kirjaaminen";
 "ssh.log.refresh" = "Päivitä loki";
+
+"rdp.cert.title" = "Tarkista palvelimen varmenne";
+
+"rdp.cert.message" = "Palvelimen identiteettiä ei voitu vahvistaa. Tarkista sormenjälki palvelimen ylläpitäjältä ennen yhdistämistä.";
+
+"rdp.cert.changed.title" = "Palvelimen varmenne on muuttunut";
+
+"rdp.cert.changed.message" = "Varmenne eroaa aiemmin hyväksymästäsi. Se on voitu vaihtaa asianmukaisesti, tai yhteys on voitu kaapata. Tarkista uusi sormenjälki palvelimen ylläpitäjältä.";
+
+"rdp.cert.mismatch" = "Varmenteen nimi ei vastaa palvelimen osoitetta.";
+
+"rdp.cert.name" = "Varmenteen nimi";
+
+"rdp.cert.subject" = "Haltija";
+
+"rdp.cert.issuer" = "Myöntäjä";
+
+"rdp.cert.fingerprint" = "Sormenjälki (SHA-256)";
+
+"rdp.cert.previous" = "Edellinen sormenjälki";
+
+"rdp.cert.once" = "Yhdistä kerran";
+
+"rdp.cert.trust" = "Luota ja yhdistä";
+
+"rdp.gateway.message" = "Viesti RDP-yhdyskäytävältä";
+
+"close.session.title" = "Suljetaanko istunto?";
+
+"close.session.message" = "Yhteys kohteeseen %@ suljetaan. Käynnissä olevat tiedostonsiirrot keskeytetään.";
+
+"close.app.title" = "Suljetaanko aktiiviset istunnot?";
+
+"close.app.message" = "Aktiivisia istuntoja: %d. Niiden yhteydet katkaistaan ja käynnissä olevat tiedostonsiirrot keskeytetään.";
+
+"close.confirm" = "Sulje istunnot";
+
+"files.title" = "Tiedostot (SFTP)";
+
+"files.connection" = "Tiedostoyhteys (SSH)";
+
+"files.connection.hint" = "Tiedostonsiirto edellyttää SSH/SFTP:tä etäkoneessa. Tyhjät kentät käyttävät tallennettua palvelinta ja käyttäjänimeä sekä porttia 22.";
+
+"files.auth" = "Kirjaudu sisään alla. Tiedostonäkymä avautuu SSH-todennuksen jälkeen.";
+
+"files.parent" = "Yläkansio";
+
+"files.path" = "Etäkansio";
+
+"files.upload" = "Lähetä…";
+
+"files.download" = "Lataa…";
+
+"files.newFolder" = "Uusi kansio…";
+
+"files.rename" = "Nimeä uudelleen…";
+
+"files.size" = "Koko";
+
+"files.modified" = "Muokattu";
+
+"files.cancelTransfer" = "Peruuta ja katkaise yhteys";
+
+"files.replace" = "Korvataanko olemassa oleva tiedosto?";
+
+"files.delete" = "Poistetaanko etäkoneesta?";
+
+"files.delete.hint" = "Tätä ei voi kumota. Kansioiden on oltava tyhjiä.";
+
+"files.startDirectory" = "SFTP-aloituskansio";
+
+"files.cancelled" = "Tiedostonsiirto peruutettiin.";
+
+"files.error.protocol" = "SFTP-palvelin lähetti virheellisen vastauksen.";
+
+"files.error.connection" = "Tiedostoyhteys suljettiin. Yhdistä uudelleen yrittääksesi uudestaan. SSH:n ja SFTP:n on oltava käytössä etäkoneessa.";
+
+"files.error.timeout" = "SFTP-palvelin ei vastannut ajoissa.";
+
+"files.error.unsupported" = "SFTP-palvelin ei tue tätä toimintoa.";
+
+"files.error.exists" = "Kohde on jo olemassa. Vain tavallisia tiedostoja voi korvata. Kansioita ei yhdistetä.";
+
+"files.error.fileType" = "Siirto sisältää symbolisen linkin tai muun tiedostotyypin, jota ei tueta.";
+
+"files.error.missing" = "Etätiedostoa ei enää ole.";
+
+"options.title" = "Lisäasetukset";
+
+"options.clipboard" = "Jaa tekstileikepöytä aktiivisen istunnon kanssa";
+
+"options.ssh" = "SSH-yhteys";
+
+"options.port" = "Portti";
+
+"options.choose" = "Valitse…";
+
+"ssh.identity" = "Yksityisen avaimen tiedosto";
+
+"ssh.jump.host" = "Välityspalvelin";
+
+"ssh.jump.port" = "Välityspalvelimen portti (22)";
+
+"ssh.jump.username" = "Välityspalvelimen käyttäjänimi";
+
+"ssh.forwards" = "Porttiohjaus";
+
+"ssh.forwards.hint" = "Kuuntelu sidotaan localhost-osoitteeseen. Paikallinen ja etäohjaus tarvitsevat kohteen. Dynaaminen ohjaus luo SOCKS-välityspalvelimen.";
+
+"ssh.forward.direction" = "Suunta";
+
+"ssh.forward.local" = "Paikallinen";
+
+"ssh.forward.remote" = "Etä";
+
+"ssh.forward.dynamic" = "Dynaaminen (SOCKS)";
+
+"ssh.forward.listen" = "Kuunteluportti";
+
+"ssh.forward.destination" = "Kohdepalvelin";
+
+"ssh.forward.add" = "Lisää ohjaus";
+
+"rdp.gateway" = "RDP-yhdyskäytävä";
+
+"rdp.gateway.port" = "Yhdyskäytävän portti (443)";
+
+"rdp.gateway.username" = "Yhdyskäytävän käyttäjänimi (valinnainen)";
+
+"rdp.gateway.password" = "Yhdyskäytävän salasana";
+
+"rdp.gateway.hint" = "Jätä käyttäjänimi tyhjäksi käyttääksesi etätyöpöydän tunnuksia. Erillistä salasanaa kysytään yhdistettäessä.";
+
+"rdp.folders" = "Jaetut kansiot";
+
+"rdp.folders.hint" = "Valitut kansiot ovat etätyöpöydän luettavissa ja kirjoitettavissa. Kansiopolut eivät saa sisältää pilkkuja.";
+
+"rdp.folders.add" = "Jaa kansio…";
+
+"links.title" = "Palvelimen linkit";
+
+"links.smb" = "Avaa Finderissa (SMB)";
+
+"links.web" = "Avaa verkkohallinta (HTTPS)";
+
+"transport.sftp" = "SFTP";
+
+"rdp.error.activationTimeout" = "Palvelin vastasi, mutta etätyöpöytä ei käynnistynyt ajoissa. Tarkista Windowsin kirjautumisnäyttö ja etätyöpöytäpalvelu ja yhdistä uudelleen.";

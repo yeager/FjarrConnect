@@ -44,3 +44,7 @@ fastlane/screenshots/**/*.png
 *.p12
 *.cer
 *.certSigningRequest
+
+# Python validation scripts
+__pycache__/
+*.pyc
