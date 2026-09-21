@@ -24,15 +24,9 @@ struct ContentView: View {
         } detail: {
             VStack(spacing: 0) {
                 if !connection.tabs.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(connection.tabs) { tab in
-                                SessionTabLabel(tab: tab, selected: connection.selectedID == tab.id,
-                                                select: { connection.selectedID = tab.id }, close: { connection.requestClose(tab.id) })
-                            }
-                        }.padding(8)
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
+                    SessionTabBar(tabs: connection.tabs, selectedID: connection.selectedID,
+                                  select: { connection.selectedID = $0 }, close: { connection.requestClose($0) })
+                    .frame(height: 56)
                     .background(.bar, ignoresSafeAreaEdges: [])
                     Divider()
                     if let tab = connection.selected {
@@ -274,30 +268,6 @@ struct ContentView: View {
                 else { connection.connect(profile, password: password, gatewayPassword: gatewayPassword) }
             } else { credentials = profile }
         } catch { errorMessage = error.localizedDescription }
-    }
-}
-
-private struct SessionTabLabel: View {
-    @ObservedObject var tab: SessionTab
-    let selected: Bool
-    let select: () -> Void
-    let close: () -> Void
-    var body: some View {
-        HStack(spacing: 8) {
-            Button(action: select) {
-                Label(tab.backend.profile.name, systemImage: tab.backend.profile.transport.symbol).lineLimit(1)
-            }.buttonStyle(.borderless)
-                .accessibilityIdentifier("session.select.\(tab.backend.profile.name)")
-                .accessibilityAddTraits(selected ? .isSelected : [])
-            Button(action: close) {
-                Image(systemName: "xmark").font(.caption)
-                    .frame(width: 24, height: 24).contentShape(Rectangle())
-            }
-                .buttonStyle(.borderless).help("action.closeSession")
-                .accessibilityLabel(Text("action.closeSession"))
-                .accessibilityIdentifier("session.close.\(tab.backend.profile.name)")
-        }.padding(.horizontal, 12).padding(.vertical, 8)
-            .background(selected ? Color.accentColor.opacity(0.15) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
     }
 }
 
