@@ -15,21 +15,19 @@ FjärrConnect brings **VNC / Mac Screen Sharing, RDP, SSH and SFTP** into one co
 manager for **macOS 14 or later**, on **Apple Silicon (arm64) and Intel (x86_64)**.
 There are no Windows, Linux or mobile app targets.
 
-## Version 0.2.7
+## Version 0.2.8
 
-**[Download version 0.2.7](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.7)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.7-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.7-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.8](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.8)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.8-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.8-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.7 fixes Windows RDP connections closing when the desktop starts:
-the embedded client now answers the server's network-latency requests. It also
-adds protocol-verified searches for VNC, RDP and SSH servers, including hosts
-that do not advertise through Bonjour. Results can be saved as profiles or
-connected immediately. Saved profiles connect on **double-click**; a single
-click selects the profile. Replace the old app; saved profiles and Keychain
-passwords are retained.
+Version 0.2.8 fixes session-tab clicks and close controls on macOS 15 by using
+native AppKit controls. It also retains an authenticated SFTP connection after a
+cancelled transfer, so a retry does not ask for credentials again. Saved profiles
+continue to connect on **double-click**; a single click only selects the profile.
+Replace the old app; saved profiles and Keychain passwords are retained.
 
 Every release passes gitleaks, Mac regression tests, separate architecture packaging and
 checks of the downloaded app on both native Mac architectures before publication.
@@ -158,10 +156,10 @@ Uploads can also be started by dropping files onto the panel. Existing files req
 confirmation before replacement. Folders are transferred recursively without merging
 into existing folders; symbolic links and special files are rejected. Transfers use
 private staging files, and originals are preserved on failure. In the current
-published version (0.2.7), cancelling disconnects the file session. On `main`,
-cancelling an upload or download keeps the authenticated SSH connection and
+published version (0.2.8), cancelling an upload or download keeps the
+authenticated SSH connection and
 refreshes the file panel, so you can continue without signing in again.
-The file table on `main` also uses native row actions: single-click selects,
+The file table also uses native row actions: single-click selects,
 double-click opens a folder or downloads a file, and right-click offers file
 actions. Double-click works across the row, including the size and date columns.
 An interrupted upload may leave a `.fjarrconnect-…partial` item on
@@ -381,15 +379,15 @@ Development is on **`main`**.
   requests. The release workflow also requires a clean full-history scan.
   `.gitleaksignore` contains one exact historical finding for a removed, fictional
   README credential example. No scanner rule or source path is broadly excluded.
-- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.7`**, triggers a
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.8`**, triggers a
   fresh scan, test and build. GitHub publishes the release assets only when these pass.
 
 For maintainers, after the current `main` revision passes verification:
 
 ```bash
 git pull --ff-only
-git tag v0.2.7
-git push origin v0.2.7
+git tag v0.2.8
+git push origin v0.2.8
 ```
 
 Do not reuse or move an already published release tag. Use a new version for fixes.
