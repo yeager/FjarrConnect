@@ -107,6 +107,7 @@ final class SFTPIntegrationTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: SFTPClient.uploadStagingPath(server.remote.appendingPathComponent(source.lastPathComponent).path)))
 
         session.upload([(source, false)])
+        try waitUntil { session.busy }
         try waitUntil { !session.busy }
         XCTAssertNil(session.errorMessage)
         XCTAssertEqual(session.transferred, 256 * 1024 * 1024)
