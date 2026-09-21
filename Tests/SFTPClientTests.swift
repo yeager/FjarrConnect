@@ -58,4 +58,60 @@ final class SFTPClientTests: XCTestCase {
         var truncated = SFTPPacket(data: Data([0, 0, 0, 10, 65]))
         XCTAssertThrowsError(try truncated.bytes())
     }
+
+    func testCancelledFileUploadResumesOnlyAfterMatchingTheRemotePartial() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let remote = root.appendingPathComponent("remote")
+        try FileManager.default.createDirectory(at: remote, withIntermediateDirectories: false)
+        let source = root.appendingPathComponent("resumable.bin")
+        let bytes = Data((0..<100_000).map { UInt8($0 % 251) })
+        try bytes.write(to: source)
+        let target = remote.appendingPathComponent(source.lastPathComponent).path
+        let staging = SFTPClient.uploadStagingPath(target)
+
+        let first = try SFTPClient(executable: URL(fileURLWithPath: "/usr/libexec/sftp-server"), arguments: ["-d", remote.path])
+        first.onProgress = { _ in first.cancel() }
+        XCTAssertThrowsError(try first.upload(source, to: target)) { error in
+            guard case SFTPFailure.cancelled = error else { return XCTFail("Expected cancellation, got \(error)") }
+        }
+        XCTAssertEqual(try first.stat(staging)?.size, 32_768)
+        first.close()
+
+        let retry = try SFTPClient(executable: URL(fileURLWithPath: "/usr/libexec/sftp-server"), arguments: ["-d", remote.path])
+        defer { retry.close() }
+        var reported = UInt64(0)
+        retry.onProgress = { reported += $0 }
+        try retry.upload(source, to: target)
+        XCTAssertEqual(reported, UInt64(bytes.count))
+        XCTAssertEqual(try retry.stat(staging), nil)
+        let copy = root.appendingPathComponent("copy.bin")
+        try retry.download(target, to: copy)
+        XCTAssertEqual(try Data(contentsOf: copy), bytes)
+    }
+
+    func testMismatchedStagingFileIsDiscardedBeforeUpload() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let remote = root.appendingPathComponent("remote")
+        try FileManager.default.createDirectory(at: remote, withIntermediateDirectories: false)
+        let source = root.appendingPathComponent("source.bin")
+        let bytes = Data((0..<65_000).map { UInt8($0 % 251) })
+        try bytes.write(to: source)
+        let target = remote.appendingPathComponent(source.lastPathComponent).path
+        let staging = SFTPClient.uploadStagingPath(target)
+        try Data("not the source prefix".utf8).write(to: URL(fileURLWithPath: staging))
+
+        let client = try SFTPClient(executable: URL(fileURLWithPath: "/usr/libexec/sftp-server"), arguments: ["-d", remote.path])
+        defer { client.close() }
+        var reported = UInt64(0)
+        client.onProgress = { reported += $0 }
+        try client.upload(source, to: target)
+        XCTAssertEqual(reported, UInt64(bytes.count))
+        let copy = root.appendingPathComponent("copy.bin")
+        try client.download(target, to: copy)
+        XCTAssertEqual(try Data(contentsOf: copy), bytes)
+    }
 }

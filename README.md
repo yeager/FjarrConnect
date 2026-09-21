@@ -161,8 +161,11 @@ refreshes the file panel, so you can continue without signing in again.
 The file table also uses native row actions: single-click selects,
 double-click opens a folder or downloads a file, and right-click offers file
 actions. Double-click works across the row, including the size and date columns.
-An interrupted upload may leave a `.fjarrconnect-…partial` item on
-the server for manual removal; automatic resume is not supported.
+If a regular-file upload is cancelled or the SFTP channel is interrupted,
+FjärrConnect retains its private `.fjarrconnect.partial` staging file. Upload the
+same file again to resume it. Before reusing the staging file, FjärrConnect compares
+its complete transferred prefix with the local file; a mismatch is discarded and the
+upload starts over. Directory uploads and downloads still restart after interruption.
 
 SSH forwards listen on loopback by default. A forwarding failure is reported by
 OpenSSH instead of silently opening a session without the requested tunnel. Identity

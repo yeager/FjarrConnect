@@ -172,17 +172,25 @@ final class SFTPClient {
         if let existing {
             guard overwrite, existing.isRegularFile, attributes.isRegularFile == true else { throw SFTPFailure.exists }
         }
-        let staging = remote + ".fjarrconnect-" + UUID().uuidString + ".partial"
         if attributes.isDirectory == true {
+            let staging = remote + ".fjarrconnect-" + UUID().uuidString + ".partial"
             try makeDirectory(staging)
             try uploadDirectory(local, to: staging, depth: 0)
             try rename(staging, to: remote)
         } else {
             guard attributes.isRegularFile == true else { throw SFTPFailure.unsafeFile }
+            let staging = Self.uploadStagingPath(remote)
             do {
-                try uploadFile(local, to: staging)
+                let offset = try resumableOffset(local: local, staging: staging)
+                try uploadFile(local, to: staging, startingAt: offset)
                 try rename(staging, to: remote, overwrite: existing != nil && overwrite)
-            } catch { try? remove(staging, directory: false); throw error }
+            } catch {
+                // Keep a verified partial file for retry after a cancelled or lost session.
+                // Invalid local input must never leave an app-created remote artifact behind.
+                let retainPartial = (error as? SFTPFailure)?.isFatal ?? false
+                if !retainPartial { try? remove(staging, directory: false) }
+                throw error
+            }
         }
     }
 
@@ -201,19 +209,23 @@ final class SFTPClient {
         }
     }
 
-    private func uploadFile(_ local: URL, to remote: String) throws {
+    private func uploadFile(_ local: URL, to remote: String, startingAt: UInt64 = 0) throws {
         let fd = Darwin.open(local.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
         guard fd >= 0 else { throw SFTPFailure.unsafeFile }
         let source = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
         var info = Darwin.stat()
         guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG else { try? source.close(); throw SFTPFailure.unsafeFile }
         defer { try? source.close() }
+        guard info.st_size >= 0, UInt64(info.st_size) >= startingAt else { throw SFTPFailure.unsafeFile }
+        if startingAt > 0 { try source.seek(toOffset: startingAt) }
         let handle = try openHandle(3) {
-            $0.put(remote); $0.put(UInt32(2 | 8 | 32)); $0.put(UInt32(4)); $0.put(UInt32(0o600))
+            let flags: UInt32 = startingAt == 0 ? 2 | 8 | 32 : 2 | 8
+            $0.put(remote); $0.put(flags); $0.put(UInt32(4)); $0.put(UInt32(0o600))
         }
         var closed = false
         defer { if !closed { try? closeHandle(handle) } }
-        var offset: UInt64 = 0
+        var offset = startingAt
+        if offset > 0 { onProgress?(offset) }
         while let data = try source.read(upToCount: 32_768), !data.isEmpty {
             try statusRequest(6) { $0.put(handle); $0.put(offset); $0.put(data) }
             offset += UInt64(data.count)
@@ -224,6 +236,40 @@ final class SFTPClient {
         }
         try closeHandle(handle)
         closed = true
+    }
+
+    private func resumableOffset(local: URL, staging: String) throws -> UInt64 {
+        guard let partial = try stat(staging) else { return 0 }
+        guard partial.isRegularFile else { throw SFTPFailure.exists }
+        let attributes = try local.resourceValues(forKeys: [.fileSizeKey])
+        guard let fileSize = attributes.fileSize, fileSize >= 0 else { throw SFTPFailure.unsafeFile }
+        let localSize = UInt64(fileSize)
+        guard partial.size <= localSize, try stagingMatchesLocalPrefix(staging, local: local, length: partial.size) else {
+            try remove(staging, directory: false)
+            return 0
+        }
+        return partial.size
+    }
+
+    private func stagingMatchesLocalPrefix(_ remote: String, local: URL, length: UInt64) throws -> Bool {
+        guard length > 0 else { return true }
+        let fd = Darwin.open(local.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
+        guard fd >= 0 else { throw SFTPFailure.unsafeFile }
+        let source = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
+        defer { try? source.close() }
+        let handle = try openHandle(3) { $0.put(remote); $0.put(UInt32(1)); $0.put(UInt32(0)) }
+        defer { try? closeHandle(handle) }
+        var offset: UInt64 = 0
+        while offset < length {
+            let requested = Int(min(32_768, length - offset))
+            var reply = try request(5) { $0.put(handle); $0.put(offset); $0.put(UInt32(requested)) }
+            guard try reply.byte() == 103 else { return false }
+            let remoteData = try reply.bytes()
+            guard remoteData.count == requested, reply.remaining == 0,
+                  let localData = try source.read(upToCount: requested), localData == remoteData else { return false }
+            offset += UInt64(requested)
+        }
+        return true
     }
 
     func download(_ remote: String, to local: URL, overwrite: Bool = false) throws {
@@ -286,6 +332,7 @@ final class SFTPClient {
 
     static func safeName(_ name: String) -> Bool { !name.isEmpty && name != "." && name != ".." && !name.contains("/") && !name.contains("\0") }
     static func join(_ directory: String, _ name: String) -> String { (directory == "/" ? "" : directory) + "/" + name }
+    static func uploadStagingPath(_ remote: String) -> String { remote + ".fjarrconnect.partial" }
 
     private func attributes(_ reply: inout SFTPPacket, name: String) throws -> SFTPEntry {
         let flags = try reply.uint32()
