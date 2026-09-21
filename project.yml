@@ -36,8 +36,8 @@ targets:
       properties:
         CFBundleDisplayName: FjärrConnect          # the ö lives here, in the display name
         CFBundleName: FjarrConnect
-        CFBundleShortVersionString: "0.2.11"
-        CFBundleVersion: "13"
+        CFBundleShortVersionString: "0.2.12"
+        CFBundleVersion: "14"
         LSMinimumSystemVersion: "14.0"
         LSApplicationCategoryType: public.app-category.utilities
         NSHumanReadableCopyright: "Copyright © 2026 Daniel Nylander"
@@ -50,8 +50,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: se.fjarrconnect.app
         PRODUCT_NAME: FjarrConnect
-        MARKETING_VERSION: "0.2.11"
-        CURRENT_PROJECT_VERSION: "13"
+        MARKETING_VERSION: "0.2.12"
+        CURRENT_PROJECT_VERSION: "14"
         SWIFT_VERSION: "5.0"
         ARCHS: "$(NATIVE_ARCH_ACTUAL)"
         ONLY_ACTIVE_ARCH: NO
