@@ -15,33 +15,27 @@ FjärrConnect brings **VNC / Mac Screen Sharing, RDP, SSH and SFTP** into one co
 manager for **macOS 14 or later**, on **Apple Silicon (arm64) and Intel (x86_64)**.
 There are no Windows, Linux or mobile app targets.
 
-## Version 0.2.5
+## Version 0.2.6
 
-**[Download version 0.2.5](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.5)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.5-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.5-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.6](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.6)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.6-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.6-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.5 improves release verification: startup checks use a temporary macOS
-home directory so they do not read your saved connection profiles. It includes all
-nine interface languages from 0.2.4, encrypted opt-in SSH command-name logs, and the
-VNC desktop-resizing fix. Replace the old app; saved profiles and Keychain passwords
+Version 0.2.6 embeds RDP desktops in session tabs and translates certificate
+dialogs into all nine interface languages. It adds an SFTP file panel, advanced
+connection options, confirmation before closing active sessions and Unicode VNC
+clipboard support. Saved profiles connect on **double-click**; a single click
+selects the profile. Replace the old app; saved profiles and Keychain passwords
 are retained.
 
 Every release passes gitleaks, Mac regression tests, separate architecture packaging and
 checks of the downloaded app on both native Mac architectures before publication.
 
-The initial release uses **ad-hoc signing**, not Developer ID signing or Apple
+The downloads use **ad-hoc signing**, not Developer ID signing or Apple
 notarization. macOS may require approval under **System Settings → Privacy & Security**
 on first launch. Never disable Gatekeeper globally to install the app.
-
-## Current development
-
-The features below describe `main`, including work for the next release. The latest
-published download remains 0.2.5. New in `main`: embedded RDP with translated
-certificate dialogs, a file-transfer panel, advanced connection options and
-confirmation before closing active sessions.
 
 ## Features
 
@@ -99,7 +93,9 @@ architectures. Each app loads its matching native library inside the app process
 no separate client window or Homebrew installation is used. Unknown or changed
 certificates show the server identity and SHA-256 fingerprint with **Cancel**,
 **Connect once**, and **Trust and connect** in the chosen interface language.
-Certificate verification remains enabled.
+Certificate verification remains enabled. Some Windows hosts can still time out
+while activating the desktop; this is reported with a localized error. Successful
+connection to every Windows configuration is not yet verified.
 
 SSH passwords are entered directly in the terminal and are **not** saved by
 FjärrConnect. SSH private keys remain managed by OpenSSH and your ssh-agent.
@@ -336,15 +332,15 @@ Development is on **`main`**.
   requests. The release workflow also requires a clean full-history scan.
   `.gitleaksignore` contains one exact historical finding for a removed, fictional
   README credential example. No scanner rule or source path is broadly excluded.
-- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.5`**, triggers a
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.6`**, triggers a
   fresh scan, test and build. GitHub publishes the release assets only when these pass.
 
 For maintainers, after the current `main` revision passes verification:
 
 ```bash
 git pull --ff-only
-git tag v0.2.5
-git push origin v0.2.5
+git tag v0.2.6
+git push origin v0.2.6
 ```
 
 Do not reuse or move an already published release tag. Use a new version for fixes.
