@@ -1,6 +1,64 @@
 import XCTest
 
 final class SFTPBrowserUITests: XCTestCase {
+    func testMultipleTabsStayConnectedWhenWindowOrQuitIsCancelled() throws {
+        continueAfterFailure = false
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: URL(fileURLWithPath: "/tmp/fjarrconnect-sftp-ui-fixture.json"))) as? [String: Any])
+        let settings = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: settings, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: settings) }
+        let profiles = settings.appendingPathComponent("profiles.json")
+        let data: [[String: Any]] = try ["First files", "Second files"].map { name in
+            ["id": UUID().uuidString, "name": name, "transport": "sftp", "host": "127.0.0.1",
+             "port": try XCTUnwrap(fixture["port"] as? Int), "username": try XCTUnwrap(fixture["username"] as? String),
+             "ssh": ["startDirectory": try XCTUnwrap(fixture["remote"] as? String)]]
+        }
+        try JSONSerialization.data(withJSONObject: data).write(to: profiles)
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = profiles.path
+        app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        app.launchEnvironment["FJARRCONNECT_TEST_SSH_CONFIG"] = try XCTUnwrap(fixture["configuration"] as? String)
+        app.launch(); defer { app.terminate() }
+        for name in ["First files", "Second files"] {
+            let row = app.buttons["connect.\(name)"].firstMatch
+            XCTAssertTrue(row.waitForExistence(timeout: 15)); row.doubleClick()
+            XCTAssertTrue(app.tables["files.table"].waitForExistence(timeout: 12))
+            let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: app.buttons["files.refresh"])
+            XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 12), .completed)
+        }
+        let firstTab = app.buttons["session.select.First files"]
+        let secondTab = app.buttons["session.select.Second files"]
+        XCTAssertTrue(firstTab.exists); XCTAssertTrue(secondTab.exists)
+        firstTab.click()
+        XCTAssertTrue(app.tables["files.table"].exists)
+
+        // Both the window delegate and the application delegate must honour Cancel.
+        for key in ["w", "q"] {
+            app.typeKey(key, modifierFlags: .command)
+            XCTAssertTrue(app.staticTexts["Close active sessions?"].firstMatch.waitForExistence(timeout: 5))
+            app.buttons["Cancel"].firstMatch.click()
+            XCTAssertTrue(firstTab.exists); XCTAssertTrue(secondTab.exists)
+            secondTab.click(); app.buttons["files.refresh"].click()
+            let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: app.buttons["files.refresh"])
+            XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 8), .completed)
+        }
+        app.buttons["session.close.Second files"].click()
+        XCTAssertTrue(app.buttons["Cancel"].firstMatch.waitForExistence(timeout: 5))
+        app.buttons["Cancel"].firstMatch.click()
+        XCTAssertTrue(firstTab.exists); XCTAssertTrue(secondTab.exists)
+        app.buttons["session.close.Second files"].click()
+        app.buttons["Close sessions"].firstMatch.click()
+        XCTAssertTrue(firstTab.exists)
+        XCTAssertFalse(secondTab.exists)
+        XCTAssertTrue(app.tables["files.table"].exists)
+        app.typeKey("q", modifierFlags: .command)
+        XCTAssertTrue(app.buttons["Close sessions"].firstMatch.waitForExistence(timeout: 5))
+        app.buttons["Close sessions"].firstMatch.click()
+        let quit = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in app.state == .notRunning }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [quit], timeout: 8), .completed)
+    }
+
     func testFileSelectionNavigationPickersAndCloseConfirmation() throws {
         continueAfterFailure = false
         let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: URL(fileURLWithPath: "/tmp/fjarrconnect-sftp-ui-fixture.json"))) as? [String: Any])
@@ -8,8 +66,10 @@ final class SFTPBrowserUITests: XCTestCase {
         let remote = try XCTUnwrap(fixture["remote"] as? String)
         let source = URL(fileURLWithPath: try XCTUnwrap(fixture["upload"] as? String))
         let downloads = root.appendingPathComponent("downloads")
-        try FileManager.default.createDirectory(at: downloads, withIntermediateDirectories: true)
-        let profiles = root.appendingPathComponent("profiles.json")
+        let settings = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: settings, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: settings) }
+        let profiles = settings.appendingPathComponent("profiles.json")
         let profile: [String: Any] = [
             "id": UUID().uuidString, "name": "UI files", "transport": "sftp", "host": "127.0.0.1",
             "port": try XCTUnwrap(fixture["port"] as? Int), "username": try XCTUnwrap(fixture["username"] as? String),
@@ -36,6 +96,14 @@ final class SFTPBrowserUITests: XCTestCase {
         XCTAssertTrue(entry("nested.txt", in: app).waitForExistence(timeout: 8))
         XCTAssertFalse(first.exists)
         XCTAssertFalse(download.isEnabled)
+        app.buttons["files.parent"].click()
+        XCTAssertTrue(first.waitForExistence(timeout: 8))
+
+        let folderRow = app.tables["files.table"].tableRows.containing(.any, identifier: "files.entry.folder").firstMatch
+        XCTAssertTrue(folderRow.exists)
+        XCTAssertGreaterThanOrEqual(folderRow.cells.count, 2)
+        folderRow.cells.element(boundBy: 1).doubleClick()
+        XCTAssertTrue(entry("nested.txt", in: app).waitForExistence(timeout: 8))
         app.buttons["files.parent"].click()
         XCTAssertTrue(first.waitForExistence(timeout: 8))
 

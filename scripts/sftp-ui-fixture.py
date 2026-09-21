@@ -23,6 +23,7 @@ def fixture():
             root = Path(temporary)
             remote = root / 'remote'
             remote.mkdir(mode=0o700)
+            (root / 'downloads').mkdir(mode=0o700)
             (remote / 'first.txt').write_bytes(b'First remote file\n')
             (remote / 'folder').mkdir()
             (remote / 'folder' / 'nested.txt').write_bytes(b'Nested remote file\n')

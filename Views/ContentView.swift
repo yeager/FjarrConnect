@@ -285,7 +285,12 @@ private struct SessionTabLabel: View {
             Button(action: select) {
                 Label(tab.backend.profile.name, systemImage: tab.backend.profile.transport.symbol).lineLimit(1)
             }.buttonStyle(.plain)
-            Button(action: close) { Image(systemName: "xmark").font(.caption) }.buttonStyle(.plain).help("action.closeSession")
+                .accessibilityIdentifier("session.select.\(tab.backend.profile.name)")
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            Button(action: close) { Image(systemName: "xmark").font(.caption) }
+                .buttonStyle(.plain).help("action.closeSession")
+                .accessibilityLabel(Text("action.closeSession"))
+                .accessibilityIdentifier("session.close.\(tab.backend.profile.name)")
         }.padding(.horizontal, 12).padding(.vertical, 8)
             .background(selected ? Color.accentColor.opacity(0.15) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
     }
