@@ -188,7 +188,7 @@ final class SFTPIntegrationTests: XCTestCase {
         XCTAssertNotNil(session.status.error)
     }
 
-    func testCancelledDownloadPreservesLocalFileAndRemovesPartialData() throws {
+    func testCancelledDownloadResumesWithoutReplacingTheLocalFileEarly() throws {
         let server = try SFTPServerFixture()
         defer { server.close() }
         let source = server.remote.appendingPathComponent("large download.bin")
@@ -212,10 +212,14 @@ final class SFTPIntegrationTests: XCTestCase {
         withExtendedLifetime(observation) {}
         XCTAssertEqual(session.status, .connected)
         XCTAssertEqual(try Data(contentsOf: destination), original)
-        XCTAssertFalse(try FileManager.default.contentsOfDirectory(atPath: server.directory.path).contains { $0.hasPrefix(".fjarrconnect-") })
-        session.upload([(destination, false)])
+        let staging = SFTPClient.downloadStagingPath(destination)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: staging.path))
+        XCTAssertGreaterThan(try staging.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0, 0)
+        session.download(entry, to: destination, overwrite: true)
+        try waitUntil { session.busy }
         try waitUntil { !session.busy }
-        XCTAssertEqual(try Data(contentsOf: server.remote.appendingPathComponent(destination.lastPathComponent)), original)
+        XCTAssertEqual(try destination.resourceValues(forKeys: [.fileSizeKey]).fileSize, 256 * 1024 * 1024)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: staging.path))
         XCTAssertNil(session.errorMessage)
     }
 

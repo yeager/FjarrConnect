@@ -280,15 +280,27 @@ final class SFTPClient {
             let values = try local.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
             guard values.isRegularFile == true, values.isSymbolicLink != true else { throw SFTPFailure.unsafeFile }
         }
-        let staging = local.deletingLastPathComponent().appendingPathComponent(".fjarrconnect-\(UUID().uuidString).partial")
-        defer { try? FileManager.default.removeItem(at: staging) }
         if entry.isDirectory {
+            let staging = local.deletingLastPathComponent().appendingPathComponent(".fjarrconnect-\(UUID().uuidString).partial")
+            defer { try? FileManager.default.removeItem(at: staging) }
             try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
             try downloadDirectory(remote, to: staging, depth: 0)
-        } else if entry.isRegularFile { try downloadFile(remote, to: staging) }
-        else { throw SFTPFailure.unsafeFile }
-        if exists { _ = try FileManager.default.replaceItemAt(local, withItemAt: staging) }
-        else { try FileManager.default.moveItem(at: staging, to: local) }
+            if exists { _ = try FileManager.default.replaceItemAt(local, withItemAt: staging) }
+            else { try FileManager.default.moveItem(at: staging, to: local) }
+        } else if entry.isRegularFile {
+            let staging = Self.downloadStagingPath(local)
+            do {
+                let offset = try resumableDownloadOffset(remote: remote, staging: staging, remoteSize: entry.size)
+                try downloadFile(remote, to: staging, startingAt: offset, expectedSize: entry.size)
+                if exists { _ = try FileManager.default.replaceItemAt(local, withItemAt: staging) }
+                else { try FileManager.default.moveItem(at: staging, to: local) }
+            } catch {
+                // Preserve only an interrupted regular-file download for a verified retry.
+                let retainPartial = (error as? SFTPFailure)?.isFatal ?? false
+                if !retainPartial { try? FileManager.default.removeItem(at: staging) }
+                throw error
+            }
+        } else { throw SFTPFailure.unsafeFile }
     }
 
     private func downloadDirectory(_ remote: String, to local: URL, depth: Int) throws {
@@ -305,13 +317,23 @@ final class SFTPClient {
         }
     }
 
-    private func downloadFile(_ remote: String, to local: URL) throws {
-        guard FileManager.default.createFile(atPath: local.path, contents: nil, attributes: [.posixPermissions: 0o600]) else { throw CocoaError(.fileWriteUnknown) }
-        let destination = try FileHandle(forWritingTo: local)
+    private func downloadFile(_ remote: String, to local: URL, startingAt: UInt64 = 0, expectedSize: UInt64? = nil) throws {
+        if startingAt == 0 {
+            guard FileManager.default.createFile(atPath: local.path, contents: nil, attributes: [.posixPermissions: 0o600]) else { throw CocoaError(.fileWriteUnknown) }
+        }
+        let fd = Darwin.open(local.path, O_WRONLY | O_NOFOLLOW | O_CLOEXEC)
+        guard fd >= 0 else { throw SFTPFailure.unsafeFile }
+        let destination = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
         defer { try? destination.close() }
+        var info = Darwin.stat()
+        guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG, info.st_size >= 0 else { throw SFTPFailure.unsafeFile }
+        guard UInt64(info.st_size) >= startingAt else { throw SFTPFailure.unsafeFile }
+        if startingAt == 0 { try destination.truncate(atOffset: 0) }
+        else { try destination.seek(toOffset: startingAt) }
         let handle = try openHandle(3) { $0.put(remote); $0.put(UInt32(1)); $0.put(UInt32(0)) }
         defer { try? closeHandle(handle) }
-        var offset: UInt64 = 0
+        var offset = startingAt
+        if offset > 0 { onProgress?(offset) }
         while true {
             var reply = try request(5) { $0.put(handle); $0.put(offset); $0.put(UInt32(32_768)) }
             let kind = try reply.byte()
@@ -327,12 +349,28 @@ final class SFTPClient {
             offset += UInt64(data.count)
             onProgress?(UInt64(data.count))
         }
+        if let expectedSize, offset != expectedSize { throw SFTPFailure.invalidPacket }
         try destination.synchronize()
     }
 
     static func safeName(_ name: String) -> Bool { !name.isEmpty && name != "." && name != ".." && !name.contains("/") && !name.contains("\0") }
     static func join(_ directory: String, _ name: String) -> String { (directory == "/" ? "" : directory) + "/" + name }
     static func uploadStagingPath(_ remote: String) -> String { remote + ".fjarrconnect.partial" }
+    static func downloadStagingPath(_ local: URL) -> URL { local.deletingLastPathComponent().appendingPathComponent(".\(local.lastPathComponent).fjarrconnect.partial") }
+
+    private func resumableDownloadOffset(remote: String, staging: URL, remoteSize: UInt64) throws -> UInt64 {
+        guard FileManager.default.fileExists(atPath: staging.path) else { return 0 }
+        let values = try staging.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
+        guard values.isRegularFile == true, values.isSymbolicLink != true,
+              let size = values.fileSize, size >= 0 else { throw SFTPFailure.unsafeFile }
+        let partialSize = UInt64(size)
+        guard partialSize <= remoteSize,
+              try stagingMatchesLocalPrefix(remote, local: staging, length: partialSize) else {
+            try FileManager.default.removeItem(at: staging)
+            return 0
+        }
+        return partialSize
+    }
 
     private func attributes(_ reply: inout SFTPPacket, name: String) throws -> SFTPEntry {
         let flags = try reply.uint32()

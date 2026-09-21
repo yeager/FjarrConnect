@@ -2,7 +2,7 @@ FjärrConnect 0.2.11 — verified SFTP upload resume.
 
 - Regular-file uploads interrupted by cancellation, timeout or a disconnected SFTP channel now retain a private staging file and resume when you upload the same local file again.
 - Before continuing, the app compares the entire completed remote prefix with the local source. A stale or mismatched staging file is removed and the upload restarts, preventing content from being mixed.
-- Directory uploads and downloads still restart after interruption. The change is verified against OpenSSH’s real `sftp-server`, plus the ARM/Intel regression, package, downloaded-app RDP and Gitleaks checks.
+- Regular-file downloads use the same verified resume behavior, while preserving an existing local destination until the complete download is ready. Directory uploads and downloads still restart after interruption. The change is verified against OpenSSH’s real `sftp-server`, plus the ARM/Intel regression, package, downloaded-app RDP and Gitleaks checks.
 
 Existing favorites, saved profiles, Keychain credentials and encrypted opt-in SSH command-name logs are retained. Saved profiles still use double-click to connect.
 

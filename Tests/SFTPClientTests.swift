@@ -114,4 +114,34 @@ final class SFTPClientTests: XCTestCase {
         try client.download(target, to: copy)
         XCTAssertEqual(try Data(contentsOf: copy), bytes)
     }
+
+    func testCancelledFileDownloadResumesOnlyAfterMatchingTheRemotePartial() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let remote = root.appendingPathComponent("remote")
+        try FileManager.default.createDirectory(at: remote, withIntermediateDirectories: false)
+        let source = remote.appendingPathComponent("download.bin")
+        let bytes = Data((0..<100_000).map { UInt8($0 % 251) })
+        try bytes.write(to: source)
+        let destination = root.appendingPathComponent("download.bin")
+        let staging = SFTPClient.downloadStagingPath(destination)
+
+        let first = try SFTPClient(executable: URL(fileURLWithPath: "/usr/libexec/sftp-server"), arguments: ["-d", remote.path])
+        first.onProgress = { _ in first.cancel() }
+        XCTAssertThrowsError(try first.download(source.path, to: destination)) { error in
+            guard case SFTPFailure.cancelled = error else { return XCTFail("Expected cancellation, got \(error)") }
+        }
+        first.close()
+        XCTAssertEqual((try staging.resourceValues(forKeys: [.fileSizeKey])).fileSize, 32_768)
+
+        let retry = try SFTPClient(executable: URL(fileURLWithPath: "/usr/libexec/sftp-server"), arguments: ["-d", remote.path])
+        defer { retry.close() }
+        var reported = UInt64(0)
+        retry.onProgress = { reported += $0 }
+        try retry.download(source.path, to: destination)
+        XCTAssertEqual(reported, UInt64(bytes.count))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: staging.path))
+        XCTAssertEqual(try Data(contentsOf: destination), bytes)
+    }
 }
