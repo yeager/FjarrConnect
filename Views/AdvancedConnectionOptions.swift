@@ -54,6 +54,13 @@ struct AdvancedConnectionOptions: View {
                 }
             }
             if transport == .rdp {
+                Section("rdp.display") {
+                    Toggle("rdp.dynamicResolution", isOn: Binding(
+                        get: { rdp.resizesRemoteDesktop },
+                        set: { rdp.dynamicResolution = $0 }
+                    ))
+                    Text("rdp.dynamicResolution.hint").font(.caption).foregroundStyle(.secondary)
+                }
                 Section("rdp.gateway") {
                     TextField("field.host", text: optional($rdp.gatewayHost))
                     TextField("rdp.gateway.port", value: $rdp.gatewayPort, format: .number)

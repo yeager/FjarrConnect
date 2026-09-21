@@ -115,6 +115,9 @@
 "rdp.cert.trust" = "Confiar y conectar";
 
 "rdp.gateway.message" = "Mensaje de la puerta de enlace RDP";
+"rdp.display" = "Pantalla";
+"rdp.dynamicResolution" = "Adaptar el escritorio remoto al tamaño de la ventana";
+"rdp.dynamicResolution.hint" = "Desactívalo en servidores que se desconectan o rechazan el cambio de tamaño de pantalla.";
 
 "close.session.title" = "¿Cerrar esta sesión?";
 

@@ -3,10 +3,11 @@ import XCTest
 
 final class ConnectionOptionsTests: XCTestCase {
     func testLegacyProfilesRetainDefaultsAndAdvancedSettingsRoundTrip() throws {
-        let old = Data(#"{"id":"11111111-1111-1111-1111-111111111111","name":"Old","transport":"rdp","host":"desktop.local","port":3389}"#.utf8)
+        let old = Data(#"{"id":"11111111-1111-1111-1111-111111111111","name":"Old","transport":"rdp","host":"desktop.local","port":3389,"rdp":{"gatewayHost":"gateway.local"}}"#.utf8)
         var profile = try JSONDecoder().decode(ConnectionProfile.self, from: old)
         XCTAssertTrue(profile.sharesClipboard)
         XCTAssertNil(profile.ssh)
+        XCTAssertTrue(profile.rdp?.resizesRemoteDesktop ?? false)
         profile.ssh = SSHOptions(host: "files.local", port: 2222, username: "files", identityFile: "/tmp/test key",
                                  jumpHost: "jump.local", jumpUsername: "jump", startDirectory: "/srv/data")
         profile.rdp = RDPOptions(gatewayHost: "gateway.local", gatewayPort: 4443, gatewayUsername: "gateway-user", sharedFolders: ["/tmp/shared folder"])
@@ -59,6 +60,16 @@ final class ConnectionOptionsTests: XCTestCase {
         XCTAssertNil(RDPArguments.input(profile: profile, password: nil, gatewayPassword: "sample\n/cert:ignore"))
         profile.rdp?.sharedFolders = ["/tmp/ambiguous,path"]
         XCTAssertFalse(profile.isValid)
+    }
+
+    func testRDPDynamicResolutionDefaultsToEnabledAndCanBeDisabled() throws {
+        var profile = ConnectionProfile(name: "Desktop", transport: .rdp, host: "desktop.local")
+        profile.rdp = RDPOptions()
+        XCTAssertTrue(profile.rdp?.resizesRemoteDesktop ?? false)
+        XCTAssertTrue(String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self).contains("/dynamic-resolution\n"))
+        profile.rdp?.dynamicResolution = false
+        XCTAssertFalse(profile.rdp?.resizesRemoteDesktop ?? true)
+        XCTAssertFalse(String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self).contains("/dynamic-resolution\n"))
     }
 
     func testLoginAndGatewayCredentialsRemainSeparateAndAreRemovedTogether() throws {

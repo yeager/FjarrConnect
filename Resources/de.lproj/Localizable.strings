@@ -115,6 +115,9 @@
 "rdp.cert.trust" = "Vertrauen und verbinden";
 
 "rdp.gateway.message" = "Nachricht vom RDP-Gateway";
+"rdp.display" = "Anzeige";
+"rdp.dynamicResolution" = "Remotedesktop an Fenstergröße anpassen";
+"rdp.dynamicResolution.hint" = "Schalten Sie dies für Server aus, die eine Größenänderung ablehnen oder die Verbindung trennen.";
 
 "close.session.title" = "Diese Sitzung schließen?";
 

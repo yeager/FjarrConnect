@@ -176,6 +176,11 @@ backend’s argument format. Remote Desktop server policy may disable drive or
 clipboard redirection. A gateway can reuse the desktop credentials or use a separate
 username/password, saved in a separate Keychain item when requested.
 
+RDP adapts the remote desktop to the window size by default. If a legacy server,
+or an RDP-to-VNC gateway, rejects a display resize or disconnects during one, disable
+**Adapt remote desktop to window size** in that profile’s Advanced options and
+reconnect. The remote desktop then keeps its initial size.
+
 RDP currently presents one desktop surface per tab. Multi-monitor layouts, RemoteApp,
 USB/printer redirection and clipboard file transfer are not exposed. RoyalVNCKit’s
 VNC authentication currently covers None, VNC password, Apple Remote Desktop and

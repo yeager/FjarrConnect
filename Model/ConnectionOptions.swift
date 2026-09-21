@@ -51,6 +51,11 @@ struct RDPOptions: Codable, Hashable {
     var gatewayPort: UInt16?
     var gatewayUsername: String?
     var sharedFolders: [String]?
+    // Nil keeps profiles saved before this preference dynamically sized.
+    var dynamicResolution: Bool?
+
+    var resizesRemoteDesktop: Bool { dynamicResolution ?? true }
+
     var isValid: Bool {
         (gatewayHost.map(ConnectionURI.validHost) ?? true) && (gatewayPort ?? 443) > 0 &&
         (gatewayUsername.map(ConnectionOptions.validValue) ?? true) &&

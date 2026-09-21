@@ -115,6 +115,9 @@
 "rdp.cert.trust" = "Luota ja yhdistä";
 
 "rdp.gateway.message" = "Viesti RDP-yhdyskäytävältä";
+"rdp.display" = "Näyttö";
+"rdp.dynamicResolution" = "Sovita etätyöpöytä ikkunan kokoon";
+"rdp.dynamicResolution.hint" = "Poista tämä käytöstä palvelimilla, jotka katkaisevat yhteyden tai hylkäävät näytön koon muutoksen.";
 
 "close.session.title" = "Suljetaanko istunto?";
 
