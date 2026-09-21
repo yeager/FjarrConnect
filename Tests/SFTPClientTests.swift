@@ -91,6 +91,44 @@ final class SFTPClientTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: copy), bytes)
     }
 
+    func testCancelledDirectoryUploadResumesValidatedFiles() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let remote = root.appendingPathComponent("remote")
+        try FileManager.default.createDirectory(at: remote, withIntermediateDirectories: false)
+        let source = root.appendingPathComponent("folder")
+        try FileManager.default.createDirectory(at: source.appendingPathComponent("nested"), withIntermediateDirectories: true)
+        let firstBytes = Data((0..<100_000).map { UInt8($0 % 251) })
+        let secondBytes = Data((0..<40_000).map { UInt8(($0 + 17) % 251) })
+        try firstBytes.write(to: source.appendingPathComponent("nested/first.bin"))
+        try secondBytes.write(to: source.appendingPathComponent("second.bin"))
+        let target = remote.appendingPathComponent(source.lastPathComponent).path
+        let staging = SFTPClient.uploadStagingPath(target)
+
+        let first = try SFTPClient(executable: URL(fileURLWithPath: "/usr/libexec/sftp-server"), arguments: ["-d", remote.path])
+        first.onProgress = { _ in first.cancel() }
+        XCTAssertThrowsError(try first.upload(source, to: target)) { error in
+            guard case SFTPFailure.cancelled = error else { return XCTFail("Expected cancellation, got \(error)") }
+        }
+        first.close()
+        let inspector = try SFTPClient(executable: URL(fileURLWithPath: "/usr/libexec/sftp-server"), arguments: ["-d", remote.path])
+        XCTAssertEqual(try inspector.stat(staging)?.isDirectory, true)
+        inspector.close()
+
+        let retry = try SFTPClient(executable: URL(fileURLWithPath: "/usr/libexec/sftp-server"), arguments: ["-d", remote.path])
+        defer { retry.close() }
+        var reported = UInt64(0)
+        retry.onProgress = { reported += $0 }
+        try retry.upload(source, to: target)
+        XCTAssertEqual(reported, UInt64(firstBytes.count + secondBytes.count))
+        XCTAssertNil(try retry.stat(staging))
+        let copy = root.appendingPathComponent("copy")
+        try retry.download(target, to: copy)
+        XCTAssertEqual(try Data(contentsOf: copy.appendingPathComponent("nested/first.bin")), firstBytes)
+        XCTAssertEqual(try Data(contentsOf: copy.appendingPathComponent("second.bin")), secondBytes)
+    }
+
     func testMismatchedStagingFileIsDiscardedBeforeUpload() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)

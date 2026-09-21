@@ -173,10 +173,19 @@ final class SFTPClient {
             guard overwrite, existing.isRegularFile, attributes.isRegularFile == true else { throw SFTPFailure.exists }
         }
         if attributes.isDirectory == true {
-            let staging = remote + ".fjarrconnect-" + UUID().uuidString + ".partial"
-            try makeDirectory(staging)
-            try uploadDirectory(local, to: staging, depth: 0)
-            try rename(staging, to: remote)
+            let staging = Self.uploadStagingPath(remote)
+            do {
+                try prepareDirectoryStaging(local, remote: staging)
+                try uploadDirectory(local, to: staging, depth: 0)
+                try rename(staging, to: remote)
+            } catch {
+                // Keep only a structurally validated staging directory after an
+                // interrupted transfer. Other failures must not leave content
+                // that could be mistaken for a later upload.
+                let retainPartial = (error as? SFTPFailure)?.isFatal ?? false
+                if !retainPartial { try? removeDirectoryRecursively(staging) }
+                throw error
+            }
         } else {
             guard attributes.isRegularFile == true else { throw SFTPFailure.unsafeFile }
             let staging = Self.uploadStagingPath(remote)
@@ -202,11 +211,63 @@ final class SFTPClient {
             guard values.isSymbolicLink != true, Self.safeName(child.lastPathComponent) else { throw SFTPFailure.unsafeFile }
             let path = Self.join(remote, child.lastPathComponent)
             if values.isDirectory == true {
-                try makeDirectory(path)
+                if let existing = try stat(path) {
+                    guard existing.isDirectory else { throw SFTPFailure.exists }
+                } else { try makeDirectory(path) }
                 try uploadDirectory(child, to: path, depth: depth + 1)
-            } else if values.isRegularFile == true { try uploadFile(child, to: path) }
+            } else if values.isRegularFile == true {
+                let offset = try resumableOffset(local: child, staging: path)
+                try uploadFile(child, to: path, startingAt: offset)
+            }
             else { throw SFTPFailure.unsafeFile }
         }
+    }
+
+    private func prepareDirectoryStaging(_ local: URL, remote: String) throws {
+        if let staging = try stat(remote) {
+            guard staging.isDirectory, try directoryStagingMatches(local, remote: remote, depth: 0) else {
+                try removeDirectoryRecursively(remote)
+                try makeDirectory(remote)
+                return
+            }
+        } else { try makeDirectory(remote) }
+    }
+
+    /// A partial directory is reusable only when it has the exact same safe tree
+    /// shape as the local source. File bytes are then verified individually by
+    /// `resumableOffset` before any append is attempted.
+    private func directoryStagingMatches(_ local: URL, remote: String, depth: Int) throws -> Bool {
+        guard depth < 64 else { return false }
+        let localChildren = try FileManager.default.contentsOfDirectory(at: local, includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
+        var localByName: [String: URL] = [:]
+        for child in localChildren {
+            let values = try child.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
+            guard values.isSymbolicLink != true, Self.safeName(child.lastPathComponent),
+                  values.isDirectory == true || values.isRegularFile == true else { return false }
+            localByName[child.lastPathComponent] = child
+        }
+        let remoteChildren = try list(remote)
+        guard remoteChildren.count == localByName.count else { return false }
+        for entry in remoteChildren {
+            guard let child = localByName[entry.name] else { return false }
+            let values = try child.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey])
+            guard entry.isDirectory == (values.isDirectory == true) else { return false }
+            if entry.isDirectory, !directoryStagingMatches(child, remote: Self.join(remote, entry.name), depth: depth + 1) { return false }
+        }
+        return true
+    }
+
+    private func removeDirectoryRecursively(_ path: String, depth: Int = 0) throws {
+        guard depth < 64 else { throw SFTPFailure.unsafeFile }
+        guard let entry = try stat(path) else { return }
+        guard entry.isDirectory else { try remove(path, directory: false); return }
+        for child in try list(path) {
+            let childPath = Self.join(path, child.name)
+            if child.isDirectory { try removeDirectoryRecursively(childPath, depth: depth + 1) }
+            else if child.isRegularFile { try remove(childPath, directory: false) }
+            else { throw SFTPFailure.unsafeFile }
+        }
+        try remove(path, directory: true)
     }
 
     private func uploadFile(_ local: URL, to remote: String, startingAt: UInt64 = 0) throws {
