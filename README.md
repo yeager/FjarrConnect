@@ -334,11 +334,15 @@ xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
 Run Mac tests for the host architecture:
 
 ```bash
-xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
+python3 scripts/with-vnc-test-fixture.py xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
   -configuration Debug -destination 'platform=macOS' \
   ARCHS="$(uname -m)" ONLY_ACTIVE_ARCH=YES \
   CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO test
 ```
+
+The wrapper starts a VNC banner fixture on `127.0.0.1:45905` for the network
+discovery UI test and closes it when the test command exits. Xcode's sandboxed
+UI-test runner cannot host the listening socket itself.
 
 `scripts/build-rdp.sh arm64` and `scripts/build-rdp.sh x86_64` build the bundled RDP
 runtime from pinned FreeRDP and OpenSSL sources on a Mac with CMake available.

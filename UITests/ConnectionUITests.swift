@@ -1,24 +1,11 @@
 import XCTest
-import Network
 
 final class ConnectionUITests: XCTestCase {
     func testNetworkSearchVerifiesAndSavesALoopbackVNCService() throws {
         continueAfterFailure = false
-        let parameters = NWParameters.tcp
-        parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: .any)
-        let listener = try NWListener(using: parameters)
-        let queue = DispatchQueue(label: "discovery.ui.fixture")
-        let clients = DiscoveryUIConnections()
-        let ready = expectation(description: "loopback service ready")
-        listener.stateUpdateHandler = { if case .ready = $0 { ready.fulfill() } }
-        listener.newConnectionHandler = { client in
-            clients.values.append(client); client.start(queue: queue)
-            client.send(content: Data("RFB 003.008\n".utf8), completion: .contentProcessed { _ in })
-        }
-        listener.start(queue: queue)
-        defer { listener.cancel(); queue.sync { for client in clients.values { client.cancel() } } }
-        wait(for: [ready], timeout: 5)
-        let port = try XCTUnwrap(listener.port).rawValue
+        // Xcode's UI-test runner cannot listen on sockets. The test wrapper owns
+        // this loopback-only banner server and stops it when xcodebuild exits.
+        let port: UInt16 = 45905
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
         let file = directory.appendingPathComponent("profiles.json")
@@ -218,9 +205,4 @@ final class ConnectionUITests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
     }
-}
-
-// Connections are accessed only on the fixture queue, including cleanup via queue.sync.
-private final class DiscoveryUIConnections: @unchecked Sendable {
-    var values: [NWConnection] = []
 }
