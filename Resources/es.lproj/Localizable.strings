@@ -13,7 +13,7 @@
 "action.cancel" = "Cancelar";
 "action.save" = "Guardar";
 "detail.empty.title" = "No hay sesiones activas";
-"detail.empty.description" = "Selecciona una conexión guardada o un Mac de tu red, o escribe una dirección para conectarte.";
+"detail.empty.description" = "Haz doble clic en una conexión guardada, elige un Mac de la red o escribe una dirección para conectarte.";
 "field.name" = "Nombre";
 "field.protocol" = "Protocolo";
 "field.host" = "Servidor";

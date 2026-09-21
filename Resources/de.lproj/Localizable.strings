@@ -13,7 +13,7 @@
 "action.cancel" = "Abbrechen";
 "action.save" = "Sichern";
 "detail.empty.title" = "Keine aktive Sitzung";
-"detail.empty.description" = "Wähle eine gespeicherte Verbindung oder einen Mac im Netzwerk aus oder gib eine Adresse ein.";
+"detail.empty.description" = "Doppelklicken Sie auf eine gespeicherte Verbindung, wählen Sie einen Mac im Netzwerk oder geben Sie eine Adresse ein, um sich zu verbinden.";
 "field.name" = "Name";
 "field.protocol" = "Protokoll";
 "field.host" = "Host";

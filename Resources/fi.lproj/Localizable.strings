@@ -13,7 +13,7 @@
 "action.cancel" = "Peruuta";
 "action.save" = "Tallenna";
 "detail.empty.title" = "Ei aktiivista istuntoa";
-"detail.empty.description" = "Valitse tallennettu yhteys tai lähiverkon Mac tai muodosta yhteys kirjoittamalla osoite.";
+"detail.empty.description" = "Yhdistä kaksoisnapsauttamalla tallennettua yhteyttä, valitsemalla verkossa oleva Mac tai kirjoittamalla osoite.";
 "field.name" = "Nimi";
 "field.protocol" = "Protokolla";
 "field.host" = "Palvelin";

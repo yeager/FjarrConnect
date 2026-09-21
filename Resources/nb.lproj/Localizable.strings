@@ -17,7 +17,7 @@
 "action.save"                = "Lagre";
 
 "detail.empty.title"         = "Ingen aktiv økt";
-"detail.empty.description"   = "Velg en lagret tilkobling, en Mac på nettverket, eller skriv inn en adresse for å koble til.";
+"detail.empty.description" = "Dobbeltklikk på en lagret tilkobling, velg en Mac på nettverket, eller skriv inn en adresse for å koble til.";
 
 "field.name"                 = "Navn";
 "field.protocol"             = "Protokoll";

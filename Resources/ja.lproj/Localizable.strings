@@ -13,7 +13,7 @@
 "action.cancel" = "キャンセル";
 "action.save" = "保存";
 "detail.empty.title" = "接続中のセッションはありません";
-"detail.empty.description" = "保存済みの接続やネットワーク上のMacを選択するか、アドレスを入力して接続してください。";
+"detail.empty.description" = "保存済みの接続をダブルクリックするか、ネットワーク上のMacを選択するか、アドレスを入力して接続します。";
 "field.name" = "名前";
 "field.protocol" = "プロトコル";
 "field.host" = "ホスト";

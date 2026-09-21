@@ -17,7 +17,7 @@
 "action.save"                = "Spara";
 
 "detail.empty.title"         = "Ingen aktiv session";
-"detail.empty.description"   = "Välj en sparad anslutning, en Mac på nätverket, eller skriv en adress för att ansluta.";
+"detail.empty.description" = "Dubbelklicka på en sparad anslutning, välj en Mac i nätverket eller skriv en adress för att ansluta.";
 
 "field.name"                 = "Namn";
 "field.protocol"             = "Protokoll";

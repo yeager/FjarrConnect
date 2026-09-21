@@ -13,7 +13,7 @@
 "action.cancel" = "Annuler";
 "action.save" = "Enregistrer";
 "detail.empty.title" = "Aucune session active";
-"detail.empty.description" = "Sélectionnez une connexion enregistrée ou un Mac sur votre réseau, ou saisissez une adresse pour vous connecter.";
+"detail.empty.description" = "Double-cliquez sur une connexion enregistrée, choisissez un Mac sur le réseau ou saisissez une adresse pour vous connecter.";
 "field.name" = "Nom";
 "field.protocol" = "Protocole";
 "field.host" = "Hôte";

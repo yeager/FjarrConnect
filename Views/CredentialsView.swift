@@ -21,7 +21,7 @@ struct CredentialsView: View {
             Label("auth.title", systemImage: "lock.shield").font(.title2.bold())
             Text(profile.uri).foregroundStyle(.secondary).textSelection(.enabled)
             TextField(LocalizedStringKey(profile.transport == .vnc ? "field.vncUsername" : "field.username"), text: $username)
-            SecureField("field.password", text: $password)
+            SecureField("field.password", text: $password).accessibilityIdentifier("auth.password")
             if profile.rdp?.gatewayHost != nil, let gatewayUser = profile.rdp?.gatewayUsername {
                 Text(gatewayUser).font(.caption).foregroundStyle(.secondary)
                 SecureField("rdp.gateway.password", text: $gatewayPassword)
@@ -30,7 +30,7 @@ struct CredentialsView: View {
                 .font(.caption).foregroundStyle(.secondary)
             if saved { Toggle("auth.remember", isOn: $remember) }
             HStack {
-                Button("action.cancel") { dismiss() }.keyboardShortcut(.cancelAction)
+                Button("action.cancel") { dismiss() }.keyboardShortcut(.cancelAction).accessibilityIdentifier("auth.cancel")
                 Spacer()
                 Button("action.connect") {
                     var candidate = profile

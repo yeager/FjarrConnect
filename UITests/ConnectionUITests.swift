@@ -1,6 +1,37 @@
 import XCTest
 
 final class ConnectionUITests: XCTestCase {
+    func testSavedProfilesRequireDoubleClickToConnectIncludingFavorites() throws {
+        continueAfterFailure = false
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let profile: [String: Any] = ["id": UUID().uuidString, "name": "Double click host", "transport": "vnc", "host": "test.invalid", "port": 5900]
+        try JSONSerialization.data(withJSONObject: [profile]).write(to: file)
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = file.path
+        app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        app.launch()
+        defer { app.terminate() }
+        let row = app.buttons["connect.Double click host"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 15))
+        row.click()
+        XCTAssertFalse(app.secureTextFields["auth.password"].waitForExistence(timeout: 1))
+        row.doubleClick()
+        XCTAssertTrue(app.secureTextFields["auth.password"].waitForExistence(timeout: 5))
+        app.buttons["auth.cancel"].click()
+        app.buttons["favorite.Double click host"].click()
+        XCTAssertTrue(app.staticTexts["Favorites"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.secureTextFields["auth.password"].exists)
+        row.click()
+        XCTAssertFalse(app.secureTextFields["auth.password"].waitForExistence(timeout: 1))
+        row.doubleClick()
+        XCTAssertTrue(app.secureTextFields["auth.password"].waitForExistence(timeout: 5))
+        app.buttons["auth.cancel"].click()
+    }
+
     func testLocalizedProfileEditorInEveryLanguage() throws {
         continueAfterFailure = false
         let languages = [

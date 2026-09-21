@@ -17,7 +17,7 @@
 "action.save"                = "Save";
 
 "detail.empty.title"         = "No Active Session";
-"detail.empty.description"   = "Pick a saved connection, choose a Mac on your network, or type an address to connect.";
+"detail.empty.description" = "Double-click a saved connection, choose a Mac on your network, or type an address to connect.";
 
 "field.name"                 = "Name";
 "field.protocol"             = "Protocol";

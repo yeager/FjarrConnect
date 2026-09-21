@@ -17,7 +17,7 @@
 "action.save"                = "Gem";
 
 "detail.empty.title"         = "Ingen aktiv session";
-"detail.empty.description"   = "Vælg en gemt forbindelse, en Mac på netværket, eller skriv en adresse for at oprette forbindelse.";
+"detail.empty.description" = "Dobbeltklik på en gemt forbindelse, vælg en Mac på netværket, eller indtast en adresse for at oprette forbindelse.";
 
 "field.name"                 = "Navn";
 "field.protocol"             = "Protokol";

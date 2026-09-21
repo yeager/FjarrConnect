@@ -49,7 +49,8 @@ confirmation before closing active sessions.
   section. Click again to remove it. Favorites persist between launches, work with
   search, and preserve compatibility with existing saved profiles.
 - **Saved connections:** create, edit and delete profiles with a name, host, port,
-  protocol, username and optional group. Right-click a connection for available actions.
+  protocol, username and optional group. Single-click to select a saved profile;
+  **double-click to connect**, including favorites. Right-click for connection and editing actions.
 - **Session tabs:** keep multiple connections open and switch between them. Closing
   a connected tab, the main window or the app asks for confirmation first. Cancel
   leaves sessions and transfers running. RDP desktops stay inside their tabs.

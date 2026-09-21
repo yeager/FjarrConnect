@@ -6,6 +6,7 @@ struct ContentView: View {
     @EnvironmentObject var connection: ConnectionManager
     @State private var quickConnect = ""
     @State private var search = ""
+    @State private var selectedProfileID: UUID?
     @State private var editing: ConnectionProfile?
     @State private var showingNew = false
     @State private var credentials: ConnectionProfile?
@@ -54,6 +55,9 @@ struct ContentView: View {
         .sheet(item: $editing) { ProfileEditorView(profile: $0) }
         .sheet(item: $commandLog) { SSHCommandLogView(profile: $0) }
         .onChange(of: profiles.profiles) { _, saved in
+            if let selectedProfileID, !saved.contains(where: { $0.id == selectedProfileID }) {
+                self.selectedProfileID = nil
+            }
             for tab in connection.tabs {
                 guard let session = tab.backend as? SSHRemoteSession else { continue }
                 session.updateLoggingPreference(saved.first { $0.id == session.profile.id }?.logsSSHCommands ?? false)
@@ -82,7 +86,7 @@ struct ContentView: View {
     }
 
     private var sidebar: some View {
-        List {
+        List(selection: $selectedProfileID) {
             Section("action.quickConnect") {
                 HStack(spacing: 8) {
                     TextField("quickconnect.placeholder", text: $quickConnect)
@@ -133,7 +137,7 @@ struct ContentView: View {
 
     private func profileRow(_ profile: ConnectionProfile) -> some View {
         HStack(spacing: 6) {
-            Button { requestConnect(profile) } label: {
+            Button { selectedProfileID = profile.id } label: {
                 HStack(spacing: 10) {
                     Image(systemName: profile.transport.symbol).foregroundStyle(.tint).frame(width: 24)
                     VStack(alignment: .leading, spacing: 3) {
@@ -142,7 +146,10 @@ struct ContentView: View {
                     }
                     Spacer(minLength: 0)
                 }.padding(.vertical, 5).contentShape(Rectangle())
-            }.buttonStyle(.plain).accessibilityIdentifier("connect.\(profile.name)")
+            }.buttonStyle(.plain)
+                .simultaneousGesture(TapGesture(count: 2).onEnded { requestConnect(profile) })
+                .accessibilityAction(named: Text("action.connect")) { requestConnect(profile) }
+                .accessibilityIdentifier("connect.\(profile.name)")
             Button { toggleFavorite(profile) } label: {
                 Image(systemName: profile.isFavorite ? "star.fill" : "star")
                     .foregroundStyle(profile.isFavorite ? Color.yellow : Color.secondary)
@@ -152,7 +159,7 @@ struct ContentView: View {
             .accessibilityLabel(Text(profile.isFavorite ? "favorite.remove" : "favorite.add"))
             .accessibilityValue(Text(profile.name))
             .accessibilityIdentifier("favorite.\(profile.name)")
-        }.contextMenu {
+        }.tag(profile.id).contextMenu {
             Button("action.connect") { requestConnect(profile) }
             Button("files.title") { connection.connect(profile.fileProfile) }
             Button("links.smb") { if let url = profile.serviceURL("smb") { NSWorkspace.shared.open(url) } }
