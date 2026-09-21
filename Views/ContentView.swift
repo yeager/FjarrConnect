@@ -31,7 +31,9 @@ struct ContentView: View {
                                                 select: { connection.selectedID = tab.id }, close: { connection.requestClose(tab.id) })
                             }
                         }.padding(8)
-                    }.background(.bar)
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    .background(.bar, ignoresSafeAreaEdges: [])
                     Divider()
                     if let tab = connection.selected {
                         SessionDetailView(tab: tab, reconnect: {
@@ -284,14 +286,14 @@ private struct SessionTabLabel: View {
         HStack(spacing: 8) {
             Button(action: select) {
                 Label(tab.backend.profile.name, systemImage: tab.backend.profile.transport.symbol).lineLimit(1)
-            }.buttonStyle(.plain)
+            }.buttonStyle(.borderless)
                 .accessibilityIdentifier("session.select.\(tab.backend.profile.name)")
                 .accessibilityAddTraits(selected ? .isSelected : [])
             Button(action: close) {
                 Image(systemName: "xmark").font(.caption)
                     .frame(width: 24, height: 24).contentShape(Rectangle())
             }
-                .buttonStyle(.plain).help("action.closeSession")
+                .buttonStyle(.borderless).help("action.closeSession")
                 .accessibilityLabel(Text("action.closeSession"))
                 .accessibilityIdentifier("session.close.\(tab.backend.profile.name)")
         }.padding(.horizontal, 12).padding(.vertical, 8)
