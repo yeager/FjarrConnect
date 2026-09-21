@@ -146,9 +146,9 @@ menu actions send the corresponding Ctrl shortcuts to the remote application.
 VNC negotiates Unicode text with Extended Clipboard peers, including TigerVNC;
 legacy VNC peers are limited to Latin-1. Text is bounded to 1 MiB. Clipboard images,
 rich text and clipboard file copying are not implemented. The VNC extension and
-session policy are pinned to a reviewed fork revision while
-[the upstream contribution](https://github.com/royalapplications/royalvnc/pull/37)
-is under review.
+session policy are pinned to a tested fork revision. Extended Clipboard is
+proposed upstream in [RoyalVNCKit PR #38](https://github.com/royalapplications/royalvnc/pull/38);
+the active-session policy remains in FjärrConnect’s SDK fork.
 
 For files, choose **Files (SFTP)** from a host’s context menu. VNC/RDP profiles can
 specify a separate SSH address, port, username and starting directory under

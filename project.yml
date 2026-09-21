@@ -8,7 +8,7 @@ options:
 
 packages:
   RoyalVNCKit:
-    # Unicode clipboard and session policy submitted upstream as royalvnc#37.
+    # Tested Unicode clipboard and active-session policy fork; protocol proposal: royalvnc#38.
     url: https://github.com/yeager/royalvnc
     revision: "03bf56cdd99292c466258c7b06d815bd47b3a57a"
   SwiftTerm:
