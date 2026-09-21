@@ -42,6 +42,8 @@ struct WindowCloseConfirmation: NSViewRepresentable {
             super.init(frame: .zero)
         }
         required init?(coder: NSCoder) { nil }
+        // This background view observes the window; clicks belong to the SwiftUI controls above it.
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
             guard let window, window.delegate !== guardDelegate else { return }

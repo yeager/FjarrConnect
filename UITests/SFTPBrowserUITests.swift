@@ -31,6 +31,8 @@ final class SFTPBrowserUITests: XCTestCase {
         let secondTab = app.buttons["session.select.Second files"]
         XCTAssertTrue(firstTab.exists); XCTAssertTrue(secondTab.exists)
         firstTab.click()
+        XCTAssertTrue(firstTab.isSelected)
+        XCTAssertFalse(secondTab.isSelected)
         XCTAssertTrue(app.outlines["files.table"].exists)
 
         // Both the window delegate and the application delegate must honour Cancel.
@@ -39,7 +41,10 @@ final class SFTPBrowserUITests: XCTestCase {
             XCTAssertTrue(app.staticTexts["Close active sessions?"].firstMatch.waitForExistence(timeout: 5))
             app.buttons["Cancel"].firstMatch.click()
             XCTAssertTrue(firstTab.exists); XCTAssertTrue(secondTab.exists)
-            secondTab.click(); app.buttons["files.refresh"].click()
+            secondTab.click()
+            XCTAssertTrue(secondTab.isSelected)
+            XCTAssertFalse(firstTab.isSelected)
+            app.buttons["files.refresh"].click()
             let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: app.buttons["files.refresh"])
             XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 8), .completed)
         }

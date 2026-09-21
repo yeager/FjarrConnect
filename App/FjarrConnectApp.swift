@@ -38,7 +38,7 @@ struct FjarrConnectApp: App {
                 .environmentObject(discovery)
                 .environmentObject(connection)
                 .frame(minWidth: 900, minHeight: 560)
-                .background(WindowCloseConfirmation(shouldClose: connection.confirmClosingAll))
+                .background(WindowCloseConfirmation(shouldClose: connection.confirmClosingAll).allowsHitTesting(false))
                 .onAppear {
                     appDelegate.shouldTerminate = connection.confirmClosingAll
                     #if DEBUG
