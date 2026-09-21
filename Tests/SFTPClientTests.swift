@@ -76,11 +76,11 @@ final class SFTPClientTests: XCTestCase {
         XCTAssertThrowsError(try first.upload(source, to: target)) { error in
             guard case SFTPFailure.cancelled = error else { return XCTFail("Expected cancellation, got \(error)") }
         }
-        XCTAssertEqual(try first.stat(staging)?.size, 32_768)
         first.close()
 
         let retry = try SFTPClient(executable: URL(fileURLWithPath: "/usr/libexec/sftp-server"), arguments: ["-d", remote.path])
         defer { retry.close() }
+        XCTAssertEqual(try retry.stat(staging)?.size, 32_768)
         var reported = UInt64(0)
         retry.onProgress = { reported += $0 }
         try retry.upload(source, to: target)
