@@ -287,7 +287,10 @@ private struct SessionTabLabel: View {
             }.buttonStyle(.plain)
                 .accessibilityIdentifier("session.select.\(tab.backend.profile.name)")
                 .accessibilityAddTraits(selected ? .isSelected : [])
-            Button(action: close) { Image(systemName: "xmark").font(.caption) }
+            Button(action: close) {
+                Image(systemName: "xmark").font(.caption)
+                    .frame(width: 24, height: 24).contentShape(Rectangle())
+            }
                 .buttonStyle(.plain).help("action.closeSession")
                 .accessibilityLabel(Text("action.closeSession"))
                 .accessibilityIdentifier("session.close.\(tab.backend.profile.name)")

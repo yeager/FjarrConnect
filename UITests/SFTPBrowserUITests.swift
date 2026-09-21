@@ -134,7 +134,7 @@ final class SFTPBrowserUITests: XCTestCase {
         attachment.name = "SFTP real server: selected file after round-trip transfer"
         attachment.lifetime = .keepAlways; add(attachment)
 
-        uploaded.rightClick(); app.menuItems["Delete"].click()
+        uploaded.rightClick(); app.outlines["files.table"].menuItems["Delete"].click()
         XCTAssertTrue(app.buttons["OK"].firstMatch.waitForExistence(timeout: 5))
         app.buttons["OK"].firstMatch.click()
         let removed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in

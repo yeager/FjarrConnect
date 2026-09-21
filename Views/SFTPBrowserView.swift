@@ -29,7 +29,8 @@ struct SFTPBrowserView: View {
                                 Button("files.rename") { if let name = askName(title: "files.rename", initial: selected.name) { session.rename(selected, to: name) } }
                                 Button("action.delete", role: .destructive) { delete(selected) }
                             }
-                        } label: { Image(systemName: "ellipsis.circle") }.accessibilityIdentifier("files.actions")
+                        } label: { Image(systemName: "ellipsis.circle") }
+                            .fixedSize().accessibilityIdentifier("files.actions")
                     }.padding(10).disabled(session.busy || session.status != .connected)
                     Divider()
                     Table(session.entries, selection: $selection) {
