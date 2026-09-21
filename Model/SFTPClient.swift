@@ -342,12 +342,20 @@ final class SFTPClient {
             guard values.isRegularFile == true, values.isSymbolicLink != true else { throw SFTPFailure.unsafeFile }
         }
         if entry.isDirectory {
-            let staging = local.deletingLastPathComponent().appendingPathComponent(".fjarrconnect-\(UUID().uuidString).partial")
-            defer { try? FileManager.default.removeItem(at: staging) }
-            try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
-            try downloadDirectory(remote, to: staging, depth: 0)
-            if exists { _ = try FileManager.default.replaceItemAt(local, withItemAt: staging) }
-            else { try FileManager.default.moveItem(at: staging, to: local) }
+            let staging = Self.downloadStagingPath(local)
+            do {
+                try prepareDirectoryDownloadStaging(remote, local: staging, depth: 0)
+                try downloadDirectory(remote, to: staging, depth: 0)
+                if exists { _ = try FileManager.default.replaceItemAt(local, withItemAt: staging) }
+                else { try FileManager.default.moveItem(at: staging, to: local) }
+            } catch {
+                // A cancelled or disconnected transfer can be resumed only after
+                // its local staging tree has been checked against the server again.
+                // Other failures discard it so stale content cannot be published later.
+                let retainPartial = (error as? SFTPFailure)?.isFatal ?? false
+                if !retainPartial { try? FileManager.default.removeItem(at: staging) }
+                throw error
+            }
         } else if entry.isRegularFile {
             let staging = Self.downloadStagingPath(local)
             do {
@@ -371,11 +379,57 @@ final class SFTPClient {
             let path = Self.join(remote, entry.name)
             let destination = local.appendingPathComponent(entry.name)
             if entry.isDirectory {
-                try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+                if FileManager.default.fileExists(atPath: destination.path) {
+                    let values = try destination.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+                    guard values.isDirectory == true, values.isSymbolicLink != true else { throw SFTPFailure.unsafeFile }
+                } else {
+                    try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+                }
                 try downloadDirectory(path, to: destination, depth: depth + 1)
-            } else if entry.isRegularFile { try downloadFile(path, to: destination) }
+            } else if entry.isRegularFile {
+                let offset = try resumableDownloadOffset(remote: path, staging: destination, remoteSize: entry.size)
+                try downloadFile(path, to: destination, startingAt: offset, expectedSize: entry.size)
+            }
             else { throw SFTPFailure.unsafeFile }
         }
+    }
+
+    /// Accept a partial local tree only when every item is safe and still has a
+    /// matching counterpart on the server. Individual file prefixes are checked
+    /// again by `resumableDownloadOffset` before they are appended to.
+    private func prepareDirectoryDownloadStaging(_ remote: String, local: URL, depth: Int) throws {
+        if FileManager.default.fileExists(atPath: local.path) {
+            guard try directoryDownloadStagingMatches(remote, local: local, depth: depth) else {
+                try FileManager.default.removeItem(at: local)
+                try FileManager.default.createDirectory(at: local, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+                return
+            }
+        } else {
+            try FileManager.default.createDirectory(at: local, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+        }
+    }
+
+    private func directoryDownloadStagingMatches(_ remote: String, local: URL, depth: Int) throws -> Bool {
+        guard depth < 64 else { return false }
+        let localValues = try local.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+        guard localValues.isDirectory == true, localValues.isSymbolicLink != true else { return false }
+        let remoteEntries = try list(remote)
+        var remoteByName: [String: SFTPEntry] = [:]
+        for entry in remoteEntries {
+            guard remoteByName[entry.name] == nil else { return false }
+            remoteByName[entry.name] = entry
+        }
+        let localChildren = try FileManager.default.contentsOfDirectory(at: local, includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
+        for child in localChildren {
+            let values = try child.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
+            guard values.isSymbolicLink != true, Self.safeName(child.lastPathComponent),
+                  let remoteEntry = remoteByName[child.lastPathComponent],
+                  remoteEntry.isDirectory == (values.isDirectory == true),
+                  remoteEntry.isRegularFile == (values.isRegularFile == true) else { return false }
+            if remoteEntry.isDirectory,
+               try !directoryDownloadStagingMatches(Self.join(remote, remoteEntry.name), local: child, depth: depth + 1) { return false }
+        }
+        return true
     }
 
     private func downloadFile(_ remote: String, to local: URL, startingAt: UInt64 = 0, expectedSize: UInt64? = nil) throws {

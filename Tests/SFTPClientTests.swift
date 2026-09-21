@@ -205,4 +205,37 @@ final class SFTPClientTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: staging.path))
         XCTAssertEqual(try Data(contentsOf: destination), bytes)
     }
+
+    func testCancelledDirectoryDownloadResumesValidatedFiles() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let remote = root.appendingPathComponent("remote")
+        try FileManager.default.createDirectory(at: remote.appendingPathComponent("folder/nested"), withIntermediateDirectories: true)
+        let firstBytes = Data((0..<100_000).map { UInt8($0 % 251) })
+        let secondBytes = Data((0..<40_000).map { UInt8(($0 + 17) % 251) })
+        try firstBytes.write(to: remote.appendingPathComponent("folder/nested/first.bin"))
+        try secondBytes.write(to: remote.appendingPathComponent("folder/second.bin"))
+        let source = remote.appendingPathComponent("folder")
+        let destination = root.appendingPathComponent("copy")
+        let staging = SFTPClient.downloadStagingPath(destination)
+
+        let first = try SFTPClient(executable: URL(fileURLWithPath: "/usr/libexec/sftp-server"), arguments: ["-d", remote.path])
+        first.onProgress = { _ in first.cancel() }
+        XCTAssertThrowsError(try first.download(source.path, to: destination)) { error in
+            guard case SFTPFailure.cancelled = error else { return XCTFail("Expected cancellation, got \(error)") }
+        }
+        first.close()
+        XCTAssertEqual((try staging.resourceValues(forKeys: [.isDirectoryKey])).isDirectory, true)
+
+        let retry = try SFTPClient(executable: URL(fileURLWithPath: "/usr/libexec/sftp-server"), arguments: ["-d", remote.path])
+        defer { retry.close() }
+        var reported = UInt64(0)
+        retry.onProgress = { reported += $0 }
+        try retry.download(source.path, to: destination)
+        XCTAssertEqual(reported, UInt64(firstBytes.count + secondBytes.count))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: staging.path))
+        XCTAssertEqual(try Data(contentsOf: destination.appendingPathComponent("nested/first.bin")), firstBytes)
+        XCTAssertEqual(try Data(contentsOf: destination.appendingPathComponent("second.bin")), secondBytes)
+    }
 }

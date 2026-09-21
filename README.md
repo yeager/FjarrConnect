@@ -17,17 +17,17 @@ There are no Windows, Linux or mobile app targets.
 
 **[GitHub repository](https://github.com/yeager/FjarrConnect)**
 
-## Version 0.2.13
+## Version 0.2.14
 
-**[Download version 0.2.13](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.13)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.13-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.13-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.14](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.14)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.14-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.14-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.13 resumes cancelled or interrupted SFTP uploads for files and directories,
-and regular-file downloads. It verifies every transferred file prefix before resuming and
-retains the existing download destination until the complete file is ready. Saved profiles still connect on **double-click**;
+Version 0.2.14 resumes cancelled or interrupted SFTP uploads and downloads for files and directories.
+It verifies every transferred file prefix before resuming and retains the existing download destination
+until the complete item is ready. Saved profiles still connect on **double-click**;
 a single click only selects the profile. Saved profiles and Keychain passwords are retained.
 
 Every release passes gitleaks, Mac regression tests, separate architecture packaging and
@@ -157,7 +157,7 @@ Uploads can also be started by dropping files onto the panel. Existing files req
 confirmation before replacement. Folders are transferred recursively without merging
 into existing folders; symbolic links and special files are rejected. Transfers use
 private staging files, and originals are preserved on failure. In the current
-published version (0.2.13), cancelling an upload or download keeps the
+published version (0.2.14), cancelling an upload or download keeps the
 authenticated SSH connection and
 refreshes the file panel, so you can continue without signing in again.
 The file table also uses native row actions: single-click selects,
@@ -168,7 +168,7 @@ FjärrConnect retains its private `.fjarrconnect.partial` staging file. Start th
 transfer again to resume it. Before reusing the staging file, FjärrConnect compares
 its complete transferred prefix with the source; a mismatch is discarded and the
 transfer starts over. Directory uploads use the same verified per-file resume behavior;
-directory downloads still restart after interruption.
+directory downloads use the same verified per-file resume behavior.
 
 SSH forwards listen on loopback by default. A forwarding failure is reported by
 OpenSSH instead of silently opening a session without the requested tunnel. Identity
@@ -389,15 +389,15 @@ Development is on **`main`**.
   requests. The release workflow also requires a clean full-history scan.
   `.gitleaksignore` contains one exact historical finding for a removed, fictional
   README credential example. No scanner rule or source path is broadly excluded.
-- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.13`**, triggers a
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.14`**, triggers a
   fresh scan, test and build. GitHub publishes the release assets only when these pass.
 
 For maintainers, after the current `main` revision passes verification:
 
 ```bash
 git pull --ff-only
-git tag v0.2.13
-git push origin v0.2.13
+git tag v0.2.14
+git push origin v0.2.14
 ```
 
 Do not reuse or move an already published release tag. Use a new version for fixes.
