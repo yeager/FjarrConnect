@@ -252,7 +252,7 @@ final class SFTPClient {
             guard let child = localByName[entry.name] else { return false }
             let values = try child.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey])
             guard entry.isDirectory == (values.isDirectory == true) else { return false }
-            if entry.isDirectory, !directoryStagingMatches(child, remote: Self.join(remote, entry.name), depth: depth + 1) { return false }
+            if entry.isDirectory, try !directoryStagingMatches(child, remote: Self.join(remote, entry.name), depth: depth + 1) { return false }
         }
         return true
     }
