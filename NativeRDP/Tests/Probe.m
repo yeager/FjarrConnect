@@ -35,7 +35,8 @@ int main(int argc, const char **argv) {
         window.title = @"FjärrConnect — embedded RDP integration test";
         window.contentView = view; [window makeKeyAndOrderFront:nil]; [NSApp activateIgnoringOtherApps:YES];
         [window makeFirstResponder:view]; fc_rdp_set_active((__bridge void *)view, 1); fc_rdp_start((__bridge void *)view);
-        NSTimeInterval deadline = NSDate.timeIntervalSinceReferenceDate + ([NSProcessInfo.processInfo.environment[@"FC_TEST_LONG"] isEqualToString:@"1"] ? 65 : 25);
+        NSTimeInterval stableSeconds = MAX(6, MIN(120, [NSProcessInfo.processInfo.environment[@"FC_TEST_STABLE_SECONDS"] doubleValue]));
+        NSTimeInterval deadline = NSDate.timeIntervalSinceReferenceDate + MAX(stableSeconds + 25, [NSProcessInfo.processInfo.environment[@"FC_TEST_LONG"] isEqualToString:@"1"] ? 65 : 25);
         NSTimeInterval connectedAt = 0;
         BOOL resize = NO;
         int result = 4;
@@ -65,12 +66,16 @@ int main(int argc, const char **argv) {
                         }
                     }
                 }
-                if (connectedAt && NSDate.timeIntervalSinceReferenceDate - connectedAt > 6) {
+                if (connectedAt && NSDate.timeIntervalSinceReferenceDate - connectedAt > stableSeconds) {
+                    // A negotiated connection alone is not a working desktop. This
+                    // private test view must also receive a rendered remote frame.
+                    NSImage *remoteFrame = [view valueForKey:@"_frame"];
+                    if (!remoteFrame || remoteFrame.size.width <= 0 || remoteFrame.size.height <= 0) { result = 7; break; }
                     NSBitmapImageRep *image = [view bitmapImageRepForCachingDisplayInRect:view.bounds];
                     [view cacheDisplayInRect:view.bounds toBitmapImageRep:image];
                     NSData *png = [image representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
-                    [png writeToFile:[NSString stringWithUTF8String:argv[2]] atomically:YES];
-                    result = incorrectCertificate ? 6 : 0; break;
+                    BOOL saved = [png writeToFile:[NSString stringWithUTF8String:argv[2]] atomically:YES];
+                    result = incorrectCertificate ? 6 : (saved ? 0 : 7); break;
                 }
             }
         }

@@ -52,7 +52,7 @@ jobs:
       - name: Run regression tests
         run: |
           set -o pipefail
-          xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
+          python3 scripts/with-vnc-test-fixture.py xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
             -configuration Debug -destination 'platform=macOS' \
             -derivedDataPath build/test -resultBundlePath build/TestResults.xcresult \
             ARCHS="$(uname -m)" ONLY_ACTIVE_ARCH=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO test | xcbeautify

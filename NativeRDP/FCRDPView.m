@@ -219,8 +219,8 @@ static void FCAnnounceClipboard(FCContext *context);
     freerdp_settings_set_bool(base->settings, FreeRDP_CertificateCallbackPreferPEM, FALSE);
     freerdp_settings_set_bool(base->settings, FreeRDP_AutoReconnectionEnabled, FALSE);
     freerdp_settings_set_bool(base->settings, FreeRDP_UnicodeInput, TRUE);
-    // This view uses explicit rendering settings and has no adaptive-bandwidth UI.
-    freerdp_settings_set_bool(base->settings, FreeRDP_NetworkAutoDetect, FALSE);
+    // Keep FreeRDP's network autodetection enabled: Windows sends RTT requests
+    // during desktop activation and the core must be able to answer them.
     [_lock lock]; _context = ctx; BOOL cancelled = self.cancelled; [_lock unlock];
     BOOL connected = parsed == 0 && !cancelled && freerdp_connect(instance);
     if (connected) {
