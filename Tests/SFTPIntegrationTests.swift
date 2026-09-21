@@ -78,6 +78,44 @@ final class SFTPIntegrationTests: XCTestCase {
     func testCancellingTransferKeepsAuthenticationAndOtherSession() throws {
         try interruptTransfer(closeSession: false)
     }
+
+    func testCancelledUploadResumesAfterTheSFTPChannelRecovers() throws {
+        let server = try SFTPServerFixture()
+        defer { server.close() }
+        let session = SFTPRemoteSession(profile: server.profile(name: "Resume files"), sshConfiguration: server.clientConfiguration)
+        defer { session.stop() }
+        session.start()
+        try waitUntil { session.status == .connected }
+        let authenticatedTerminal = session.terminal
+        let source = server.directory.appendingPathComponent("resume.bin")
+        XCTAssertTrue(FileManager.default.createFile(atPath: source.path, contents: nil))
+        let handle = try FileHandle(forWritingTo: source)
+        try handle.truncate(atOffset: 256 * 1024 * 1024)
+        try handle.close()
+        var cancelled = false
+        let observation = session.$transferred.sink { count in
+            if count > 0 && !cancelled {
+                cancelled = true
+                session.cancelTransfer()
+            }
+        }
+        session.upload([(source, false)])
+        try waitUntil { cancelled && !session.busy }
+        withExtendedLifetime(observation) {}
+        XCTAssertEqual(session.status, .connected)
+        XCTAssertTrue(session.terminal === authenticatedTerminal)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: SFTPClient.uploadStagingPath(server.remote.appendingPathComponent(source.lastPathComponent).path)))
+
+        session.upload([(source, false)])
+        try waitUntil { !session.busy }
+        XCTAssertNil(session.errorMessage)
+        XCTAssertEqual(session.transferred, 256 * 1024 * 1024)
+        let final = server.remote.appendingPathComponent(source.lastPathComponent)
+        let attributes = try FileManager.default.attributesOfItem(atPath: final.path)
+        XCTAssertEqual((attributes[.size] as? NSNumber)?.uint64Value, 256 * 1024 * 1024)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: SFTPClient.uploadStagingPath(server.remote.appendingPathComponent(source.lastPathComponent).path)))
+    }
+
     private func interruptTransfer(closeSession: Bool) throws {
         let passphrase = closeSession ? "" : UUID().uuidString
         let server = try SFTPServerFixture(passphrase: passphrase)
