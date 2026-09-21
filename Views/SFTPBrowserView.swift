@@ -50,7 +50,8 @@ struct SFTPBrowserView: View {
                             ProgressView().controlSize(.small)
                             Text(ByteCountFormatter.string(fromByteCount: Int64(clamping: session.transferred), countStyle: .file)).monospacedDigit()
                             Spacer()
-                            Button("files.cancelTransfer") { session.stop() }
+                            Button("files.cancelTransfer") { session.cancelTransfer() }
+                                .disabled(session.recoveringTransfer)
                         }.padding(10)
                     }
                 }

@@ -18,8 +18,16 @@ final class SFTPRemoteSession: NSObject, RemoteSession, LocalProcessTerminalView
     private let clientLock = NSLock()
     private var client: SFTPClient?
     private var stopped = false
+    private let configurationArguments: [String]
+    @Published private(set) var recoveringTransfer = false
 
-    init(profile: ConnectionProfile) { self.profile = profile; super.init() }
+    // An explicit configuration lets integration tests isolate host keys and
+    // identities while exercising the real OpenSSH master and subsystem.
+    init(profile: ConnectionProfile, sshConfiguration: URL? = nil) {
+        self.profile = profile
+        configurationArguments = sshConfiguration.map { ["-F", $0.path] } ?? []
+        super.init()
+    }
     func start() {
         guard terminal == nil else { return }
         do {
@@ -32,7 +40,7 @@ final class SFTPRemoteSession: NSObject, RemoteSession, LocalProcessTerminalView
             view.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
             terminal = view
             view.startProcess(executable: "/usr/bin/ssh",
-                args: ["-M", "-S", folder.appendingPathComponent("control").path, "-N", "-o", "ControlPersist=no"] + SSHArguments.connection(profile) + ["--", profile.host],
+                args: configurationArguments + ["-M", "-S", folder.appendingPathComponent("control").path, "-N", "-o", "ControlPersist=no"] + SSHArguments.connection(profile) + ["--", profile.host],
                 environment: SSHArguments.environment())
             guard view.process.running else { throw SFTPFailure.disconnected }
             status = .connecting
@@ -43,24 +51,36 @@ final class SFTPRemoteSession: NSObject, RemoteSession, LocalProcessTerminalView
         guard let socket = socketDirectory?.appendingPathComponent("control").path,
               FileManager.default.fileExists(atPath: socket) else { return }
         authenticationTimer?.invalidate(); authenticationTimer = nil
+        openChannel(socket: socket, directory: profile.ssh?.startDirectory ?? ".")
+    }
+    private func openChannel(socket: String, directory: String) {
         busy = true
         queue.async { [weak self] in
             guard let self else { return }
             do {
+                self.clientLock.lock(); let oldClient = self.client; self.client = nil; self.clientLock.unlock()
+                oldClient?.close()
                 let client = try SFTPClient(executable: URL(fileURLWithPath: "/usr/bin/ssh"), arguments:
-                    ["-S", socket, "-o", "BatchMode=yes", "-o", "ControlMaster=no", "-o", "ClearAllForwardings=yes",
+                    self.configurationArguments + ["-S", socket, "-o", "BatchMode=yes", "-o", "ControlMaster=no", "-o", "ClearAllForwardings=yes",
                      "-o", "RemoteCommand=none", "-o", "RequestTTY=no"] + SSHArguments.connection(self.profile) + ["-s", "--", self.profile.host, "sftp"])
                 self.clientLock.lock()
                 if self.stopped { self.clientLock.unlock(); client.close(); return }
                 self.client = client; self.clientLock.unlock()
-                let path = try client.realPath(self.profile.ssh?.startDirectory ?? ".")
+                let path = try client.realPath(directory)
                 let entries = try client.list(path)
                 DispatchQueue.main.async {
                     guard !self.status.isFinished else { return }
-                    self.entries = entries; self.directory = path; self.busy = false; self.status = .connected
+                    self.entries = entries; self.directory = path; self.recoveringTransfer = false
+                    self.busy = false; self.status = .connected
                 }
             } catch { DispatchQueue.main.async { if !self.status.isFinished { self.stop(); self.status = .disconnected(reason: error.localizedDescription) } } }
         }
+    }
+    func cancelTransfer() {
+        guard busy, status == .connected, !recoveringTransfer else { return }
+        recoveringTransfer = true
+        clientLock.lock(); let client = self.client; clientLock.unlock()
+        client?.cancel()
     }
     func browse(_ path: String) {
         perform { client in
@@ -126,6 +146,14 @@ final class SFTPRemoteSession: NSObject, RemoteSession, LocalProcessTerminalView
             let total = bytes
             DispatchQueue.main.async {
                 guard !self.status.isFinished else { return }
+                if self.recoveringTransfer, let socket = self.socketDirectory?.appendingPathComponent("control").path {
+                    self.transferred = total
+                    // A cancelled request may leave unread SFTP replies. Replace
+                    // only that subsystem channel, retaining the authenticated SSH
+                    // master so no password/passphrase is requested again.
+                    self.openChannel(socket: socket, directory: self.directory)
+                    return
+                }
                 self.busy = false; self.transferred = total
                 switch result {
                 case .success(let (path, entries)): self.directory = path; self.entries = entries
@@ -144,7 +172,7 @@ final class SFTPRemoteSession: NSObject, RemoteSession, LocalProcessTerminalView
         let folder = socketDirectory
         queue.async { client?.close(); if let folder { try? FileManager.default.removeItem(at: folder) } }
         terminal?.processDelegate = nil; terminal?.terminate(); terminal = nil
-        socketDirectory = nil; busy = false
+        socketDirectory = nil; busy = false; recoveringTransfer = false
         status = .disconnected(reason: nil)
     }
     func makeScreenView() -> AnyView { AnyView(SFTPBrowserView(session: self)) }

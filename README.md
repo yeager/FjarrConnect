@@ -157,8 +157,11 @@ Authentication stays in an embedded terminal; the file panel opens after it succ
 Uploads can also be started by dropping files onto the panel. Existing files require
 confirmation before replacement. Folders are transferred recursively without merging
 into existing folders; symbolic links and special files are rejected. Transfers use
-private staging files, and originals are preserved on failure. Cancelling disconnects
-the file session. An interrupted upload may leave a `.fjarrconnect-…partial` item on
+private staging files, and originals are preserved on failure. In the current
+published version (0.2.7), cancelling disconnects the file session. On `main`,
+cancelling an upload or download keeps the authenticated SSH connection and
+refreshes the file panel, so you can continue without signing in again.
+An interrupted upload may leave a `.fjarrconnect-…partial` item on
 the server for manual removal; automatic resume is not supported.
 
 SSH forwards listen on loopback by default. A forwarding failure is reported by
@@ -338,7 +341,11 @@ python3 scripts/with-vnc-test-fixture.py xcodebuild -project FjarrConnect.xcodep
 
 The wrapper starts a VNC banner fixture on `127.0.0.1:45905` for the network
 discovery UI test and closes it when the test command exits. Xcode's sandboxed
-UI-test runner cannot host the listening socket itself.
+UI-test runner cannot host the listening socket itself. SFTP integration tests
+start an unprivileged, loopback-only OpenSSH server with temporary keys and
+isolated configuration. They cover encrypted-key authentication, rejected host
+keys, concurrent sessions, tab switching and cancellation in both directions.
+They do not change the user's SSH configuration or known-hosts file.
 
 `scripts/build-rdp.sh arm64` and `scripts/build-rdp.sh x86_64` build the bundled RDP
 runtime from pinned FreeRDP and OpenSSL sources on a Mac with CMake available.
