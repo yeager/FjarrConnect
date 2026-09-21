@@ -144,4 +144,27 @@ final class SFTPClientTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: staging.path))
         XCTAssertEqual(try Data(contentsOf: destination), bytes)
     }
+
+    func testMismatchedDownloadStagingFileIsDiscardedBeforeDownload() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let remote = root.appendingPathComponent("remote")
+        try FileManager.default.createDirectory(at: remote, withIntermediateDirectories: false)
+        let source = remote.appendingPathComponent("download.bin")
+        let bytes = Data((0..<65_000).map { UInt8($0 % 251) })
+        try bytes.write(to: source)
+        let destination = root.appendingPathComponent("download.bin")
+        let staging = SFTPClient.downloadStagingPath(destination)
+        try Data("not the remote prefix".utf8).write(to: staging)
+
+        let client = try SFTPClient(executable: URL(fileURLWithPath: "/usr/libexec/sftp-server"), arguments: ["-d", remote.path])
+        defer { client.close() }
+        var reported = UInt64(0)
+        client.onProgress = { reported += $0 }
+        try client.download(source.path, to: destination)
+        XCTAssertEqual(reported, UInt64(bytes.count))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: staging.path))
+        XCTAssertEqual(try Data(contentsOf: destination), bytes)
+    }
 }
