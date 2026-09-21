@@ -15,6 +15,7 @@
 #include <winpr/synch.h>
 #include <winpr/wlog.h>
 #include <stdatomic.h>
+#include <stdint.h>
 
 @class FCRDPView;
 typedef struct {
@@ -37,6 +38,83 @@ static BOOL FCGatewayMessage(freerdp *, UINT32, BOOL, BOOL, size_t, const WCHAR 
 static SSIZE_T FCRetry(freerdp *instance, const char *what, size_t current, void *data);
 static void FCAnnounceClipboard(FCContext *context);
 
+// RDP transfers bitmap clipboard data as a DIB: a BMP file without its 14-byte
+// file header. Keep this bounded because clipboard redirection is remote input.
+static const NSUInteger FCClipboardImageMaximumBytes = 64 * 1024 * 1024;
+static const uint64_t FCClipboardImageMaximumPixels = 32ULL * 1024 * 1024;
+
+static uint16_t FCReadLE16(const uint8_t *bytes) {
+    return (uint16_t)bytes[0] | ((uint16_t)bytes[1] << 8);
+}
+
+static uint32_t FCReadLE32(const uint8_t *bytes) {
+    return (uint32_t)bytes[0] | ((uint32_t)bytes[1] << 8) |
+           ((uint32_t)bytes[2] << 16) | ((uint32_t)bytes[3] << 24);
+}
+
+static void FCWriteLE32(uint8_t *bytes, uint32_t value) {
+    bytes[0] = (uint8_t)value;
+    bytes[1] = (uint8_t)(value >> 8);
+    bytes[2] = (uint8_t)(value >> 16);
+    bytes[3] = (uint8_t)(value >> 24);
+}
+
+static NSData *FCDIBFromPasteboard(NSPasteboard *pasteboard) {
+    if (![pasteboard availableTypeFromArray:@[NSPasteboardTypeTIFF, NSPasteboardTypePNG]]) return nil;
+    NSImage *image = [[NSImage alloc] initWithPasteboard:pasteboard];
+    NSData *tiff = image.TIFFRepresentation;
+    NSBitmapImageRep *bitmap = tiff ? [NSBitmapImageRep imageRepWithData:tiff] : nil;
+    NSData *bmp = [bitmap representationUsingType:NSBitmapImageFileTypeBMP properties:@{}];
+    // AppKit produces a normal BMP file. The RDP CF_DIB format omits its header.
+    if (bmp.length <= 14 || bmp.length - 14 > FCClipboardImageMaximumBytes) return nil;
+    const uint8_t *bytes = bmp.bytes;
+    if (bytes[0] != 'B' || bytes[1] != 'M') return nil;
+    return [bmp subdataWithRange:NSMakeRange(14, bmp.length - 14)];
+}
+
+static NSData *FCBMPFromDIB(NSData *dib) {
+    if (!dib || dib.length < 12 || dib.length > FCClipboardImageMaximumBytes) return nil;
+    const uint8_t *bytes = dib.bytes;
+    const uint32_t headerSize = FCReadLE32(bytes);
+    uint64_t pixelOffset = 14;
+    uint32_t width = 0, height = 0, bitsPerPixel = 0, compression = 0, colorsUsed = 0;
+    if (headerSize == 12) { // BITMAPCOREHEADER
+        if (dib.length < 12) return nil;
+        width = FCReadLE16(bytes + 4); height = FCReadLE16(bytes + 6);
+        bitsPerPixel = FCReadLE16(bytes + 10);
+        if (!width || !height || !bitsPerPixel) return nil;
+        pixelOffset += headerSize + ((bitsPerPixel <= 8 ? (1ULL << bitsPerPixel) : 0) * 3);
+    } else {
+        if (headerSize < 40 || headerSize > dib.length) return nil;
+        const int32_t signedWidth = (int32_t)FCReadLE32(bytes + 4);
+        const int32_t signedHeight = (int32_t)FCReadLE32(bytes + 8);
+        if (signedWidth <= 0 || signedHeight == 0 || signedHeight == INT32_MIN) return nil;
+        width = (uint32_t)signedWidth;
+        height = (uint32_t)(signedHeight < 0 ? -signedHeight : signedHeight);
+        bitsPerPixel = FCReadLE16(bytes + 14);
+        compression = FCReadLE32(bytes + 16);
+        colorsUsed = FCReadLE32(bytes + 32);
+        if (!bitsPerPixel) return nil;
+        pixelOffset += headerSize;
+        // BITMAPINFOHEADER stores bitfield masks after the header; newer DIB
+        // headers include them in the header itself.
+        if (headerSize == 40 && (compression == 3 || compression == 6))
+            pixelOffset += compression == 6 ? 16 : 12;
+        const uint64_t paletteEntries = colorsUsed ? colorsUsed : (bitsPerPixel <= 8 ? (1ULL << bitsPerPixel) : 0);
+        pixelOffset += paletteEntries * 4;
+    }
+    if (width > 16384 || height > 16384 || (uint64_t)width * height > FCClipboardImageMaximumPixels ||
+        pixelOffset >= dib.length || pixelOffset > UINT32_MAX) return nil;
+    const uint64_t fileSize = 14 + dib.length;
+    if (fileSize > UINT32_MAX) return nil;
+    uint8_t header[14] = { 'B', 'M' };
+    FCWriteLE32(header + 2, (uint32_t)fileSize);
+    FCWriteLE32(header + 10, (uint32_t)pixelOffset);
+    NSMutableData *bmp = [NSMutableData dataWithBytes:header length:sizeof(header)];
+    [bmp appendData:dib];
+    return bmp;
+}
+
 @interface FCRDPView : NSView <NSTextInputClient>
 @property(nonatomic, readonly) NSDictionary<NSString *, NSString *> *translations;
 @property(atomic) int connectionStatus;
@@ -45,6 +123,8 @@ static void FCAnnounceClipboard(FCContext *context);
 @property(atomic) BOOL cancelled;
 @property(atomic) BOOL clipboardActive;
 @property(atomic, copy) NSData *clipboardText;
+@property(atomic, copy) NSData *clipboardImage;
+@property(atomic) uint32_t clipboardRequestedFormat;
 @property(atomic) BOOL needsClipboardAnnouncement;
 @property(atomic) BOOL clipboardAllowed;
 @property(atomic) BOOL unicodeSupported;
@@ -57,6 +137,7 @@ static void FCAnnounceClipboard(FCContext *context);
 - (void)setSessionActive:(BOOL)active;
 - (void)enqueue:(FCInput)input;
 - (void)publishFrame:(rdpGdi *)gdi;
+- (void)receiveClipboardDIB:(NSData *)dib;
 - (NSString *)text:(NSString *)key;
 - (DWORD)certificateForHost:(NSString *)host port:(UINT16)port commonName:(NSString *)name subject:(NSString *)subject issuer:(NSString *)issuer fingerprint:(NSString *)fingerprint oldFingerprint:(NSString *)oldFingerprint flags:(DWORD)flags;
 @end
@@ -146,6 +227,7 @@ static void FCAnnounceClipboard(FCContext *context);
     self.cancelled = YES;
     self.clipboardActive = NO;
     self.clipboardText = nil;
+    self.clipboardImage = nil;
     [_clipboardTimer invalidate]; _clipboardTimer = nil;
     if (_certificateAlert) [NSApp abortModal];
     [_lock lock];
@@ -158,23 +240,25 @@ static void FCAnnounceClipboard(FCContext *context);
     self.clipboardActive = active && NSApp.isActive && self.window.isKeyWindow && self.clipboardAllowed;
     // Changing tabs never uploads a clipboard copied in another session.
     _clipboardChange = NSPasteboard.generalPasteboard.changeCount;
-    if (!active) self.clipboardText = nil;
+    if (!active) { self.clipboardText = nil; self.clipboardImage = nil; }
 }
 - (void)clipboardTick {
     BOOL active = _sessionActive && NSApp.isActive && self.window.isKeyWindow && self.clipboardAllowed;
     if (self.clipboardActive != active) {
         self.clipboardActive = active;
         _clipboardChange = NSPasteboard.generalPasteboard.changeCount;
-        if (!active) { self.clipboardText = nil; [self releaseInput]; }
+        if (!active) { self.clipboardText = nil; self.clipboardImage = nil; [self releaseInput]; }
     }
     NSPasteboard *pasteboard = NSPasteboard.generalPasteboard;
     if (!active || self.connectionStatus != 2 || pasteboard.changeCount == _clipboardChange) return;
     _clipboardChange = pasteboard.changeCount;
+    NSData *image = FCDIBFromPasteboard(pasteboard);
+    self.clipboardImage = image;
     NSString *text = [pasteboard stringForType:NSPasteboardTypeString];
-    if (text.length > 512 * 1024) { self.clipboardText = nil; return; }
+    if (text.length > 512 * 1024) { self.clipboardText = nil; self.needsClipboardAnnouncement = image != nil; return; }
     text = [[text stringByReplacingOccurrencesOfString:@"\r\n" withString:@"\n"] stringByReplacingOccurrencesOfString:@"\n" withString:@"\r\n"];
     NSMutableData *data = [[text dataUsingEncoding:NSUTF16LittleEndianStringEncoding] mutableCopy];
-    if (!data || data.length > 1024 * 1024) { self.clipboardText = nil; return; }
+    if (!data || data.length > 1024 * 1024) { self.clipboardText = nil; self.needsClipboardAnnouncement = image != nil; return; }
     const uint16_t nul = 0; [data appendBytes:&nul length:2];
     self.clipboardText = data;
     self.needsClipboardAnnouncement = YES;
@@ -184,6 +268,19 @@ static void FCAnnounceClipboard(FCContext *context);
         if (!self.clipboardActive || !self->_sessionActive || !NSApp.isActive || !self.window.isKeyWindow || self.cancelled) return;
         NSPasteboard *pasteboard = NSPasteboard.generalPasteboard;
         [pasteboard clearContents]; [pasteboard setString:text forType:NSPasteboardTypeString];
+        self->_clipboardChange = pasteboard.changeCount;
+    });
+}
+- (void)receiveClipboardDIB:(NSData *)dib {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (!self.clipboardActive || !self->_sessionActive || !NSApp.isActive || !self.window.isKeyWindow || self.cancelled) return;
+        NSData *bmp = FCBMPFromDIB(dib);
+        NSImage *image = bmp ? [[NSImage alloc] initWithData:bmp] : nil;
+        NSData *tiff = image.TIFFRepresentation;
+        if (!tiff.length || tiff.length > FCClipboardImageMaximumBytes) return;
+        NSPasteboard *pasteboard = NSPasteboard.generalPasteboard;
+        [pasteboard clearContents];
+        [pasteboard setData:tiff forType:NSPasteboardTypeTIFF];
         self->_clipboardChange = pasteboard.changeCount;
     });
 }
@@ -242,7 +339,7 @@ static void FCAnnounceClipboard(FCContext *context);
     freerdp_disconnect(instance);
     [_lock lock]; _context = NULL; [_input removeAllObjects]; [_lock unlock];
     freerdp_client_context_free(base);
-    self.clipboardText = nil; self.connectionStatus = 3;
+    self.clipboardText = nil; self.clipboardImage = nil; self.connectionStatus = 3;
     dispatch_async(dispatch_get_main_queue(), ^{ [self->_clipboardTimer invalidate]; self->_clipboardTimer = nil; });
 }
 - (void)setFrameSize:(NSSize)newSize {
@@ -487,8 +584,22 @@ static UINT FCClipReady(CliprdrClientContext *clip, const CLIPRDR_MONITOR_READY 
 }
 static void FCAnnounceClipboard(FCContext *ctx) {
     if (!ctx->clipboard) return;
-    CLIPRDR_FORMAT format = {CF_UNICODETEXT, NULL}; CLIPRDR_FORMAT_LIST list = {0};
-    if (ctx->view.clipboardActive && ctx->view.clipboardText) { list.numFormats = 1; list.formats = &format; }
+    CLIPRDR_FORMAT formats[2] = { {CF_DIB, NULL}, {CF_UNICODETEXT, NULL} };
+    CLIPRDR_FORMAT_LIST list = {0};
+    if (ctx->view.clipboardActive) {
+        // Keep DIB first when both formats are available, which lets Windows
+        // paste a copied screenshot as an image instead of choosing its text.
+        if (ctx->view.clipboardImage && ctx->view.clipboardText) {
+            list.formats = formats;
+            list.numFormats = 2;
+        } else if (ctx->view.clipboardImage) {
+            list.formats = &formats[0];
+            list.numFormats = 1;
+        } else if (ctx->view.clipboardText) {
+            list.formats = &formats[1];
+            list.numFormats = 1;
+        }
+    }
     ctx->clipboard->ClientFormatList(ctx->clipboard, &list);
 }
 static UINT FCClipList(CliprdrClientContext *clip, const CLIPRDR_FORMAT_LIST *list) {
@@ -496,24 +607,44 @@ static UINT FCClipList(CliprdrClientContext *clip, const CLIPRDR_FORMAT_LIST *li
     CLIPRDR_FORMAT_LIST_RESPONSE response = {0}; response.common.msgFlags = CB_RESPONSE_OK;
     UINT rc = clip->ClientFormatListResponse(clip, &response);
     if (rc || !ctx->view.clipboardActive) return rc;
-    for (UINT32 i = 0; i < list->numFormats; i++) if (list->formats[i].formatId == CF_UNICODETEXT) {
-        CLIPRDR_FORMAT_DATA_REQUEST request = {0}; request.requestedFormatId = CF_UNICODETEXT;
+    UINT32 format = 0;
+    for (UINT32 i = 0; i < list->numFormats; i++) {
+        const UINT32 candidate = list->formats[i].formatId;
+        if (candidate == CF_DIBV5) { format = candidate; break; }
+        if (candidate == CF_DIB) format = candidate;
+        else if (!format && candidate == CF_UNICODETEXT) format = candidate;
+    }
+    if (format) {
+        CLIPRDR_FORMAT_DATA_REQUEST request = {0}; request.requestedFormatId = format;
+        ctx->view.clipboardRequestedFormat = format;
         return clip->ClientFormatDataRequest(clip, &request);
     }
     return CHANNEL_RC_OK;
 }
 static UINT FCClipListResponse(CliprdrClientContext *clip, const CLIPRDR_FORMAT_LIST_RESPONSE *response) { return CHANNEL_RC_OK; }
 static UINT FCClipRequest(CliprdrClientContext *clip, const CLIPRDR_FORMAT_DATA_REQUEST *request) {
-    FCContext *ctx = clip->custom; NSData *data = ctx->view.clipboardActive ? ctx->view.clipboardText : nil;
+    FCContext *ctx = clip->custom;
+    NSData *data = nil;
+    if (ctx->view.clipboardActive) {
+        if (request->requestedFormatId == CF_DIB) data = ctx->view.clipboardImage;
+        else if (request->requestedFormatId == CF_UNICODETEXT) data = ctx->view.clipboardText;
+    }
     CLIPRDR_FORMAT_DATA_RESPONSE response = {0}; response.common.msgFlags = CB_RESPONSE_FAIL;
-    if (request->requestedFormatId == CF_UNICODETEXT && data && data.length <= 1024 * 1024 + 2) {
+    const NSUInteger maximum = request->requestedFormatId == CF_DIB ? FCClipboardImageMaximumBytes : 1024 * 1024 + 2;
+    if (data && data.length <= maximum) {
         response.common.msgFlags = CB_RESPONSE_OK; response.common.dataLen = (UINT32)data.length; response.requestedFormatData = data.bytes;
     }
     return clip->ClientFormatDataResponse(clip, &response);
 }
 static UINT FCClipResponse(CliprdrClientContext *clip, const CLIPRDR_FORMAT_DATA_RESPONSE *response) {
     FCContext *ctx = clip->custom; UINT32 length = response->common.dataLen;
-    if (!ctx->view.clipboardActive || !(response->common.msgFlags & CB_RESPONSE_OK) || !response->requestedFormatData || length < 2 || length > 1024 * 1024 + 2 || length % 2) return CHANNEL_RC_OK;
+    if (!ctx->view.clipboardActive || !(response->common.msgFlags & CB_RESPONSE_OK) || !response->requestedFormatData) return CHANNEL_RC_OK;
+    const UINT32 format = ctx->view.clipboardRequestedFormat;
+    if ((format == CF_DIB || format == CF_DIBV5) && length && length <= FCClipboardImageMaximumBytes) {
+        [ctx->view receiveClipboardDIB:[NSData dataWithBytes:response->requestedFormatData length:length]];
+        return CHANNEL_RC_OK;
+    }
+    if (format != CF_UNICODETEXT || length < 2 || length > 1024 * 1024 + 2 || length % 2) return CHANNEL_RC_OK;
     const BYTE *bytes = response->requestedFormatData;
     if (bytes[length-1] != 0 || bytes[length-2] != 0) return CHANNEL_RC_OK;
     NSString *text = [[NSString alloc] initWithBytes:bytes length:length-2 encoding:NSUTF16LittleEndianStringEncoding];

@@ -187,6 +187,7 @@
 "options.title" = "Opciones avanzadas";
 
 "options.clipboard" = "Compartir el portapapeles de texto con la sesión activa";
+"options.rdpClipboard" = "Compartir el portapapeles de texto e imágenes con la sesión activa";
 
 "options.ssh" = "Conexión SSH";
 

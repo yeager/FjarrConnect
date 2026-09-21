@@ -17,17 +17,19 @@ There are no Windows, Linux or mobile app targets.
 
 **[GitHub repository](https://github.com/yeager/FjarrConnect)**
 
-## Version 0.2.17
+## Version 0.2.18
 
-**[Download version 0.2.17](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.17)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.17-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.17-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.18](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.18)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.18-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.18-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.17 adds **FjärrConnect on GitHub** to the app menu, opening this repository in the default browser. It also includes localized troubleshooting guidance for VNC connection failures instead of raw
-SDK diagnostics. The endpoint stays visible but implementation details are not shown or stored. Saved profiles still connect on **double-click**;
-a single click only selects the profile. Saved profiles and Keychain passwords are retained.
+Version 0.2.18 adds RDP image clipboard support for screenshots and other copied
+images. It uses the standard Windows DIB format and is enabled by the existing
+per-profile clipboard setting. VNC clipboard remains text-only. Saved profiles still
+connect on **double-click**; a single click only selects the profile. Saved profiles
+and Keychain passwords are retained.
 
 Every release passes gitleaks, Mac regression tests, separate architecture packaging and
 checks of the downloaded app on both native Mac architectures before publication.
@@ -77,7 +79,7 @@ on first launch. Never disable Gatekeeper globally to install the app.
 |---|---|---|
 | VNC / Mac Screen Sharing | Embedded desktop through [RoyalVNCKit](https://github.com/royalapplications/royalvnc), with keyboard, mouse and clipboard support | VNC password or remote Mac username/password; optional Keychain storage |
 | SSH | Embedded [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) terminal running macOS `/usr/bin/ssh` | Your SSH configuration, keys and ssh-agent; passwords and new host-key confirmation in the terminal |
-| RDP | Embedded [FreeRDP](https://github.com/FreeRDP/FreeRDP) desktop, keyboard/mouse, resizing, text clipboard, shared folders and gateway settings | Username/password; localized certificate verification and separate gateway credentials |
+| RDP | Embedded [FreeRDP](https://github.com/FreeRDP/FreeRDP) desktop, keyboard/mouse, resizing, text and image clipboard, shared folders and gateway settings | Username/password; localized certificate verification and separate gateway credentials |
 | SFTP | Built-in file panel using the authenticated OpenSSH connection | Keys/agent or interactive password and host-key prompts |
 
 **Standard VNC uses only a password:** leave Username empty and enter the server's
@@ -135,15 +137,17 @@ FjärrConnect's Local Network permission in System Settings.
 
 ## Clipboard, files and connection options
 
-VNC and RDP have a per-profile **Share text clipboard with the active session**
-setting. Only the selected session in the foreground window may synchronize text.
-Switching tabs does not automatically send existing clipboard contents to another
-server. Copy again after activating the intended tab. RDP’s standard macOS Edit
-menu actions send the corresponding Ctrl shortcuts to the remote application.
+VNC has a per-profile **Share text clipboard with the active session** setting. RDP
+has **Share text and image clipboard with the active session**, including screenshots
+copied in either direction with Windows peers that advertise the standard DIB image
+format. Only the selected session in the foreground window may synchronize clipboard
+contents. Switching tabs does not automatically send existing clipboard contents to
+another server. Copy again after activating the intended tab. RDP’s standard macOS
+Edit menu actions send the corresponding Ctrl shortcuts to the remote application.
 
 VNC negotiates Unicode text with Extended Clipboard peers, including TigerVNC;
-legacy VNC peers are limited to Latin-1. Text is bounded to 1 MiB. Clipboard images,
-rich text and clipboard file copying are not implemented. The VNC extension and
+legacy VNC peers are limited to Latin-1. Text is bounded to 1 MiB. VNC clipboard
+images, rich text and clipboard file copying are not implemented. The VNC extension and
 session policy are pinned to a tested fork revision. Extended Clipboard is
 proposed upstream in [RoyalVNCKit PR #38](https://github.com/royalapplications/royalvnc/pull/38);
 the active-session policy remains in FjärrConnect’s SDK fork.
@@ -388,15 +392,15 @@ Development is on **`main`**.
   requests. The release workflow also requires a clean full-history scan.
   `.gitleaksignore` contains one exact historical finding for a removed, fictional
   README credential example. No scanner rule or source path is broadly excluded.
-- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.17`**, triggers a
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.18`**, triggers a
   fresh scan, test and build. GitHub publishes the release assets only when these pass.
 
 For maintainers, after the current `main` revision passes verification:
 
 ```bash
 git pull --ff-only
-git tag v0.2.17
-git push origin v0.2.17
+git tag v0.2.18
+git push origin v0.2.18
 ```
 
 Do not reuse or move an already published release tag. Use a new version for fixes.

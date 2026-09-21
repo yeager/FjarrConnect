@@ -202,6 +202,7 @@
 "options.title" = "Avanserte innstillinger";
 
 "options.clipboard" = "Del tekstutklippstavlen med den aktive økten";
+"options.rdpClipboard" = "Del tekst- og bildeutklippstavlen med den aktive økten";
 
 "options.ssh" = "SSH-tilkobling";
 

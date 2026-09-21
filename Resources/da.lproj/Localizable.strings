@@ -202,6 +202,7 @@
 "options.title" = "Avancerede indstillinger";
 
 "options.clipboard" = "Del tekstudklipsholder med den aktive session";
+"options.rdpClipboard" = "Del tekst- og billedudklipsholder med den aktive session";
 
 "options.ssh" = "SSH-forbindelse";
 

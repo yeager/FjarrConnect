@@ -187,6 +187,7 @@
 "options.title" = "Erweiterte Einstellungen";
 
 "options.clipboard" = "Textzwischenablage mit der aktiven Sitzung teilen";
+"options.rdpClipboard" = "Text- und Bildzwischenablage mit der aktiven Sitzung teilen";
 
 "options.ssh" = "SSH-Verbindung";
 

@@ -34,6 +34,12 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
     subprocess.run(['xcrun', 'clang', '-fobjc-arc', '-framework', 'AppKit',
                     '-I', str(ROOT / 'NativeRDP'), str(ROOT / 'NativeRDP/Tests/Probe.m'),
                     str(library), '-Wl,-rpath,' + str(library.parent), '-o', str(probe)], check=True)
+    empty_translations = directory / 'empty-translations.json'
+    empty_translations.write_text('{}')
+    image_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
+                                 input='', text=True, capture_output=True, timeout=15,
+                                 env=dict(os.environ, FC_TEST_CLIPBOARD_IMAGE='1'))
+    assert image_check.returncode == 0, f'RDP image clipboard round-trip failed: {image_check.stdout}\n{image_check.stderr}'
     certificate, key = directory / 'certificate.pem', directory / 'key.pem'
     subprocess.run(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
                     '-keyout', str(key), '-out', str(certificate), '-subj', '/CN=FjarrConnect local test'],

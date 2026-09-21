@@ -187,6 +187,7 @@
 "options.title" = "Lisäasetukset";
 
 "options.clipboard" = "Jaa tekstileikepöytä aktiivisen istunnon kanssa";
+"options.rdpClipboard" = "Jaa teksti- ja kuvapöytä aktiivisen istunnon kanssa";
 
 "options.ssh" = "SSH-yhteys";
 

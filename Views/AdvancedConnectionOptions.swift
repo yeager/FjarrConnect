@@ -10,7 +10,7 @@ struct AdvancedConnectionOptions: View {
 
     var body: some View {
         DisclosureGroup("options.title") {
-            if transport.isGraphical { Toggle("options.clipboard", isOn: $clipboard) }
+            if transport.isGraphical { Toggle(transport == .rdp ? "options.rdpClipboard" : "options.clipboard", isOn: $clipboard) }
             Section(transport.isGraphical ? "files.connection" : "options.ssh") {
                 if transport.isGraphical {
                     Text("files.connection.hint").font(.caption).foregroundStyle(.secondary)

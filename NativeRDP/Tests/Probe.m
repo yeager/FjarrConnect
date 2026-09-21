@@ -2,6 +2,7 @@
 #import <AppKit/AppKit.h>
 #import <objc/runtime.h>
 #import "FCRDPView.h"
+#include <string.h>
 static NSString *expectedFingerprint;
 static NSString *expectedTitle;
 static BOOL sawCertificate;
@@ -34,6 +35,30 @@ int main(int argc, const char **argv) {
         NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(80, 80, 1100, 750) styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskResizable backing:NSBackingStoreBuffered defer:NO];
         window.title = @"FjärrConnect — embedded RDP integration test";
         window.contentView = view; [window makeKeyAndOrderFront:nil]; [NSApp activateIgnoringOtherApps:YES];
+        if ([NSProcessInfo.processInfo.environment[@"FC_TEST_CLIPBOARD_IMAGE"] isEqualToString:@"1"]) {
+            // Exercise the native CLIPRDR image path without a server: AppKit image
+            // -> CF_DIB -> AppKit image. This catches architecture-specific bitmap
+            // and pasteboard regressions before a package is published.
+            [view setValue:@YES forKey:@"clipboardAllowed"];
+            fc_rdp_set_active((__bridge void *)view, 1);
+            [view setValue:@2 forKey:@"connectionStatus"];
+            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
+            NSBitmapImageRep *source = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:2 pixelsHigh:2 bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSDeviceRGBColorSpace bitmapFormat:NSBitmapFormatAlphaFirst bytesPerRow:8 bitsPerPixel:32];
+            if (!source || !source.bitmapData) return 8;
+            uint8_t *pixels = source.bitmapData;
+            const uint8_t sample[] = { 255, 0, 0, 255, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255 };
+            memcpy(pixels, sample, sizeof(sample));
+            NSPasteboard *pasteboard = NSPasteboard.generalPasteboard;
+            [pasteboard clearContents];
+            [pasteboard setData:[source representationUsingType:NSBitmapImageFileTypePNG properties:@{}] forType:NSPasteboardTypePNG];
+            [(id)view clipboardTick];
+            NSData *dib = [view valueForKey:@"clipboardImage"];
+            [pasteboard clearContents];
+            [(id)view receiveClipboardDIB:dib];
+            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+            NSImage *roundTrip = [[NSImage alloc] initWithData:[pasteboard dataForType:NSPasteboardTypeTIFF]];
+            return dib.length > 40 && roundTrip.size.width == 2 && roundTrip.size.height == 2 ? 0 : 8;
+        }
         [window makeFirstResponder:view]; fc_rdp_set_active((__bridge void *)view, 1); fc_rdp_start((__bridge void *)view);
         NSTimeInterval stableSeconds = MAX(6, MIN(120, [NSProcessInfo.processInfo.environment[@"FC_TEST_STABLE_SECONDS"] doubleValue]));
         NSTimeInterval deadline = NSDate.timeIntervalSinceReferenceDate + MAX(stableSeconds + 25, [NSProcessInfo.processInfo.environment[@"FC_TEST_LONG"] isEqualToString:@"1"] ? 65 : 25);
