@@ -149,10 +149,13 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
                 self.notice = nil
                 self.connectionDeadline?.cancel()
                 self.password = nil
-                self.status = .disconnected(reason: self.credentialFailure ?? connectionState.error.map { error in
-                    let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-                    return "VNC \(self.profile.host):\(self.profile.port)\n\(detail)"
-                })
+                // SDK error strings are diagnostic implementation details and may
+                // be English or expose server-specific text. Keep the endpoint
+                // visible while giving every locale a safe, useful next step.
+                let reason = self.credentialFailure ?? connectionState.error.map { _ in
+                    Self.connectionFailureMessage(host: self.profile.host, port: self.profile.port)
+                }
+                self.status = .disconnected(reason: reason)
             }
         }
     }
@@ -256,6 +259,10 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
             guard let self, self.connection != nil else { return }
             self.status = new
         }
+    }
+
+    static func connectionFailureMessage(host: String, port: UInt16) -> String {
+        "VNC \(host):\(port)\n" + NSLocalizedString("vnc.connectionFailed", comment: "")
     }
 }
 

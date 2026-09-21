@@ -66,6 +66,7 @@
 "favorite.remove" = "Quitar de favoritos";
 "session.timeout" = "Se agotó el tiempo de conexión. Comprueba la dirección, Compartir pantalla y el cortafuegos e inténtalo de nuevo.";
 "vnc.usernameRequired" = "Este servidor requiere un nombre de usuario. Introduce el nombre corto y la contraseña de la cuenta del Mac remoto y comprueba que la cuenta tiene permiso para compartir la pantalla.";
+"vnc.connectionFailed" = "La conexión VNC falló. Comprueba la dirección y el puerto y confirma que Compartir pantalla o el servicio VNC está activado en el equipo remoto y que la cuenta tiene permiso.";
 "rdp.error.network" = "No se pudo acceder al servidor. Comprueba que el escritorio remoto está activado y que la dirección y el puerto son accesibles.";
 "rdp.error.authentication" = "El servidor rechazó la identificación. Comprueba el nombre de usuario, la contraseña y el permiso para usar el escritorio remoto.";
 "rdp.error.certificate" = "Falló la conexión segura. Comprueba el certificado del servidor y los ajustes de TLS.";

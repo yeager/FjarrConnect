@@ -26,6 +26,13 @@ final class VNCIntegrationTests: XCTestCase {
         try exerciseServer(requiresUsername: false, resize: true)
     }
 
+    func testVNCFailureMessageIsLocalizedAndDoesNotContainBackendDiagnostics() {
+        let message = VNCRemoteSession.connectionFailureMessage(host: "desktop.local", port: 5901)
+        XCTAssertTrue(message.contains("desktop.local:5901"))
+        XCTAssertTrue(message.contains(NSLocalizedString("vnc.connectionFailed", comment: "")))
+        XCTAssertFalse(message.contains("ERRCONNECT"))
+    }
+
     private func exerciseServer(requiresUsername: Bool, requiresPassword: Bool = false,
                                 blackInitially: Bool = false, resize: Bool = false) throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

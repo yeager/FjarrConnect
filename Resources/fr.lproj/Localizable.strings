@@ -66,6 +66,7 @@
 "favorite.remove" = "Retirer des favoris";
 "session.timeout" = "Le délai de connexion a expiré. Vérifiez l’adresse, le partage d’écran et le pare-feu, puis réessayez.";
 "vnc.usernameRequired" = "Ce serveur exige un nom d’utilisateur. Saisissez le nom court et le mot de passe du compte du Mac distant et vérifiez que le partage d’écran est autorisé pour ce compte.";
+"vnc.connectionFailed" = "La connexion VNC a échoué. Vérifiez l’adresse et le port, puis confirmez que Partage d’écran ou le service VNC est activé sur l’ordinateur distant et que le compte est autorisé.";
 "rdp.error.network" = "Impossible de joindre le serveur. Vérifiez que le bureau à distance est activé et que cette adresse et ce port sont accessibles.";
 "rdp.error.authentication" = "Le serveur a refusé l’identification. Vérifiez le nom d’utilisateur, le mot de passe et l’autorisation d’utiliser le bureau à distance.";
 "rdp.error.certificate" = "La connexion sécurisée a échoué. Vérifiez le certificat du serveur et les réglages TLS.";
