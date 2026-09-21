@@ -15,6 +15,8 @@ FjärrConnect brings **VNC / Mac Screen Sharing, RDP, SSH and SFTP** into one co
 manager for **macOS 14 or later**, on **Apple Silicon (arm64) and Intel (x86_64)**.
 There are no Windows, Linux or mobile app targets.
 
+**[GitHub repository](https://github.com/yeager/FjarrConnect)**
+
 ## Version 0.2.11
 
 **[Download version 0.2.11](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.11)**
