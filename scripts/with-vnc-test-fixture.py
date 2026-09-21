@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Run a test command with the loopback banner used by the discovery UI test."""
+"""Run tests with loopback VNC discovery and real OpenSSH file-browser fixtures."""
 import contextlib
+import importlib.util
 import socketserver
 import subprocess
 import sys
@@ -23,7 +24,11 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.exit("Usage: with-vnc-test-fixture.py command [arguments ...]")
     # A collision fails immediately instead of testing against an unknown service.
-    with Server(("127.0.0.1", 45905), Banner) as server:
+    from pathlib import Path
+    spec = importlib.util.spec_from_file_location('sftp_ui_fixture', Path(__file__).with_name('sftp-ui-fixture.py'))
+    sftp = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sftp)
+    with sftp.fixture(), Server(("127.0.0.1", 45905), Banner) as server:
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         try:

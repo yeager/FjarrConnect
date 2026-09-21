@@ -165,7 +165,8 @@
 
 "files.modified" = "Modified";
 
-"files.cancelTransfer" = "Cancel and disconnect";
+"files.cancelTransfer" = "Cancel transfer";
+"files.openFolder" = "Open folder";
 
 "files.replace" = "Replace the existing file?";
 

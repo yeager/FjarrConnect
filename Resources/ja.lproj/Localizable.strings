@@ -150,7 +150,8 @@
 
 "files.modified" = "更新日時";
 
-"files.cancelTransfer" = "中止して切断";
+"files.cancelTransfer" = "転送を中止";
+"files.openFolder" = "フォルダを開く";
 
 "files.replace" = "既存のファイルを置き換えますか？";
 

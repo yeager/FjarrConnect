@@ -5,7 +5,22 @@ struct FjarrConnectApp: App {
     @NSApplicationDelegateAdaptor(FjarrConnectAppDelegate.self) private var appDelegate
     @StateObject private var profiles = FjarrConnectApp.makeProfileStore()
     @StateObject private var discovery = BonjourBrowser()
-    @StateObject private var connection = ConnectionManager()
+    @StateObject private var connection = FjarrConnectApp.makeConnectionManager()
+
+    private static func makeConnectionManager() -> ConnectionManager {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["FJARRCONNECT_TEST_PROFILE_PATH"] != nil,
+           let path = ProcessInfo.processInfo.environment["FJARRCONNECT_TEST_SSH_CONFIG"] {
+            return ConnectionManager { profile, credentials in
+                if profile.transport == .sftp && profile.host == "127.0.0.1" {
+                    return SFTPRemoteSession(profile: profile, sshConfiguration: URL(fileURLWithPath: path))
+                }
+                return ProtocolRegistry.makeSession(for: profile, credentials: credentials)
+            }
+        }
+        #endif
+        return ConnectionManager()
+    }
 
     private static func makeProfileStore() -> ProfileStore {
         #if DEBUG

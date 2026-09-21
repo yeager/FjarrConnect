@@ -161,6 +161,9 @@ private staging files, and originals are preserved on failure. In the current
 published version (0.2.7), cancelling disconnects the file session. On `main`,
 cancelling an upload or download keeps the authenticated SSH connection and
 refreshes the file panel, so you can continue without signing in again.
+The file table on `main` also uses native row actions: single-click selects,
+double-click opens a folder or downloads a file, and right-click offers file
+actions. Double-click works across the row, including the size and date columns.
 An interrupted upload may leave a `.fjarrconnect-…partial` item on
 the server for manual removal; automatic resume is not supported.
 
@@ -340,8 +343,11 @@ python3 scripts/with-vnc-test-fixture.py xcodebuild -project FjarrConnect.xcodep
 ```
 
 The wrapper starts a VNC banner fixture on `127.0.0.1:45905` for the network
-discovery UI test and closes it when the test command exits. Xcode's sandboxed
-UI-test runner cannot host the listening socket itself. SFTP integration tests
+discovery UI test and a private OpenSSH server for the file-browser UI test.
+It closes both when the test command exits. The SFTP UI test uses real row
+selection, folder navigation, rename/delete, standard upload/download file
+panels and session-close confirmation. Xcode's sandboxed UI-test runner cannot
+host the listening sockets itself. SFTP integration tests separately
 start an unprivileged, loopback-only OpenSSH server with temporary keys and
 isolated configuration. They cover encrypted-key authentication, rejected host
 keys, concurrent sessions, tab switching and cancellation in both directions.

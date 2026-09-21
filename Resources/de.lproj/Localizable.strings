@@ -150,7 +150,8 @@
 
 "files.modified" = "Geändert";
 
-"files.cancelTransfer" = "Abbrechen und trennen";
+"files.cancelTransfer" = "Übertragung abbrechen";
+"files.openFolder" = "Ordner öffnen";
 
 "files.replace" = "Vorhandene Datei ersetzen?";
 

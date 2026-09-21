@@ -150,7 +150,8 @@
 
 "files.modified" = "Muokattu";
 
-"files.cancelTransfer" = "Peruuta ja katkaise yhteys";
+"files.cancelTransfer" = "Peruuta siirto";
+"files.openFolder" = "Avaa kansio";
 
 "files.replace" = "Korvataanko olemassa oleva tiedosto?";
 

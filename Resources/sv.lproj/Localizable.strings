@@ -165,7 +165,8 @@
 
 "files.modified" = "Ändrad";
 
-"files.cancelTransfer" = "Avbryt och koppla från";
+"files.cancelTransfer" = "Avbryt överföring";
+"files.openFolder" = "Öppna mapp";
 
 "files.replace" = "Ersätt den befintliga filen?";
 

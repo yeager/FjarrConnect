@@ -150,7 +150,8 @@
 
 "files.modified" = "Modificado";
 
-"files.cancelTransfer" = "Cancelar y desconectar";
+"files.cancelTransfer" = "Cancelar transferencia";
+"files.openFolder" = "Abrir carpeta";
 
 "files.replace" = "¿Reemplazar el archivo existente?";
 

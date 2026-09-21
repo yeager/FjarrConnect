@@ -165,7 +165,8 @@
 
 "files.modified" = "Endret";
 
-"files.cancelTransfer" = "Avbryt og koble fra";
+"files.cancelTransfer" = "Avbryt overføring";
+"files.openFolder" = "Åpne mappe";
 
 "files.replace" = "Erstatte den eksisterende filen?";
 
