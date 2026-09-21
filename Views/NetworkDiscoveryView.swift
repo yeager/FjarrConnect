@@ -61,14 +61,17 @@ struct NetworkDiscoveryView: View {
             if let error = scanner.errorMessage { Text(error).font(.caption).foregroundStyle(.red) }
             List(selection: $selected) {
                 ForEach(scanner.hosts) { host in
-                    HStack {
-                        Label(host.address, systemImage: host.service.transport.symbol)
-                        Spacer()
-                        Text("\(host.service.transport.rawValue.uppercased()) · \(host.service.port)").foregroundStyle(.secondary)
-                    }.padding(.vertical, 3).contentShape(Rectangle()).tag(host.id)
+                    Button { selected = host.id } label: {
+                        HStack {
+                            Label(host.address, systemImage: host.service.transport.symbol)
+                            Spacer()
+                            Text("\(host.service.transport.rawValue.uppercased()) · \(String(host.service.port))").foregroundStyle(.secondary)
+                        }.padding(.vertical, 3).contentShape(Rectangle())
+                    }.buttonStyle(.plain).tag(host.id)
                         .simultaneousGesture(TapGesture(count: 2).onEnded { choose(host.profile, true) })
                         .accessibilityElement(children: .combine)
                         .accessibilityIdentifier("scan.host.\(host.service.transport.rawValue).\(host.address)")
+                        .accessibilityAction(named: Text("action.connect")) { choose(host.profile, true) }
                 }
             }.overlay {
                 if scanner.hosts.isEmpty && !scanner.isScanning && scanner.state != .idle {
