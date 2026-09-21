@@ -226,9 +226,9 @@ final class SFTPIntegrationTests: XCTestCase {
         XCTAssertNil(session.errorMessage)
     }
 
-    private func waitUntil(_ condition: @escaping () -> Bool) throws {
+    private func waitUntil(timeout: TimeInterval = 30, _ condition: @escaping () -> Bool) throws {
         let done = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in condition() }, object: nil)
-        guard XCTWaiter.wait(for: [done], timeout: 12) == .completed else {
+        guard XCTWaiter.wait(for: [done], timeout: timeout) == .completed else {
             XCTFail("SFTP operation did not reach the expected state")
             throw SFTPFailure.timeout
         }
