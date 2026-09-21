@@ -17,15 +17,15 @@ There are no Windows, Linux or mobile app targets.
 
 **[GitHub repository](https://github.com/yeager/FjarrConnect)**
 
-## Version 0.2.16
+## Version 0.2.17
 
-**[Download version 0.2.16](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.16)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.16-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.16-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.17](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.17)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.17-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.17-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.16 presents localized troubleshooting guidance for VNC connection failures instead of raw
+Version 0.2.17 adds **FjärrConnect on GitHub** to the app menu, opening this repository in the default browser. It also includes localized troubleshooting guidance for VNC connection failures instead of raw
 SDK diagnostics. The endpoint stays visible but implementation details are not shown or stored. Saved profiles still connect on **double-click**;
 a single click only selects the profile. Saved profiles and Keychain passwords are retained.
 
@@ -156,7 +156,7 @@ Uploads can also be started by dropping files onto the panel. Existing files req
 confirmation before replacement. Folders are transferred recursively without merging
 into existing folders; symbolic links and special files are rejected. Transfers use
 private staging files, and originals are preserved on failure. In the current
-published version (0.2.16), cancelling an upload or download keeps the
+published version (0.2.17), cancelling an upload or download keeps the
 authenticated SSH connection and
 refreshes the file panel, so you can continue without signing in again.
 The file table also uses native row actions: single-click selects,
@@ -388,15 +388,15 @@ Development is on **`main`**.
   requests. The release workflow also requires a clean full-history scan.
   `.gitleaksignore` contains one exact historical finding for a removed, fictional
   README credential example. No scanner rule or source path is broadly excluded.
-- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.16`**, triggers a
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.17`**, triggers a
   fresh scan, test and build. GitHub publishes the release assets only when these pass.
 
 For maintainers, after the current `main` revision passes verification:
 
 ```bash
 git pull --ff-only
-git tag v0.2.16
-git push origin v0.2.16
+git tag v0.2.17
+git push origin v0.2.17
 ```
 
 Do not reuse or move an already published release tag. Use a new version for fixes.
