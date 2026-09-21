@@ -191,15 +191,20 @@ with socket.socket() as listener:
     client, _ = listener.accept()
     with client:
         client.settimeout(12)
-        client.sendall(b'RFB 003.008\n')
-        read(client, 12)
         if sys.argv[2] == 'username':
-            client.sendall(b'\x01\x1e')
+            # macOS Screen Sharing advertises 3.889 but accepts the client's
+            # standards-compatible 3.8 downgrade, then includes its Apple
+            # extensions alongside ARD and standard VNC authentication.
+            client.sendall(b'RFB 003.889\n')
+            assert read(client, 12) == b'RFB 003.008\n'
+            client.sendall(b'\x07\x1e\x21\x24\x1f\x20\x02\x23')
             assert read(client, 1) == b'\x1e'
             # No credentials are submitted: only the ARD challenge is needed.
             client.sendall(struct.pack('!HH', 5, 512) + b'\xff' * 512 + b'\x01' * 512)
             assert client.recv(1) == b''
             sys.exit(0)
+        client.sendall(b'RFB 003.008\n')
+        read(client, 12)
         if sys.argv[2] == 'password':
             client.sendall(b'\x01\x02')
             assert read(client, 1) == b'\x02'
