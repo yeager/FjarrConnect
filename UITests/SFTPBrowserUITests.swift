@@ -23,7 +23,7 @@ final class SFTPBrowserUITests: XCTestCase {
         for name in ["First files", "Second files"] {
             let row = app.buttons["connect.\(name)"].firstMatch
             XCTAssertTrue(row.waitForExistence(timeout: 15)); row.doubleClick()
-            XCTAssertTrue(app.tables["files.table"].waitForExistence(timeout: 12))
+            XCTAssertTrue(app.outlines["files.table"].waitForExistence(timeout: 12))
             let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: app.buttons["files.refresh"])
             XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 12), .completed)
         }
@@ -31,7 +31,7 @@ final class SFTPBrowserUITests: XCTestCase {
         let secondTab = app.buttons["session.select.Second files"]
         XCTAssertTrue(firstTab.exists); XCTAssertTrue(secondTab.exists)
         firstTab.click()
-        XCTAssertTrue(app.tables["files.table"].exists)
+        XCTAssertTrue(app.outlines["files.table"].exists)
 
         // Both the window delegate and the application delegate must honour Cancel.
         for key in ["w", "q"] {
@@ -51,7 +51,7 @@ final class SFTPBrowserUITests: XCTestCase {
         app.buttons["Close sessions"].firstMatch.click()
         XCTAssertTrue(firstTab.exists)
         XCTAssertFalse(secondTab.exists)
-        XCTAssertTrue(app.tables["files.table"].exists)
+        XCTAssertTrue(app.outlines["files.table"].exists)
         app.typeKey("q", modifierFlags: .command)
         XCTAssertTrue(app.buttons["Close sessions"].firstMatch.waitForExistence(timeout: 5))
         app.buttons["Close sessions"].firstMatch.click()
@@ -90,7 +90,7 @@ final class SFTPBrowserUITests: XCTestCase {
         XCTAssertFalse(download.isEnabled)
         first.click()
         XCTAssertTrue(download.isEnabled)
-        XCTAssertEqual(app.textFields["files.path"].value as? String, URL(fileURLWithPath: remote).resolvingSymlinksInPath().path)
+        XCTAssertEqual(app.textFields["files.path"].value as? String, remote)
 
         entry("folder", in: app).doubleClick()
         XCTAssertTrue(entry("nested.txt", in: app).waitForExistence(timeout: 8))
@@ -99,7 +99,7 @@ final class SFTPBrowserUITests: XCTestCase {
         app.buttons["files.parent"].click()
         XCTAssertTrue(first.waitForExistence(timeout: 8))
 
-        let folderRow = app.tables["files.table"].tableRows.containing(.any, identifier: "files.entry.folder").firstMatch
+        let folderRow = app.outlines["files.table"].outlineRows.containing(.any, identifier: "files.entry.folder").firstMatch
         XCTAssertTrue(folderRow.exists)
         XCTAssertGreaterThanOrEqual(folderRow.cells.count, 2)
         folderRow.cells.element(boundBy: 1).doubleClick()
@@ -151,7 +151,7 @@ final class SFTPBrowserUITests: XCTestCase {
         app.buttons["Disconnect"].click()
         XCTAssertTrue(app.buttons["Close sessions"].firstMatch.waitForExistence(timeout: 5))
         app.buttons["Close sessions"].firstMatch.click()
-        let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.tables["files.table"])
+        let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.outlines["files.table"])
         XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 5), .completed)
     }
 
@@ -162,6 +162,7 @@ final class SFTPBrowserUITests: XCTestCase {
     private func choose(path: String, confirm: String, in app: XCUIApplication) {
         // Use the real standard file panel and its Go to Folder command.
         app.typeKey("g", modifierFlags: [.command, .shift])
+        app.typeKey("a", modifierFlags: .command)
         app.typeText(path)
         app.typeKey(.return, modifierFlags: [])
         let button = app.buttons[confirm].firstMatch

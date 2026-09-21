@@ -20,7 +20,7 @@ def fixture():
     server = None
     try:
         with os.fdopen(descriptor, 'w') as output, tempfile.TemporaryDirectory(prefix='fjarr-sftp-ui-', dir='/tmp') as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve()
             remote = root / 'remote'
             remote.mkdir(mode=0o700)
             (root / 'downloads').mkdir(mode=0o700)
