@@ -374,7 +374,9 @@ final class SFTPClient {
 
     private func downloadDirectory(_ remote: String, to local: URL, depth: Int) throws {
         guard depth < 64 else { throw SFTPFailure.unsafeFile }
-        for entry in try list(remote) {
+        let remoteEntries = try list(remote)
+        try pruneDirectoryDownloadStaging(local, against: remoteEntries)
+        for entry in remoteEntries {
             try checkCancellation()
             let path = Self.join(remote, entry.name)
             let destination = local.appendingPathComponent(entry.name)
@@ -391,6 +393,28 @@ final class SFTPClient {
                 try downloadFile(path, to: destination, startingAt: offset, expectedSize: entry.size)
             }
             else { throw SFTPFailure.unsafeFile }
+        }
+    }
+
+    /// A server can change after the initial staging check. Remove only safe
+    /// local items no longer present in its newest listing, so a completed
+    /// directory never inherits a file from an earlier remote tree snapshot.
+    private func pruneDirectoryDownloadStaging(_ local: URL, against remoteEntries: [SFTPEntry]) throws {
+        var remoteByName: [String: SFTPEntry] = [:]
+        for entry in remoteEntries {
+            guard remoteByName[entry.name] == nil else { throw SFTPFailure.invalidPacket }
+            remoteByName[entry.name] = entry
+        }
+        for child in try FileManager.default.contentsOfDirectory(at: local, includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey]) {
+            let values = try child.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
+            guard values.isSymbolicLink != true, Self.safeName(child.lastPathComponent),
+                  values.isDirectory == true || values.isRegularFile == true else { throw SFTPFailure.unsafeFile }
+            guard let remoteEntry = remoteByName[child.lastPathComponent] else {
+                try FileManager.default.removeItem(at: child)
+                continue
+            }
+            guard remoteEntry.isDirectory == (values.isDirectory == true),
+                  remoteEntry.isRegularFile == (values.isRegularFile == true) else { throw SFTPFailure.unsafeFile }
         }
     }
 

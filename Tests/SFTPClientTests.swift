@@ -238,4 +238,24 @@ final class SFTPClientTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: destination.appendingPathComponent("nested/first.bin")), firstBytes)
         XCTAssertEqual(try Data(contentsOf: destination.appendingPathComponent("second.bin")), secondBytes)
     }
+
+    func testUnexpectedDirectoryDownloadStagingTreeIsDiscarded() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let remote = root.appendingPathComponent("remote")
+        try FileManager.default.createDirectory(at: remote.appendingPathComponent("folder"), withIntermediateDirectories: true)
+        let bytes = Data((0..<40_000).map { UInt8($0 % 251) })
+        try bytes.write(to: remote.appendingPathComponent("folder/expected.bin"))
+        let destination = root.appendingPathComponent("copy")
+        let staging = SFTPClient.downloadStagingPath(destination)
+        try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: false)
+        try Data("stale".utf8).write(to: staging.appendingPathComponent("unexpected.bin"))
+
+        let client = try SFTPClient(executable: URL(fileURLWithPath: "/usr/libexec/sftp-server"), arguments: ["-d", remote.path])
+        defer { client.close() }
+        try client.download(remote.appendingPathComponent("folder").path, to: destination)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destination.appendingPathComponent("unexpected.bin").path))
+        XCTAssertEqual(try Data(contentsOf: destination.appendingPathComponent("expected.bin")), bytes)
+    }
 }
