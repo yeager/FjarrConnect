@@ -107,14 +107,17 @@ final class SFTPIntegrationTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: SFTPClient.uploadStagingPath(server.remote.appendingPathComponent(source.lastPathComponent).path)))
 
         session.upload([(source, false)])
-        try waitUntil { session.busy }
-        try waitUntil { !session.busy }
+        // A resumed upload can finish between two main-queue observations on an
+        // Intel runner. Wait for its observable result instead of requiring that
+        // transient busy state to be sampled.
+        let staging = SFTPClient.uploadStagingPath(server.remote.appendingPathComponent(source.lastPathComponent).path)
+        try waitUntil { !session.busy && session.transferred == 256 * 1024 * 1024 && !FileManager.default.fileExists(atPath: staging) }
         XCTAssertNil(session.errorMessage)
         XCTAssertEqual(session.transferred, 256 * 1024 * 1024)
         let final = server.remote.appendingPathComponent(source.lastPathComponent)
         let attributes = try FileManager.default.attributesOfItem(atPath: final.path)
         XCTAssertEqual((attributes[.size] as? NSNumber)?.uint64Value, 256 * 1024 * 1024)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: SFTPClient.uploadStagingPath(server.remote.appendingPathComponent(source.lastPathComponent).path)))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: staging))
     }
 
     private func interruptTransfer(closeSession: Bool) throws {
