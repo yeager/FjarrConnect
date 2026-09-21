@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 @main
@@ -57,6 +58,9 @@ struct FjarrConnectApp: App {
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("about.menu", action: AboutPanel.show)
+            }
+            CommandGroup(after: .appInfo) {
+                Button("about.repository", action: AboutPanel.openRepository)
             }
         }
     }

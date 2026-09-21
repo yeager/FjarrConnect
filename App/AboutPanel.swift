@@ -16,4 +16,8 @@ enum AboutPanel {
         NSApp.orderFrontStandardAboutPanel(options: [.credits: credits()])
         NSApp.activate(ignoringOtherApps: true)
     }
+
+    static func openRepository() {
+        NSWorkspace.shared.open(repositoryURL)
+    }
 }
