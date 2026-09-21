@@ -12,6 +12,9 @@
 "action.disconnect" = "接続解除";
 "action.cancel" = "キャンセル";
 "action.save" = "保存";
+"about.menu" = "FjärrConnectについて";
+"about.author" = "作成者: Daniel Nylander";
+"about.repository" = "GitHubのFjärrConnect";
 "detail.empty.title" = "接続中のセッションはありません";
 "detail.empty.description" = "保存済みの接続をダブルクリックするか、ネットワーク上のサーバを検索するか、アドレスを入力して接続してください。";
 "field.name" = "名前";

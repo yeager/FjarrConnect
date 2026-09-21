@@ -15,6 +15,9 @@
 "action.disconnect"          = "Koppla från";
 "action.cancel"              = "Avbryt";
 "action.save"                = "Spara";
+"about.menu" = "Om FjärrConnect";
+"about.author" = "Skapad av Daniel Nylander";
+"about.repository" = "FjärrConnect på GitHub";
 
 "detail.empty.title"         = "Ingen aktiv session";
 "detail.empty.description" = "Dubbelklicka på en sparad anslutning, sök efter en server i nätverket eller skriv en adress för att ansluta.";

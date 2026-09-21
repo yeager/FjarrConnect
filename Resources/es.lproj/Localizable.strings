@@ -12,6 +12,9 @@
 "action.disconnect" = "Desconectar";
 "action.cancel" = "Cancelar";
 "action.save" = "Guardar";
+"about.menu" = "Acerca de FjärrConnect";
+"about.author" = "Creado por Daniel Nylander";
+"about.repository" = "FjärrConnect en GitHub";
 "detail.empty.title" = "No hay sesiones activas";
 "detail.empty.description" = "Haz doble clic en una conexión guardada, busca un servidor en la red o introduce una dirección para conectarte.";
 "field.name" = "Nombre";

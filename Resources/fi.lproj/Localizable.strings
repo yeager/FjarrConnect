@@ -12,6 +12,9 @@
 "action.disconnect" = "Katkaise yhteys";
 "action.cancel" = "Peruuta";
 "action.save" = "Tallenna";
+"about.menu" = "Tietoja FjärrConnectista";
+"about.author" = "Tekijä Daniel Nylander";
+"about.repository" = "FjärrConnect GitHubissa";
 "detail.empty.title" = "Ei aktiivista istuntoa";
 "detail.empty.description" = "Kaksoisklikkaa tallennettua yhteyttä, etsi palvelin verkosta tai muodosta yhteys kirjoittamalla osoite.";
 "field.name" = "Nimi";

@@ -54,5 +54,10 @@ struct FjarrConnectApp: App {
                 }
         }
         .windowStyle(.titleBar)
+        .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("about.menu", action: AboutPanel.show)
+            }
+        }
     }
 }

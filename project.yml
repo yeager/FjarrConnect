@@ -40,7 +40,7 @@ targets:
         CFBundleVersion: "11"
         LSMinimumSystemVersion: "14.0"
         LSApplicationCategoryType: public.app-category.utilities
-        NSHumanReadableCopyright: "Copyright © 2026 yeager"
+        NSHumanReadableCopyright: "Copyright © 2026 Daniel Nylander"
         NSLocalNetworkUsageDescription: "Find VNC, RDP and SSH servers on your local network."
         NSBonjourServices:
           - _rfb._tcp
