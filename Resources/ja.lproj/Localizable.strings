@@ -4,7 +4,7 @@
 "sidebar.saved" = "保存済みの接続";
 "sidebar.saved.empty" = "保存済みの接続はありません";
 "sidebar.discovered" = "ローカルネットワーク";
-"sidebar.discovered.empty" = "検索中…";
+"sidebar.discovered.empty" = "公開されているサービスはまだありません。「サーバを検索」でネットワークを検索できます。";
 "profile.new" = "新規接続";
 "profile.edit" = "接続を編集";
 "action.edit" = "編集";
@@ -13,7 +13,7 @@
 "action.cancel" = "キャンセル";
 "action.save" = "保存";
 "detail.empty.title" = "接続中のセッションはありません";
-"detail.empty.description" = "保存済みの接続をダブルクリックするか、ネットワーク上のMacを選択するか、アドレスを入力して接続します。";
+"detail.empty.description" = "保存済みの接続をダブルクリックするか、ネットワーク上のサーバを検索するか、アドレスを入力して接続してください。";
 "field.name" = "名前";
 "field.protocol" = "プロトコル";
 "field.host" = "ホスト";
@@ -37,7 +37,7 @@
 "action.quickConnect" = "クイック接続";
 "action.closeSession" = "セッションを閉じる";
 "action.copyAddress" = "アドレスをコピー";
-"action.refresh" = "ネットワークを更新";
+"action.refresh" = "近くのサービスを更新";
 "action.ok" = "OK";
 "error.title" = "操作を完了できませんでした";
 "welcome.title" = "すべてのコンピュータを、一か所に。";
@@ -57,7 +57,7 @@
 "rdp.install" = "内蔵RDPコンポーネントがないか、読み込めませんでした。お使いのMacのアーキテクチャに対応するFjärrConnectを再インストールしてください。";
 "rdp.invalid" = "RDPの認証情報に改行を含めることはできません。";
 "rdp.ended" = "RDPが終了しました。サーバ、認証情報、証明書を確認してから、再接続してください。";
-"discovery.resolveFailed" = "このMacに接続できませんでした。画面共有とローカルネットワークへのアクセス許可を確認してから、更新してください。";
+"discovery.resolveFailed" = "このサーバに接続できません。サービス、ネットワーク、ローカルネットワーク権限を確認してから更新してください。";
 "sidebar.favorites" = "お気に入り";
 "favorite.add" = "お気に入りに追加";
 "favorite.remove" = "お気に入りから削除";
@@ -237,3 +237,18 @@
 "transport.sftp" = "SFTP";
 
 "rdp.error.activationTimeout" = "サーバーは応答しましたが、時間内にリモートデスクトップが起動しませんでした。Windowsのサインイン画面とリモートデスクトップサービスを確認してから、再接続してください。";
+
+// Network service discovery
+"discovery.scan.title" = "サーバを検索";
+"discovery.scan.hint" = "VNC、RDP、SSHサーバを検索します。結果を選択すると、保存または接続できます。";
+"discovery.scan.range" = "IPv4ネットワーク（例：192.168.1.0/24）";
+"discovery.scan.local" = "ローカルネットワーク";
+"discovery.scan.ports" = "ポート（カンマ区切り）";
+"discovery.scan.invalid" = "IPv4ネットワークは/20〜/32、ポートは1〜65535で指定してください。1つ以上のプロトコルを選択し、1回の検索は16,384件以内にしてください。";
+"discovery.scan.denied" = "ネットワークへのアクセスが拒否されました。システム設定でFjärrConnectのローカルネットワーク権限を確認し、再度検索してください。";
+"discovery.scan.progress" = "%d / %d";
+"discovery.scan.count" = "見つかったサービス：%d";
+"discovery.scan.cancelled" = "検索を停止しました";
+"discovery.scan.start" = "検索";
+"discovery.scan.empty" = "一致するサービスが見つかりません。ネットワーク、ポート、ファイアウォール、ローカルネットワーク権限を確認してください。";
+"discovery.scan.results" = "ネットワーク検索の結果";

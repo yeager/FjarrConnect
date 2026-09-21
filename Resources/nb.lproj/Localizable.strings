@@ -5,7 +5,7 @@
 "sidebar.saved"              = "Lagrede tilkoblinger";
 "sidebar.saved.empty"        = "Ingen lagrede tilkoblinger ennå";
 "sidebar.discovered"         = "På nettverket ditt";
-"sidebar.discovered.empty"   = "Søker…";
+"sidebar.discovered.empty" = "Ingen annonserte tjenester ennå. Bruk Finn servere for å søke på nettverket.";
 
 "profile.new"                = "Ny tilkobling";
 "profile.edit"               = "Rediger tilkobling";
@@ -17,7 +17,7 @@
 "action.save"                = "Lagre";
 
 "detail.empty.title"         = "Ingen aktiv økt";
-"detail.empty.description" = "Dobbeltklikk på en lagret tilkobling, velg en Mac på nettverket, eller skriv inn en adresse for å koble til.";
+"detail.empty.description" = "Dobbeltklikk på en lagret tilkobling, finn en server på nettverket, eller skriv inn en adresse for å koble til.";
 
 "field.name"                 = "Navn";
 "field.protocol"             = "Protokoll";
@@ -45,7 +45,7 @@
 "action.quickConnect" = "Hurtigtilkobling";
 "action.closeSession" = "Lukk økt";
 "action.copyAddress" = "Kopier adresse";
-"action.refresh" = "Oppdater nettverket";
+"action.refresh" = "Oppdater tjenester i nærheten";
 "action.ok" = "OK";
 "error.title" = "Handlingen kunne ikke fullføres";
 "welcome.title" = "Dine maskiner. Ett sted.";
@@ -65,7 +65,7 @@
 "rdp.install" = "Den innebygde RDP-komponenten mangler eller kunne ikke lastes. Installer FjärrConnect på nytt for din Mac-arkitektur.";
 "rdp.invalid" = "RDP-innloggingsopplysninger kan ikke inneholde linjeskift.";
 "rdp.ended" = "RDP ble avsluttet. Kontroller server, innlogging og sertifikat, og koble til igjen.";
-"discovery.resolveFailed" = "Kunne ikke nå denne Macen. Kontroller skjermdeling og tilgang til lokalt nettverk, og oppdater.";
+"discovery.resolveFailed" = "Kunne ikke nå serveren. Kontroller tjenesten, nettverket og tillatelsen til lokalt nettverk, og oppdater deretter.";
 
 "sidebar.favorites" = "Favoritter";
 "favorite.add" = "Legg til som favoritt";
@@ -252,3 +252,18 @@
 "transport.sftp" = "SFTP";
 
 "rdp.error.activationTimeout" = "Serveren svarte, men startet ikke det eksterne skrivebordet i tide. Kontroller påloggingsskjermen i Windows og tjenesten Eksternt skrivebord, og koble deretter til igjen.";
+
+// Network service discovery
+"discovery.scan.title" = "Finn servere";
+"discovery.scan.hint" = "Søk etter VNC-, RDP- og SSH-servere. Velg et resultat for å lagre eller koble til.";
+"discovery.scan.range" = "IPv4-nettverk (f.eks. 192.168.1.0/24)";
+"discovery.scan.local" = "Lokale nettverk";
+"discovery.scan.ports" = "Porter (kommaseparert)";
+"discovery.scan.invalid" = "Angi et IPv4-nettverk med /20–/32 og porter 1–65535. Velg minst én protokoll og høyst 16 384 kontroller per søk.";
+"discovery.scan.denied" = "Nettverkstilgang ble nektet. Kontroller tillatelsen til Lokalt nettverk for FjärrConnect i Systeminnstillinger, og søk på nytt.";
+"discovery.scan.progress" = "%d av %d";
+"discovery.scan.count" = "Tjenester funnet: %d";
+"discovery.scan.cancelled" = "Søket er stoppet";
+"discovery.scan.start" = "Søk";
+"discovery.scan.empty" = "Ingen samsvarende tjenester funnet. Kontroller nettverket, portene, brannmuren og tillatelsen til lokalt nettverk.";
+"discovery.scan.results" = "Funnet via nettverkssøk";

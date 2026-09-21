@@ -4,6 +4,9 @@ struct ContentView: View {
     @EnvironmentObject var profiles: ProfileStore
     @EnvironmentObject var discovery: BonjourBrowser
     @EnvironmentObject var connection: ConnectionManager
+    @StateObject private var scanner = NetworkScanner()
+    @State private var showingNetworkSearch = false
+    @State private var discoveredAction: (profile: ConnectionProfile, connect: Bool)?
     @State private var quickConnect = ""
     @State private var search = ""
     @State private var selectedProfileID: UUID?
@@ -51,6 +54,13 @@ struct ContentView: View {
                     .help("profile.new").keyboardShortcut("n").accessibilityIdentifier("newConnection")
             }
         }
+        .sheet(isPresented: $showingNetworkSearch, onDismiss: applyDiscoveredAction) {
+            NetworkDiscoveryView(scanner: scanner) { profile, connect in
+                discoveredAction = (profile, connect)
+                showingNetworkSearch = false
+            }
+        }
+        .onDisappear { scanner.stop() }
         .sheet(isPresented: $showingNew) { ProfileEditorView(profile: nil) }
         .sheet(item: $editing) { ProfileEditorView(profile: $0) }
         .sheet(item: $commandLog) { SSHCommandLogView(profile: $0) }
@@ -113,24 +123,44 @@ struct ContentView: View {
                 else if profiles.profiles.filter({ matches($0) }).isEmpty { Text("search.empty").foregroundStyle(.secondary) }
             }
             Section("sidebar.discovered") {
-                ForEach(discovery.hosts.filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) }) { host in
+                ForEach(discovery.hosts.filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) || $0.transport.rawValue.localizedCaseInsensitiveContains(search) }) { host in
                     Button {
                         discovery.resolve(host) { result in
                             switch result {
                             case .success(let endpoint):
-                                requestConnect(ConnectionProfile(name: host.name, host: endpoint.host, port: endpoint.port))
+                                requestConnect(ConnectionProfile(name: host.name, transport: host.transport, host: endpoint.host, port: endpoint.port))
                             case .failure(let error): errorMessage = error.localizedDescription
                             }
                         }
                     } label: {
-                        Label(host.name, systemImage: "bonjour").padding(.vertical, 3)
+                        HStack {
+                            Label(host.name, systemImage: host.transport.symbol)
+                            Spacer()
+                            Text(host.transport.rawValue.uppercased()).font(.caption).foregroundStyle(.secondary)
+                        }.padding(.vertical, 3)
                     }.buttonStyle(.plain)
                 }
-                if discovery.hosts.isEmpty {
-                    Text(discovery.errorMessage ?? NSLocalizedString("sidebar.discovered.empty", comment: ""))
-                        .font(.caption).foregroundStyle(.secondary)
-                }
+                if let error = discovery.errorMessage { Text(error).font(.caption).foregroundStyle(.secondary) }
+                else if discovery.hosts.isEmpty { Text("sidebar.discovered.empty").font(.caption).foregroundStyle(.secondary) }
                 Button("action.refresh") { discovery.stop(); discovery.start() }.font(.caption)
+                Button("discovery.scan.title") { showingNetworkSearch = true }
+                    .font(.caption).accessibilityIdentifier("network.scan")
+            }
+            if !scanner.hosts.isEmpty {
+                Section("discovery.scan.results") {
+                    ForEach(scanner.hosts.filter { matches($0.profile) }) { host in
+                        HStack {
+                            Button { selectedProfileID = host.id } label: {
+                                Label(host.profile.uri, systemImage: host.service.transport.symbol)
+                                    .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+                            }.buttonStyle(.plain)
+                                .simultaneousGesture(TapGesture(count: 2).onEnded { requestConnect(host.profile) })
+                                .accessibilityAction(named: Text("action.connect")) { requestConnect(host.profile) }
+                            Button { saveDiscovered(host.profile) } label: { Image(systemName: "plus") }
+                                .buttonStyle(.borderless).help("action.save").accessibilityLabel(Text("action.save"))
+                        }.tag(host.id)
+                    }
+                }
             }
         }.listStyle(.sidebar).searchable(text: $search, prompt: Text("search.placeholder"))
     }
@@ -180,6 +210,20 @@ struct ContentView: View {
             Divider()
             Button("action.delete", role: .destructive) { deleting = profile }
         }
+    }
+
+    private func applyDiscoveredAction() {
+        guard let action = discoveredAction else { return }
+        discoveredAction = nil
+        if action.connect { requestConnect(action.profile) } else { saveDiscovered(action.profile) }
+    }
+
+    private func saveDiscovered(_ profile: ConnectionProfile) {
+        if let existing = profiles.profiles.first(where: {
+            $0.host.caseInsensitiveCompare(profile.host) == .orderedSame && $0.port == profile.port && $0.transport == profile.transport
+        }) { selectedProfileID = existing.id; return }
+        do { try profiles.save(profile, password: nil); selectedProfileID = profile.id }
+        catch { errorMessage = error.localizedDescription }
     }
 
     private func toggleFavorite(_ profile: ConnectionProfile) {

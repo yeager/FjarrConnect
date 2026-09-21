@@ -37,6 +37,12 @@ The downloads use **ad-hoc signing**, not Developer ID signing or Apple
 notarization. macOS may require approval under **System Settings → Privacy & Security**
 on first launch. Never disable Gatekeeper globally to install the app.
 
+## Current development
+
+`main` adds protocol-verified network searches for VNC, RDP and SSH, including
+servers that do not advertise through Bonjour. The current published download is
+still 0.2.6; this network-search feature will be included in the next release.
+
 ## Features
 
 - **Favorites:** click the star beside a saved connection to pin it to the Favorites
@@ -52,9 +58,9 @@ on first launch. Never disable Gatekeeper globally to install the app.
   discovered Macs by name.
 - **Quick connect:** press **⌘K**, enter an address, then press Return.
 - **New connection:** press **⌘N**. Leave the name blank to use the hostname.
-- **Bonjour discovery:** find Macs advertising Screen Sharing on the local network,
-  with refresh and visible connection errors. Discovery uses `_rfb._tcp` (VNC);
-  SSH and RDP hosts are added manually, and hosts on other networks need an address.
+- **Network discovery:** automatically list advertised VNC, RDP and SSH services
+  through Bonjour. Choose **Find servers** to search an IPv4 network for services
+  that do not advertise. Select a result to connect or save it as a profile.
 - **Keychain credentials:** save VNC and RDP passwords in the macOS Keychain. Quick
   connections can use a password without saving it.
 - **Files:** open an SFTP tab from a connection’s context menu. Browse, upload and
@@ -102,6 +108,36 @@ FjärrConnect. SSH private keys remain managed by OpenSSH and your ssh-agent.
 The status “Client running” for SSH means the terminal process started; OpenSSH
 shows authentication in that terminal. RDP and SFTP report Connected only after
 their protocol connection is established.
+
+## Finding servers on your network
+
+Bonjour listens for `_rfb._tcp`, `_rdp._tcp` and `_ssh._tcp` advertisements, including
+IPv6 services. Many Windows RDP servers do not advertise themselves. Choose
+**Find servers** in the sidebar to search for them, select a local network or enter
+an IPv4 CIDR such as `192.168.1.0/24`, and press **Search**. The proposed range uses
+the current interface's subnet, limited to the local /24 on larger networks.
+
+Enable the protocols you want and adjust their comma-separated ports if needed.
+Defaults are VNC 5900/5901, RDP 3389 and SSH 22. A result requires a VNC or SSH
+protocol banner, or an RDP connection-negotiation response; an unrelated service
+with an open port is not listed. Discovery does not send passwords, authenticate,
+or open a desktop session. Finding a server does not prove its authentication
+method or desktop configuration is supported.
+
+Searches show progress and can be cancelled. They use at most 32 concurrent
+connections with a two-second deadline per probe. IPv4 ranges /20–/32 and up to
+16,384 address/port checks per search are supported. A /31 or /32 includes every
+address; other ranges exclude the network and broadcast addresses. Use a smaller
+range if a large network needs several searches. IPv6 hosts can be found through
+Bonjour or entered manually; IPv6 address-space scanning is not implemented.
+
+Select a result and choose **Save** to add it without a password, or **Connect** to
+start the normal connection flow. Double-clicking a search result also connects.
+Saved profiles still require a double-click. Saving the same address, protocol and
+port again selects the existing profile. Results remain in the sidebar for the
+current app session; the search does not run automatically on launch. If no services
+appear, check server settings, the selected network/ports, VPN/firewall rules and
+FjärrConnect's Local Network permission in System Settings.
 
 ## Clipboard, files and connection options
 

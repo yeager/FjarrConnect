@@ -4,7 +4,7 @@
 "sidebar.saved" = "Tallennetut yhteydet";
 "sidebar.saved.empty" = "Ei vielä tallennettuja yhteyksiä";
 "sidebar.discovered" = "Lähiverkossa";
-"sidebar.discovered.empty" = "Etsitään…";
+"sidebar.discovered.empty" = "Ilmoitettuja palveluja ei vielä näy. Etsi verkosta toiminnolla Etsi palvelimia.";
 "profile.new" = "Uusi yhteys";
 "profile.edit" = "Muokkaa yhteyttä";
 "action.edit" = "Muokkaa";
@@ -13,7 +13,7 @@
 "action.cancel" = "Peruuta";
 "action.save" = "Tallenna";
 "detail.empty.title" = "Ei aktiivista istuntoa";
-"detail.empty.description" = "Yhdistä kaksoisnapsauttamalla tallennettua yhteyttä, valitsemalla verkossa oleva Mac tai kirjoittamalla osoite.";
+"detail.empty.description" = "Kaksoisklikkaa tallennettua yhteyttä, etsi palvelin verkosta tai muodosta yhteys kirjoittamalla osoite.";
 "field.name" = "Nimi";
 "field.protocol" = "Protokolla";
 "field.host" = "Palvelin";
@@ -37,7 +37,7 @@
 "action.quickConnect" = "Pikayhteys";
 "action.closeSession" = "Sulje istunto";
 "action.copyAddress" = "Kopioi osoite";
-"action.refresh" = "Päivitä verkkohaku";
+"action.refresh" = "Päivitä lähistön palvelut";
 "action.ok" = "OK";
 "error.title" = "Toimintoa ei voitu suorittaa";
 "welcome.title" = "Tietokoneesi samassa paikassa.";
@@ -57,7 +57,7 @@
 "rdp.install" = "Sisäinen RDP-komponentti puuttuu tai sitä ei voitu ladata. Asenna FjärrConnect uudelleen Macisi arkkitehtuurille.";
 "rdp.invalid" = "RDP-kirjautumistiedoissa ei saa olla rivinvaihtoja.";
 "rdp.ended" = "RDP päättyi. Tarkista palvelin, kirjautumistiedot ja varmenne ja yhdistä uudelleen.";
-"discovery.resolveFailed" = "Tähän Maciin ei saatu yhteyttä. Tarkista Näytönjako ja lähiverkon käyttöoikeus ja päivitä haku.";
+"discovery.resolveFailed" = "Palvelimeen ei saatu yhteyttä. Tarkista palvelu, verkko ja paikallisen verkon käyttöoikeus ja päivitä sitten.";
 "sidebar.favorites" = "Suosikit";
 "favorite.add" = "Lisää suosikkeihin";
 "favorite.remove" = "Poista suosikeista";
@@ -237,3 +237,18 @@
 "transport.sftp" = "SFTP";
 
 "rdp.error.activationTimeout" = "Palvelin vastasi, mutta etätyöpöytä ei käynnistynyt ajoissa. Tarkista Windowsin kirjautumisnäyttö ja etätyöpöytäpalvelu ja yhdistä uudelleen.";
+
+// Network service discovery
+"discovery.scan.title" = "Etsi palvelimia";
+"discovery.scan.hint" = "Etsi VNC-, RDP- ja SSH-palvelimia. Valitse tulos tallentaaksesi sen tai muodostaaksesi yhteyden.";
+"discovery.scan.range" = "IPv4-verkko (esim. 192.168.1.0/24)";
+"discovery.scan.local" = "Paikalliset verkot";
+"discovery.scan.ports" = "Portit (pilkuilla erotettuina)";
+"discovery.scan.invalid" = "Anna IPv4-verkko välillä /20–/32 ja portit välillä 1–65535. Valitse vähintään yksi protokolla ja enintään 16 384 tarkistusta hakua kohden.";
+"discovery.scan.denied" = "Verkkoyhteys estettiin. Tarkista Järjestelmäasetuksista FjärrConnectin paikallisen verkon käyttöoikeus ja hae uudelleen.";
+"discovery.scan.progress" = "%d / %d";
+"discovery.scan.count" = "Löydetyt palvelut: %d";
+"discovery.scan.cancelled" = "Haku pysäytetty";
+"discovery.scan.start" = "Etsi";
+"discovery.scan.empty" = "Vastaavia palveluja ei löytynyt. Tarkista verkko, portit, palomuuri ja paikallisen verkon käyttöoikeus.";
+"discovery.scan.results" = "Verkkohaulla löydetyt";

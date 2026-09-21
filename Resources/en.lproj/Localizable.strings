@@ -5,7 +5,7 @@
 "sidebar.saved"              = "Saved Connections";
 "sidebar.saved.empty"        = "No saved connections yet";
 "sidebar.discovered"         = "On Your Network";
-"sidebar.discovered.empty"   = "Searching…";
+"sidebar.discovered.empty" = "No advertised services yet. Use Find servers to search the network.";
 
 "profile.new"                = "New Connection";
 "profile.edit"               = "Edit Connection";
@@ -17,7 +17,7 @@
 "action.save"                = "Save";
 
 "detail.empty.title"         = "No Active Session";
-"detail.empty.description" = "Double-click a saved connection, choose a Mac on your network, or type an address to connect.";
+"detail.empty.description" = "Double-click a saved connection, find a server on your network, or type an address to connect.";
 
 "field.name"                 = "Name";
 "field.protocol"             = "Protocol";
@@ -45,7 +45,7 @@
 "action.quickConnect" = "Quick Connect";
 "action.closeSession" = "Close session";
 "action.copyAddress" = "Copy address";
-"action.refresh" = "Refresh network";
+"action.refresh" = "Refresh nearby services";
 "action.ok" = "OK";
 "error.title" = "Could not complete the action";
 "welcome.title" = "Your machines. One place.";
@@ -65,7 +65,7 @@
 "rdp.install" = "The embedded RDP component is missing or could not be loaded. Reinstall FjärrConnect for your Mac architecture.";
 "rdp.invalid" = "RDP credentials cannot contain line breaks.";
 "rdp.ended" = "RDP ended. Check the server, credentials and certificate, then reconnect.";
-"discovery.resolveFailed" = "Could not reach this Mac. Check Screen Sharing and Local Network permission, then refresh.";
+"discovery.resolveFailed" = "Could not reach this server. Check the service, network and Local Network permission, then refresh.";
 
 "sidebar.favorites" = "Favorites";
 "favorite.add" = "Add to favorites";
@@ -252,3 +252,18 @@
 "transport.sftp" = "SFTP";
 
 "rdp.error.activationTimeout" = "The server answered but did not start the remote desktop in time. Check the Windows sign-in screen and Remote Desktop service, then reconnect.";
+
+// Network service discovery
+"discovery.scan.title" = "Find servers";
+"discovery.scan.hint" = "Search for VNC, RDP and SSH servers. Select a result to save it or connect.";
+"discovery.scan.range" = "IPv4 network (e.g. 192.168.1.0/24)";
+"discovery.scan.local" = "Local networks";
+"discovery.scan.ports" = "Ports (comma-separated)";
+"discovery.scan.invalid" = "Use an IPv4 network with /20–/32 and ports 1–65535. Select at least one protocol and at most 16,384 checks per search.";
+"discovery.scan.denied" = "Network access was denied. Check Local Network permission for FjärrConnect in System Settings, then search again.";
+"discovery.scan.progress" = "%d of %d";
+"discovery.scan.count" = "Services found: %d";
+"discovery.scan.cancelled" = "Search stopped";
+"discovery.scan.start" = "Search";
+"discovery.scan.empty" = "No matching services found. Check the network, ports, firewall and Local Network permission.";
+"discovery.scan.results" = "Found by Network Search";

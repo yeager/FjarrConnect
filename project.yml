@@ -41,9 +41,11 @@ targets:
         LSMinimumSystemVersion: "14.0"
         LSApplicationCategoryType: public.app-category.utilities
         NSHumanReadableCopyright: "Copyright © 2026 yeager"
-        NSLocalNetworkUsageDescription: "Find Macs sharing their screen on your local network."
+        NSLocalNetworkUsageDescription: "Find VNC, RDP and SSH servers on your local network."
         NSBonjourServices:
           - _rfb._tcp
+          - _rdp._tcp
+          - _ssh._tcp
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: se.fjarrconnect.app

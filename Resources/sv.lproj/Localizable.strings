@@ -5,7 +5,7 @@
 "sidebar.saved"              = "Sparade anslutningar";
 "sidebar.saved.empty"        = "Inga sparade anslutningar än";
 "sidebar.discovered"         = "På ditt nätverk";
-"sidebar.discovered.empty"   = "Söker…";
+"sidebar.discovered.empty" = "Inga annonserade tjänster ännu. Använd Sök servrar för att söka i nätverket.";
 
 "profile.new"                = "Ny anslutning";
 "profile.edit"               = "Redigera anslutning";
@@ -17,7 +17,7 @@
 "action.save"                = "Spara";
 
 "detail.empty.title"         = "Ingen aktiv session";
-"detail.empty.description" = "Dubbelklicka på en sparad anslutning, välj en Mac i nätverket eller skriv en adress för att ansluta.";
+"detail.empty.description" = "Dubbelklicka på en sparad anslutning, sök efter en server i nätverket eller skriv en adress för att ansluta.";
 
 "field.name"                 = "Namn";
 "field.protocol"             = "Protokoll";
@@ -45,7 +45,7 @@
 "action.quickConnect" = "Snabbanslutning";
 "action.closeSession" = "Stäng session";
 "action.copyAddress" = "Kopiera adress";
-"action.refresh" = "Uppdatera nätverket";
+"action.refresh" = "Uppdatera närliggande tjänster";
 "action.ok" = "OK";
 "error.title" = "Åtgärden kunde inte slutföras";
 "welcome.title" = "Dina datorer. En plats.";
@@ -65,7 +65,7 @@
 "rdp.install" = "Den inbyggda RDP-komponenten saknas eller kunde inte läsas in. Installera om FjärrConnect för din Mac-arkitektur.";
 "rdp.invalid" = "Inloggningsuppgifter för RDP får inte innehålla radbrytningar.";
 "rdp.ended" = "RDP avslutades. Kontrollera server, inloggning och certifikat och anslut igen.";
-"discovery.resolveFailed" = "Kunde inte nå Macen. Kontrollera skärmdelning och behörighet till lokalt nätverk och uppdatera sedan.";
+"discovery.resolveFailed" = "Kunde inte nå servern. Kontrollera tjänsten, nätverket och behörigheten för lokalt nätverk och uppdatera sedan.";
 
 "sidebar.favorites" = "Favoriter";
 "favorite.add" = "Lägg till som favorit";
@@ -252,3 +252,18 @@
 "transport.sftp" = "SFTP";
 
 "rdp.error.activationTimeout" = "Servern svarade men startade inte fjärrskrivbordet i tid. Kontrollera Windows inloggningsskärm och tjänsten Fjärrskrivbord och anslut sedan igen.";
+
+// Network service discovery
+"discovery.scan.title" = "Sök servrar";
+"discovery.scan.hint" = "Sök efter VNC-, RDP- och SSH-servrar. Markera ett resultat för att spara eller ansluta.";
+"discovery.scan.range" = "IPv4-nät (t.ex. 192.168.1.0/24)";
+"discovery.scan.local" = "Lokala nät";
+"discovery.scan.ports" = "Portar (kommaseparerade)";
+"discovery.scan.invalid" = "Ange ett IPv4-nät med /20–/32 och portar 1–65535. Välj minst ett protokoll och högst 16 384 kontroller per sökning.";
+"discovery.scan.denied" = "Nätverksåtkomst nekades. Kontrollera behörigheten Lokalt nätverk för FjärrConnect i Systeminställningar och sök igen.";
+"discovery.scan.progress" = "%d av %d";
+"discovery.scan.count" = "Hittade tjänster: %d";
+"discovery.scan.cancelled" = "Sökningen stoppades";
+"discovery.scan.start" = "Sök";
+"discovery.scan.empty" = "Inga matchande tjänster hittades. Kontrollera nätet, portarna, brandväggen och behörigheten för lokalt nätverk.";
+"discovery.scan.results" = "Hittade via nätverkssökning";

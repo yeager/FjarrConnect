@@ -4,7 +4,7 @@
 "sidebar.saved" = "Connexions enregistrées";
 "sidebar.saved.empty" = "Aucune connexion enregistrée";
 "sidebar.discovered" = "Sur votre réseau";
-"sidebar.discovered.empty" = "Recherche…";
+"sidebar.discovered.empty" = "Aucun service annoncé pour le moment. Utilisez Rechercher des serveurs pour explorer le réseau.";
 "profile.new" = "Nouvelle connexion";
 "profile.edit" = "Modifier la connexion";
 "action.edit" = "Modifier";
@@ -13,7 +13,7 @@
 "action.cancel" = "Annuler";
 "action.save" = "Enregistrer";
 "detail.empty.title" = "Aucune session active";
-"detail.empty.description" = "Double-cliquez sur une connexion enregistrée, choisissez un Mac sur le réseau ou saisissez une adresse pour vous connecter.";
+"detail.empty.description" = "Double-cliquez sur une connexion enregistrée, recherchez un serveur sur le réseau ou saisissez une adresse pour vous connecter.";
 "field.name" = "Nom";
 "field.protocol" = "Protocole";
 "field.host" = "Hôte";
@@ -37,7 +37,7 @@
 "action.quickConnect" = "Connexion rapide";
 "action.closeSession" = "Fermer la session";
 "action.copyAddress" = "Copier l’adresse";
-"action.refresh" = "Actualiser le réseau";
+"action.refresh" = "Actualiser les services à proximité";
 "action.ok" = "OK";
 "error.title" = "Impossible de terminer l’action";
 "welcome.title" = "Vos ordinateurs, au même endroit.";
@@ -57,7 +57,7 @@
 "rdp.install" = "Le composant RDP intégré est absent ou n’a pas pu être chargé. Réinstallez FjärrConnect pour l’architecture de votre Mac.";
 "rdp.invalid" = "Les identifiants RDP ne peuvent pas contenir de sauts de ligne.";
 "rdp.ended" = "RDP s’est arrêté. Vérifiez le serveur, les identifiants et le certificat, puis reconnectez-vous.";
-"discovery.resolveFailed" = "Impossible de joindre ce Mac. Vérifiez le partage d’écran et l’autorisation d’accès au réseau local, puis actualisez la recherche.";
+"discovery.resolveFailed" = "Impossible de joindre ce serveur. Vérifiez le service, le réseau et l’autorisation d’accès au réseau local, puis actualisez.";
 "sidebar.favorites" = "Favoris";
 "favorite.add" = "Ajouter aux favoris";
 "favorite.remove" = "Retirer des favoris";
@@ -237,3 +237,18 @@
 "transport.sftp" = "SFTP";
 
 "rdp.error.activationTimeout" = "Le serveur a répondu, mais le bureau à distance ne s’est pas ouvert à temps. Vérifiez l’écran de connexion Windows et le service Bureau à distance, puis reconnectez-vous.";
+
+// Network service discovery
+"discovery.scan.title" = "Rechercher des serveurs";
+"discovery.scan.hint" = "Recherchez des serveurs VNC, RDP et SSH. Sélectionnez un résultat pour l’enregistrer ou vous y connecter.";
+"discovery.scan.range" = "Réseau IPv4 (p. ex. 192.168.1.0/24)";
+"discovery.scan.local" = "Réseaux locaux";
+"discovery.scan.ports" = "Ports (séparés par des virgules)";
+"discovery.scan.invalid" = "Indiquez un réseau IPv4 de /20 à /32 et des ports de 1 à 65535. Sélectionnez au moins un protocole et au plus 16 384 vérifications par recherche.";
+"discovery.scan.denied" = "L’accès au réseau a été refusé. Vérifiez l’autorisation Réseau local de FjärrConnect dans Réglages Système, puis relancez la recherche.";
+"discovery.scan.progress" = "%d sur %d";
+"discovery.scan.count" = "Services trouvés : %d";
+"discovery.scan.cancelled" = "Recherche arrêtée";
+"discovery.scan.start" = "Rechercher";
+"discovery.scan.empty" = "Aucun service correspondant trouvé. Vérifiez le réseau, les ports, le pare-feu et l’autorisation d’accès au réseau local.";
+"discovery.scan.results" = "Trouvés sur le réseau";

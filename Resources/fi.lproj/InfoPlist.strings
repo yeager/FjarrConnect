@@ -1,1 +1,1 @@
-"NSLocalNetworkUsageDescription" = "Etsi lähiverkosta Mac-tietokoneita, jotka jakavat näyttönsä.";
+"NSLocalNetworkUsageDescription" = "Etsi VNC-, RDP- ja SSH-palvelimia paikallisesta verkostasi.";

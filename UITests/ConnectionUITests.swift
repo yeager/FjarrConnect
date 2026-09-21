@@ -1,6 +1,61 @@
 import XCTest
+import Network
 
 final class ConnectionUITests: XCTestCase {
+    func testNetworkSearchVerifiesAndSavesALoopbackVNCService() throws {
+        continueAfterFailure = false
+        let parameters = NWParameters.tcp
+        parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: .any)
+        let listener = try NWListener(using: parameters)
+        let queue = DispatchQueue(label: "discovery.ui.fixture")
+        let clients = DiscoveryUIConnections()
+        let ready = expectation(description: "loopback service ready")
+        listener.stateUpdateHandler = { if case .ready = $0 { ready.fulfill() } }
+        listener.newConnectionHandler = { client in
+            clients.values.append(client); client.start(queue: queue)
+            client.send(content: Data("RFB 003.008\n".utf8), completion: .contentProcessed { _ in })
+        }
+        listener.start(queue: queue)
+        defer { listener.cancel(); queue.sync { for client in clients.values { client.cancel() } } }
+        wait(for: [ready], timeout: 5)
+        let port = try XCTUnwrap(listener.port).rawValue
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = file.path
+        app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        app.launch(); defer { app.terminate() }
+        let search = app.buttons["network.scan"]
+        XCTAssertTrue(search.waitForExistence(timeout: 15)); search.click()
+        let range = app.textFields["scan.range"]
+        XCTAssertTrue(range.waitForExistence(timeout: 5))
+        func replace(_ field: XCUIElement, with value: String) {
+            field.click(); field.typeKey("a", modifierFlags: .command); field.typeText(value)
+        }
+        replace(range, with: "0.0.0.0/0")
+        XCTAssertFalse(app.buttons["scan.start"].isEnabled)
+        replace(range, with: "127.0.0.1/32")
+        app.checkBoxes["scan.enable.rdp"].click()
+        app.checkBoxes["scan.enable.ssh"].click()
+        replace(app.textFields["scan.ports.vnc"], with: String(port))
+        XCTAssertTrue(app.buttons["scan.start"].isEnabled)
+        app.buttons["scan.start"].click()
+        let result = app.descendants(matching: .any).matching(identifier: "scan.host.vnc.127.0.0.1").firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 8)); result.click()
+        XCTAssertTrue(app.buttons["scan.save"].isEnabled)
+        capture(app, name: "Verified VNC network search")
+        app.buttons["scan.save"].click()
+        XCTAssertTrue(app.buttons["connect.127.0.0.1"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.secureTextFields["auth.password"].exists)
+        let profiles = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [[String: Any]])
+        XCTAssertEqual(profiles.count, 1)
+        XCTAssertEqual(profiles.first?["host"] as? String, "127.0.0.1")
+        XCTAssertEqual(profiles.first?["transport"] as? String, "vnc")
+        XCTAssertEqual(profiles.first?["port"] as? Int, Int(port))
+    }
+
     func testSavedProfilesRequireDoubleClickToConnectIncludingFavorites() throws {
         continueAfterFailure = false
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -163,4 +218,9 @@ final class ConnectionUITests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
     }
+}
+
+// Connections are accessed only on the fixture queue, including cleanup via queue.sync.
+private final class DiscoveryUIConnections: @unchecked Sendable {
+    var values: [NWConnection] = []
 }
