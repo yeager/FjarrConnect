@@ -79,6 +79,7 @@
 
 "vnc.usernameRequired" = "Serveren krever et brukernavn. Oppgi det korte brukernavnet og passordet til kontoen på den eksterne Macen, og kontroller at kontoen har tilgang under Skjermdeling.";
 "vnc.connectionFailed" = "VNC-tilkoblingen mislyktes. Kontroller adressen og porten, og bekreft deretter at Skjermdeling eller VNC-tjenesten er aktivert på den eksterne datamaskinen og at kontoen har tilgang.";
+"vnc.unsupportedSecurity" = "Serveren krever en VNC-sikkerhetsmetode som FjärrConnect ennå ikke støtter, for eksempel VeNCrypt/TLS eller RSA-AES. Bruk vanlig VNC-godkjenning, eller velg en kompatibel sikkerhetsinnstilling på serveren.";
 
 "rdp.error.network" = "Serveren kunne ikke nås. Kontroller at Eksternt skrivebord er aktivert og at adressen og porten er tilgjengelige.";
 "rdp.error.authentication" = "Serveren avviste innloggingen. Kontroller brukernavn, passord og tilgang til Eksternt skrivebord.";

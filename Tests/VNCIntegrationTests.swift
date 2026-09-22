@@ -33,6 +33,17 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertFalse(message.contains("ERRCONNECT"))
     }
 
+    func testVNCUnsupportedSecurityExplainsTheProtocolLimitation() {
+        let message = VNCRemoteSession.connectionFailureMessage(
+            host: "desktop.local",
+            port: 5901,
+            error: VNCError.authentication(.clientCouldNotDecideOnSecurityType)
+        )
+        XCTAssertTrue(message.contains("desktop.local:5901"))
+        XCTAssertTrue(message.contains(NSLocalizedString("vnc.unsupportedSecurity", comment: "")))
+        XCTAssertFalse(message.contains("could not decide"))
+    }
+
     private func exerciseServer(requiresUsername: Bool, requiresPassword: Bool = false,
                                 blackInitially: Bool = false, resize: Bool = false) throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

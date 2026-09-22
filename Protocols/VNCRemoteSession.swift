@@ -152,8 +152,8 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
                 // SDK error strings are diagnostic implementation details and may
                 // be English or expose server-specific text. Keep the endpoint
                 // visible while giving every locale a safe, useful next step.
-                let reason = self.credentialFailure ?? connectionState.error.map { _ in
-                    Self.connectionFailureMessage(host: self.profile.host, port: self.profile.port)
+                let reason = self.credentialFailure ?? connectionState.error.map { error in
+                    Self.connectionFailureMessage(host: self.profile.host, port: self.profile.port, error: error)
                 }
                 self.status = .disconnected(reason: reason)
             }
@@ -261,8 +261,16 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         }
     }
 
-    static func connectionFailureMessage(host: String, port: UInt16) -> String {
-        "VNC \(host):\(port)\n" + NSLocalizedString("vnc.connectionFailed", comment: "")
+    static func connectionFailureMessage(host: String, port: UInt16, error: Error? = nil) -> String {
+        let explanation: String
+        if let error,
+           case VNCError.authentication(.clientCouldNotDecideOnSecurityType) = error {
+            explanation = NSLocalizedString("vnc.unsupportedSecurity", comment: "")
+        } else {
+            explanation = NSLocalizedString("vnc.connectionFailed", comment: "")
+        }
+
+        return "VNC \(host):\(port)\n" + explanation
     }
 }
 

@@ -79,6 +79,7 @@
 
 "vnc.usernameRequired" = "This server requires a username. Enter the remote Mac account’s short username and password, and check that the account is allowed under Screen Sharing.";
 "vnc.connectionFailed" = "The VNC connection failed. Check the address and port, then confirm that Screen Sharing or the VNC service is enabled on the remote computer and that the account is permitted.";
+"vnc.unsupportedSecurity" = "This server requires a VNC security method that FjärrConnect does not support yet, such as VeNCrypt/TLS or RSA-AES. Use standard VNC authentication, or choose a compatible server security setting.";
 
 "rdp.error.network" = "The server could not be reached. Check that Remote Desktop is enabled and that this address and port are reachable.";
 "rdp.error.authentication" = "The server rejected the sign-in. Check the username, password and permission to use Remote Desktop.";

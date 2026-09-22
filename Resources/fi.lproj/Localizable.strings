@@ -67,6 +67,7 @@
 "session.timeout" = "Yhteys aikakatkaistiin. Tarkista osoite, Näytönjako ja palomuuri ja yritä uudelleen.";
 "vnc.usernameRequired" = "Palvelin vaatii käyttäjätunnuksen. Anna etä-Macin tilin lyhyt käyttäjätunnus ja salasana ja tarkista, että tilillä on Näytönjaon käyttöoikeus.";
 "vnc.connectionFailed" = "VNC-yhteys epäonnistui. Tarkista osoite ja portti ja vahvista sitten, että Näytönjako tai VNC-palvelu on käytössä etätietokoneessa ja että tilillä on käyttöoikeus.";
+"vnc.unsupportedSecurity" = "Palvelin vaatii VNC-suojausmenetelmän, jota FjärrConnect ei vielä tue, kuten VeNCrypt/TLS:n tai RSA-AES:n. Käytä tavallista VNC-todennusta tai valitse palvelimesta yhteensopiva suojausasetus.";
 "rdp.error.network" = "Palvelimeen ei saatu yhteyttä. Tarkista, että etätyöpöytä on käytössä ja osoite ja portti ovat saavutettavissa.";
 "rdp.error.authentication" = "Palvelin hylkäsi kirjautumisen. Tarkista käyttäjätunnus, salasana ja etätyöpöydän käyttöoikeus.";
 "rdp.error.certificate" = "Suojattu yhteys epäonnistui. Tarkista palvelimen varmenne ja TLS-asetukset.";
