@@ -197,6 +197,11 @@ without dynamic desktop resizing. Shared folders remain the supported file flow.
 Clipboard file transfer is intentionally not enabled until it has been tested against
 supported Windows versions.
 
+RemoteApp profile and session handling is covered by argument and session tests. The
+project currently has no Windows Server with a published RemoteApp alias available for
+an end-to-end RemoteApp launch test; that remains required before making a release
+claim about a particular RDS deployment.
+
 RDP currently presents one desktop surface per tab. Multi-monitor layouts and USB
 redirection are not exposed: MacFreeRDP cannot currently render multiple remote
 screens as an in-app feature. RoyalVNCKit’s
