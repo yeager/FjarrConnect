@@ -43,6 +43,8 @@ final class ConnectionOptionsTests: XCTestCase {
         let legacy = try JSONDecoder().decode(SSHOptions.self, from: Data("{}".utf8))
         XCTAssertTrue(legacy.usesKeepAlive)
         var profile = ConnectionProfile(name: "SSH", transport: .ssh, host: "host")
+        XCTAssertTrue(SSHArguments.make(profile).contains("ServerAliveInterval=30"))
+        XCTAssertTrue(SSHArguments.make(profile).contains("ServerAliveCountMax=3"))
         profile.ssh = SSHOptions(keepAlive: false)
         let arguments = SSHArguments.make(profile)
         XCTAssertFalse(arguments.contains("ServerAliveInterval=30"))
