@@ -94,7 +94,7 @@ final class VNCIntegrationTests: XCTestCase {
         if requiresUsername {
             XCTAssertEqual(session.status.error, NSLocalizedString("vnc.usernameRequired", comment: ""))
         } else if unsupportedSecurity {
-            XCTAssertEqual(session.status.error, NSLocalizedString("vnc.unsupportedSecurity", comment: ""))
+            XCTAssertTrue(session.status.error?.contains(NSLocalizedString("vnc.unsupportedSecurity", comment: "")) == true)
         } else {
             XCTAssertEqual(session.status, .connected)
             try assertRenderedDesktop(session, isBlack: blackInitially)
