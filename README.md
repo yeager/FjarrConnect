@@ -16,15 +16,15 @@ It supports macOS 14 or later on Apple Silicon (arm64) and Intel (x86_64).
 
 **[GitHub repository](https://github.com/yeager/FjarrConnect)**
 
-## Version 0.2.22
+## Version 0.2.23
 
-**[Download version 0.2.22](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.22)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.22-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.22-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.23](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.23)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.23-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.23-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.22 adds H.264 recording for embedded RDP and VNC tabs. The Record button
+Version 0.2.23 adds H.264 recording for embedded RDP and VNC tabs. The Record button
 shows a red indicator while recording. Recordings include the remote desktop only—no
 sidebar, dialogs, other tabs or audio.
 
@@ -392,15 +392,15 @@ Development is on **`main`**.
   architectures, packages separate archives, and smoke-tests each downloaded app and
   its embedded RDP runtime on native hardware.
 - **Gitleaks:** scans repository history on pushes, pull requests and releases.
-- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.22`**, runs the
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.23`**, runs the
   same checks and publishes the architecture-specific archives after they pass.
 
 For maintainers, after the current `main` revision passes verification:
 
 ```bash
 git pull --ff-only
-git tag -a v0.2.22 -m 'FjärrConnect 0.2.22'
-git push origin v0.2.22
+git tag -a v0.2.23 -m 'FjärrConnect 0.2.23'
+git push origin v0.2.23
 ```
 
 Do not reuse or move an already published release tag. Use a new version for fixes.
