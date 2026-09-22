@@ -72,7 +72,10 @@ struct RDPOptions: Codable, Hashable {
     var redirectsSmartCard: Bool { smartCardRedirection ?? false }
     var redirectsAudio: Bool { audioRedirection ?? false }
     var redirectsMicrophone: Bool { microphoneRedirection ?? false }
-    var remoteAppProgram: String? { remoteApp?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty }
+    var remoteAppProgram: String? {
+        let program = remoteApp?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return program.isEmpty ? nil : program
+    }
 
     var isValid: Bool {
         (gatewayHost.map(ConnectionURI.validHost) ?? true) && (gatewayPort ?? 443) > 0 &&
@@ -80,10 +83,6 @@ struct RDPOptions: Codable, Hashable {
         (sharedFolders ?? []).allSatisfy { $0.hasPrefix("/") && !$0.contains(",") && ConnectionOptions.validValue($0) } &&
         (remoteApp.map(ConnectionOptions.validValue) ?? true)
     }
-}
-
-private extension String {
-    var nilIfEmpty: String? { isEmpty ? nil : self }
 }
 
 struct HostLinks: Codable, Hashable {
