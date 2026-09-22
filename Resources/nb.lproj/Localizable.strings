@@ -280,3 +280,13 @@
 "ssh.keepAlive" = "Hold tilkoblingen aktiv";
 "ssh.keepAlive.enable" = "Hold SSH-tilkoblingen aktiv ved inaktivitet";
 "ssh.keepAlive.hint" = "Sender en kryptert SSH-kontroll hvert 30. sekund. Ingenting vises i terminalen eller lagres i kommandologgen.";
+"rdp.devices" = "Lokale enheter";
+"rdp.printer" = "Del skrivere";
+"rdp.smartCard" = "Del smartkort";
+"rdp.audio" = "Spill av ekstern lyd på denne Macen";
+"rdp.microphone" = "Del mikrofonen på denne Macen";
+"rdp.devices.hint" = "Enhetsvideresending er valgfri og kan deaktiveres per profil.";
+"rdp.remoteApp" = "RemoteApp";
+"rdp.remoteApp.program" = "RemoteApp-program";
+"rdp.remoteApp.example" = "for eksempel ||wordpad";
+"rdp.remoteApp.hint" = "Starter den angitte Windows RemoteApp i stedet for et helt skrivebord. Utklippstavlen fungerer; fildeling bruker delte mapper.";

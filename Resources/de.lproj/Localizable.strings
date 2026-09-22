@@ -265,3 +265,13 @@
 "ssh.keepAlive" = "Verbindung aktiv halten";
 "ssh.keepAlive.enable" = "SSH-Verbindung bei Inaktivität aktiv halten";
 "ssh.keepAlive.hint" = "Sendet alle 30 Sekunden eine verschlüsselte SSH-Prüfung. Es wird nichts im Terminal angezeigt oder im Befehlsprotokoll gespeichert.";
+"rdp.devices" = "Lokale Geräte";
+"rdp.printer" = "Drucker freigeben";
+"rdp.smartCard" = "Smartcards freigeben";
+"rdp.audio" = "Remote-Audio auf diesem Mac wiedergeben";
+"rdp.microphone" = "Mikrofon dieses Macs freigeben";
+"rdp.devices.hint" = "Geräteumleitung ist optional und kann je Profil deaktiviert werden.";
+"rdp.remoteApp" = "RemoteApp";
+"rdp.remoteApp.program" = "RemoteApp-Programm";
+"rdp.remoteApp.example" = "zum Beispiel ||wordpad";
+"rdp.remoteApp.hint" = "Startet die angegebene Windows-RemoteApp statt eines vollständigen Desktops. Die Zwischenablage funktioniert; Dateien werden über freigegebene Ordner geteilt.";

@@ -265,3 +265,13 @@
 "ssh.keepAlive" = "接続を維持";
 "ssh.keepAlive.enable" = "アイドル時もSSH接続を維持";
 "ssh.keepAlive.hint" = "30秒ごとに暗号化されたSSHキープアライブを送信します。端末には表示されず、コマンドログにも記録されません。";
+"rdp.devices" = "ローカルデバイス";
+"rdp.printer" = "プリンターを共有";
+"rdp.smartCard" = "スマートカードを共有";
+"rdp.audio" = "リモート音声をこのMacで再生";
+"rdp.microphone" = "このMacのマイクを共有";
+"rdp.devices.hint" = "デバイスリダイレクトは任意で、プロファイルごとに無効にできます。";
+"rdp.remoteApp" = "RemoteApp";
+"rdp.remoteApp.program" = "RemoteAppプログラム";
+"rdp.remoteApp.example" = "例: ||wordpad";
+"rdp.remoteApp.hint" = "完全なデスクトップの代わりに指定したWindows RemoteAppを起動します。クリップボードは利用でき、ファイル共有には共有フォルダーを使用します。";

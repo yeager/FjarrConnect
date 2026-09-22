@@ -55,16 +55,35 @@ struct RDPOptions: Codable, Hashable {
     var gatewayPort: UInt16?
     var gatewayUsername: String?
     var sharedFolders: [String]?
+    // These redirections are opt-in. They can expose local devices to the
+    // remote desktop, so existing profiles keep them disabled.
+    var printerRedirection: Bool? = nil
+    var smartCardRedirection: Bool? = nil
+    var audioRedirection: Bool? = nil
+    var microphoneRedirection: Bool? = nil
+    // A Windows RemoteApp executable or alias, for example "||wordpad".
+    // Nil means a full desktop session.
+    var remoteApp: String? = nil
     // Nil keeps profiles saved before this preference dynamically sized.
     var dynamicResolution: Bool?
 
     var resizesRemoteDesktop: Bool { dynamicResolution ?? true }
+    var redirectsPrinter: Bool { printerRedirection ?? false }
+    var redirectsSmartCard: Bool { smartCardRedirection ?? false }
+    var redirectsAudio: Bool { audioRedirection ?? false }
+    var redirectsMicrophone: Bool { microphoneRedirection ?? false }
+    var remoteAppProgram: String? { remoteApp?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty }
 
     var isValid: Bool {
         (gatewayHost.map(ConnectionURI.validHost) ?? true) && (gatewayPort ?? 443) > 0 &&
         (gatewayUsername.map(ConnectionOptions.validValue) ?? true) &&
-        (sharedFolders ?? []).allSatisfy { $0.hasPrefix("/") && !$0.contains(",") && ConnectionOptions.validValue($0) }
+        (sharedFolders ?? []).allSatisfy { $0.hasPrefix("/") && !$0.contains(",") && ConnectionOptions.validValue($0) } &&
+        (remoteApp.map(ConnectionOptions.validValue) ?? true)
     }
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }
 
 struct HostLinks: Codable, Hashable {

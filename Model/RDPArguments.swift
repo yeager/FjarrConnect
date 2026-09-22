@@ -9,6 +9,11 @@ enum RDPArguments {
                     "/title:FjärrConnect — \(title)", "/log-level:OFF"]
         if profile.rdp?.resizesRemoteDesktop ?? true { args.append("/dynamic-resolution") }
         args.append(profile.sharesClipboard ? "+clipboard" : "-clipboard")
+        if profile.rdp?.redirectsPrinter == true { args.append("/printer") }
+        if profile.rdp?.redirectsSmartCard == true { args.append("/smartcard") }
+        if profile.rdp?.redirectsAudio == true { args.append("/sound") }
+        if profile.rdp?.redirectsMicrophone == true { args.append("/microphone") }
+        if let remoteApp = profile.rdp?.remoteAppProgram { args.append("/app:\(remoteApp)") }
         for (index, path) in (profile.rdp?.sharedFolders ?? []).enumerated() {
             args.append("/drive:Shared\(index + 1),\(path)")
         }

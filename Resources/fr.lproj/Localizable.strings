@@ -265,3 +265,13 @@
 "ssh.keepAlive" = "Maintenir la connexion active";
 "ssh.keepAlive.enable" = "Maintenir la connexion SSH active en cas d’inactivité";
 "ssh.keepAlive.hint" = "Envoie un contrôle SSH chiffré toutes les 30 secondes. Rien n’est affiché dans le terminal ni enregistré dans le journal des commandes.";
+"rdp.devices" = "Appareils locaux";
+"rdp.printer" = "Partager les imprimantes";
+"rdp.smartCard" = "Partager les cartes à puce";
+"rdp.audio" = "Lire l’audio distant sur ce Mac";
+"rdp.microphone" = "Partager le microphone de ce Mac";
+"rdp.devices.hint" = "La redirection d’appareils est facultative et peut être désactivée par profil.";
+"rdp.remoteApp" = "RemoteApp";
+"rdp.remoteApp.program" = "Programme RemoteApp";
+"rdp.remoteApp.example" = "par exemple ||wordpad";
+"rdp.remoteApp.hint" = "Lance la RemoteApp Windows indiquée au lieu d’un bureau complet. Le presse-papiers fonctionne ; le partage de fichiers utilise les dossiers partagés.";

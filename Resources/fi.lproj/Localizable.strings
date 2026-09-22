@@ -265,3 +265,13 @@
 "ssh.keepAlive" = "Pidä yhteys aktiivisena";
 "ssh.keepAlive.enable" = "Pidä SSH-yhteys aktiivisena käyttämättömänä";
 "ssh.keepAlive.hint" = "Lähettää salatun SSH-tarkistuksen 30 sekunnin välein. Mitään ei näytetä päätteessä eikä tallenneta komentolokiin.";
+"rdp.devices" = "Paikalliset laitteet";
+"rdp.printer" = "Jaa tulostimet";
+"rdp.smartCard" = "Jaa älykortit";
+"rdp.audio" = "Toista etäääni tässä Macissa";
+"rdp.microphone" = "Jaa tämän Macin mikrofoni";
+"rdp.devices.hint" = "Laiteuudelleenohjaus on valinnainen ja sen voi poistaa käytöstä profiilikohtaisesti.";
+"rdp.remoteApp" = "RemoteApp";
+"rdp.remoteApp.program" = "RemoteApp-ohjelma";
+"rdp.remoteApp.example" = "esimerkiksi ||wordpad";
+"rdp.remoteApp.hint" = "Käynnistää määritetyn Windows RemoteAppin koko työpöydän sijaan. Leikepöytä toimii; tiedostojen jako käyttää jaettuja kansioita.";

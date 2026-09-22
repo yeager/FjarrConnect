@@ -84,6 +84,19 @@ final class ConnectionOptionsTests: XCTestCase {
         XCTAssertFalse(String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self).contains("/dynamic-resolution\n"))
     }
 
+    func testRDPDeviceRedirectionAndRemoteAppAreExplicitPerProfile() throws {
+        var profile = ConnectionProfile(name: "App", transport: .rdp, host: "desktop.local")
+        profile.rdp = RDPOptions(printerRedirection: true, smartCardRedirection: true,
+                                 audioRedirection: true, microphoneRedirection: true,
+                                 remoteApp: "||wordpad")
+        let arguments = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
+        for flag in ["/printer", "/smartcard", "/sound", "/microphone", "/app:||wordpad"] {
+            XCTAssertTrue(arguments.contains(flag + "\n"), flag)
+        }
+        profile.rdp?.remoteApp = "wordpad\n/cert:ignore"
+        XCTAssertFalse(profile.isValid)
+    }
+
     func testLoginAndGatewayCredentialsRemainSeparateAndAreRemovedTogether() throws {
         let id = UUID()
         defer {
