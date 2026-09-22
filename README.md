@@ -78,7 +78,7 @@ on first launch. Never disable Gatekeeper globally to install the app.
 |---|---|---|
 | VNC / Mac Screen Sharing | Embedded desktop through [RoyalVNCKit](https://github.com/royalapplications/royalvnc), with keyboard, mouse and clipboard support | VNC password or remote Mac username/password; optional Keychain storage |
 | SSH | Embedded [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) terminal running macOS `/usr/bin/ssh`, with optional encrypted keep-alives during idle periods | Your SSH configuration, keys and ssh-agent; passwords and new host-key confirmation in the terminal |
-| RDP | Embedded [FreeRDP](https://github.com/FreeRDP/FreeRDP) desktop, keyboard/mouse, resizing, text and image clipboard, shared folders and gateway settings | Username/password; localized certificate verification and separate gateway credentials |
+| RDP | Embedded [FreeRDP](https://github.com/FreeRDP/FreeRDP) desktop or RemoteApp, keyboard/mouse, resizing, text and image clipboard, shared folders, local-device options and gateway settings | Username/password; localized certificate verification and separate gateway credentials |
 | SFTP | Built-in file panel using the authenticated OpenSSH connection | Keys/agent or interactive password and host-key prompts |
 
 **Standard VNC uses only a password:** leave Username empty and enter the server's
@@ -188,8 +188,17 @@ or an RDP-to-VNC gateway, rejects a display resize or disconnects during one, di
 **Adapt remote desktop to window size** in that profile’s Advanced options and
 reconnect. The remote desktop then keeps its initial size.
 
-RDP currently presents one desktop surface per tab. Multi-monitor layouts, RemoteApp,
-USB/printer redirection and clipboard file transfer are not exposed. RoyalVNCKit’s
+RDP profiles can opt in to printer, smart-card, audio and microphone redirection when
+the server and bundled FreeRDP runtime support the relevant channel. They are off by
+default because they expose local devices to the remote session. A profile can also
+start a Windows **RemoteApp** by entering its server-published alias, such as
+`||wordpad`; it uses the same tab and clipboard policy as a desktop session. Shared
+folders remain the supported file flow. Clipboard file transfer is intentionally not
+enabled until it has been tested against supported Windows versions.
+
+RDP currently presents one desktop surface per tab. Multi-monitor layouts and USB
+redirection are not exposed: MacFreeRDP cannot currently render multiple remote
+screens as an in-app feature. RoyalVNCKit’s
 VNC authentication currently covers None, VNC password, Apple Remote Desktop and
 UltraVNC MS-Logon II; VeNCrypt/TLS and RSA-AES authentication remain unsupported.
 Use SFTP or a configured SMB share for files instead of a VNC-specific file protocol.
