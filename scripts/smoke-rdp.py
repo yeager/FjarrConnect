@@ -19,6 +19,9 @@ import threading
 ROOT = Path(__file__).resolve().parent.parent
 library = Path(sys.argv[1]).resolve()
 assert library.is_file(), library
+architectures = subprocess.check_output(['lipo', '-archs', str(library)], text=True).split()
+assert len(architectures) == 1, f'Expected one runtime architecture, found {architectures}'
+architecture = architectures[0]
 
 
 def translations(language):
@@ -31,7 +34,7 @@ def translations(language):
 with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
     directory = Path(temporary)
     probe = directory / 'FjarrRDPProbe'
-    subprocess.run(['xcrun', 'clang', '-fobjc-arc', '-framework', 'AppKit',
+    subprocess.run(['xcrun', 'clang', '-arch', architecture, '-fobjc-arc', '-framework', 'AppKit',
                     '-I', str(ROOT / 'NativeRDP'), str(ROOT / 'NativeRDP/Tests/Probe.m'),
                     str(library), '-Wl,-rpath,' + str(library.parent), '-o', str(probe)], check=True)
     empty_translations = directory / 'empty-translations.json'
