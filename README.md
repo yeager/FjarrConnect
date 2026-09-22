@@ -17,18 +17,18 @@ There are no Windows, Linux or mobile app targets.
 
 **[GitHub repository](https://github.com/yeager/FjarrConnect)**
 
-## Version 0.2.20
+## Version 0.2.21
 
-**[Download version 0.2.20](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.20)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.20-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.20-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.21](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.21)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.21-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.21-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.20 makes Mac CI resilient to Xcode's spurious exit 65 after a verified passing
-test result. Real test failures still fail the build. Saved profiles still connect on
-**double-click**; a single click only selects the profile. Saved profiles and Keychain
-passwords are retained.
+Version 0.2.21 adds local H.264 recording for embedded RDP and VNC sessions, with a
+Record control and active indicator in each graphical session tab. Mac CI continues to
+reject real test failures while tolerating Xcode's verified spurious exit 65. Saved
+profiles still connect on **double-click**; a single click only selects the profile.
 
 Every release passes gitleaks, Mac regression tests, separate architecture packaging and
 checks of the downloaded app on both native Mac architectures before publication.
