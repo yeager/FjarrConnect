@@ -44,15 +44,20 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertFalse(message.contains("could not decide"))
     }
 
+    func testVNCHandshakeExplainsVeNCryptRequirement() throws {
+        try exerciseServer(requiresUsername: false, unsupportedSecurity: true)
+    }
+
     private func exerciseServer(requiresUsername: Bool, requiresPassword: Bool = false,
-                                blackInitially: Bool = false, resize: Bool = false) throws {
+                                blackInitially: Bool = false, resize: Bool = false,
+                                unsupportedSecurity: Bool = false) throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let portFile = directory.appendingPathComponent("port")
         let server = Process()
         server.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
-        server.arguments = ["-c", Self.server, portFile.path, requiresUsername ? "username" : (requiresPassword ? "password" : (blackInitially ? "black" : (resize ? "resize" : "none")))]
+        server.arguments = ["-c", Self.server, portFile.path, requiresUsername ? "username" : (unsupportedSecurity ? "unsupported" : (requiresPassword ? "password" : (blackInitially ? "black" : (resize ? "resize" : "none"))))]
         server.standardOutput = FileHandle.nullDevice
         // XCTest injects libraries into its host; these must not leak into Python.
         server.environment = ProcessInfo.processInfo.environment.filter {
@@ -82,12 +87,14 @@ final class VNCIntegrationTests: XCTestCase {
         let connected = expectation(description: "Authenticated RFB session")
         var observed = false
         let subscription = session.$status.sink { state in
-            if (requiresUsername ? state.isFinished : state == .connected) && !observed { observed = true; connected.fulfill() }
+            if ((requiresUsername || unsupportedSecurity) ? state.isFinished : state == .connected) && !observed { observed = true; connected.fulfill() }
         }
         session.start()
         wait(for: [connected], timeout: 10)
         if requiresUsername {
             XCTAssertEqual(session.status.error, NSLocalizedString("vnc.usernameRequired", comment: ""))
+        } else if unsupportedSecurity {
+            XCTAssertEqual(session.status.error, NSLocalizedString("vnc.unsupportedSecurity", comment: ""))
         } else {
             XCTAssertEqual(session.status, .connected)
             try assertRenderedDesktop(session, isBlack: blackInitially)
@@ -223,6 +230,13 @@ with socket.socket() as listener:
             sys.exit(0)
         client.sendall(b'RFB 003.008\n')
         read(client, 12)
+        if sys.argv[2] == 'unsupported':
+            # VeNCrypt is deliberately unsupported by this SDK revision. The
+            # app must show its localized compatibility explanation, not the
+            # SDK's generic security-selection diagnostic.
+            client.sendall(b'\x01\x13')
+            assert client.recv(1) == b''
+            sys.exit(0)
         if sys.argv[2] == 'password':
             client.sendall(b'\x01\x02')
             assert read(client, 1) == b'\x02'
