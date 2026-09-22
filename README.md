@@ -202,6 +202,10 @@ project currently has no Windows Server with a published RemoteApp alias availab
 an end-to-end RemoteApp launch test; that remains required before making a release
 claim about a particular RDS deployment.
 
+The project also has no RDS environment configured to allow practical audio and
+microphone-redirection testing. The per-profile controls remain opt-in and are only
+documented as runtime/server-dependent until they are exercised against such a server.
+
 RDP currently presents one desktop surface per tab. Multi-monitor layouts and USB
 redirection are not exposed: MacFreeRDP cannot currently render multiple remote
 screens as an in-app feature. RoyalVNCKit’s

@@ -7,7 +7,7 @@ FjärrConnect 0.2.20 — reliable Mac verification.
 
 Existing favorites, saved profiles, Keychain credentials and encrypted opt-in SSH command-name logs are retained. Saved profiles still use double-click to connect.
 
-Known limitations: VNC clipboard supports text only; clipboard file copying is not implemented. Multi-monitor RDP, USB redirection, RDP printer redirection and RDP smart-card redirection are not implemented. RDP audio and microphone redirection are opt-in and require server support. RemoteApp is a separate tabbed session type with dynamic desktop resizing disabled, but end-to-end launch verification awaits a Windows Server with a published alias. VNC VeNCrypt/TLS and RSA-AES authentication are not implemented. See the README for protocol details.
+Known limitations: VNC clipboard supports text only; clipboard file copying is not implemented. Multi-monitor RDP, USB redirection, RDP printer redirection and RDP smart-card redirection are not implemented. RDP audio and microphone redirection are opt-in and require server support, but await RDS integration testing. RemoteApp is a separate tabbed session type with dynamic desktop resizing disabled, but end-to-end launch verification awaits a Windows Server with a published alias. VNC VeNCrypt/TLS and RSA-AES authentication are not implemented. See the README for protocol details.
 
 Download `FjarrConnect-0.2.20-macOS-arm64.zip` for Apple Silicon or `FjarrConnect-0.2.20-macOS-x86_64.zip` for Intel. Each app contains only its target architecture and requires macOS 14 or later. Unzip and move FjärrConnect to Applications. `SHA256SUMS.txt` contains both download checksums.
 
