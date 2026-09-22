@@ -9,7 +9,9 @@
 // them through the shipping C API.
 @interface NSView (FCRDPClipboardProbe)
 - (void)clipboardTick;
+- (NSData *)DIBFromPasteboard:(NSPasteboard *)pasteboard;
 - (void)receiveClipboardDIB:(NSData *)dib;
+- (void)writeClipboardDIB:(NSData *)dib;
 @end
 
 static NSString *expectedFingerprint;
@@ -48,10 +50,6 @@ int main(int argc, const char **argv) {
             // Exercise the native CLIPRDR image path without a server: AppKit image
             // -> CF_DIB -> AppKit image. This catches architecture-specific bitmap
             // and pasteboard regressions before a package is published.
-            [view setValue:@YES forKey:@"clipboardAllowed"];
-            fc_rdp_set_active((__bridge void *)view, 1);
-            [view setValue:@2 forKey:@"connectionStatus"];
-            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
             NSBitmapImageRep *source = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:2 pixelsHigh:2 bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSDeviceRGBColorSpace bitmapFormat:NSBitmapFormatAlphaFirst bytesPerRow:8 bitsPerPixel:32];
             if (!source || !source.bitmapData) return 8;
             uint8_t *pixels = source.bitmapData;
@@ -60,11 +58,9 @@ int main(int argc, const char **argv) {
             NSPasteboard *pasteboard = NSPasteboard.generalPasteboard;
             [pasteboard clearContents];
             [pasteboard setData:[source representationUsingType:NSBitmapImageFileTypePNG properties:@{}] forType:NSPasteboardTypePNG];
-            [(id)view clipboardTick];
-            NSData *dib = [view valueForKey:@"clipboardImage"];
+            NSData *dib = [(id)view DIBFromPasteboard:pasteboard];
             [pasteboard clearContents];
-            [(id)view receiveClipboardDIB:dib];
-            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+            [(id)view writeClipboardDIB:dib];
             NSImage *roundTrip = [[NSImage alloc] initWithData:[pasteboard dataForType:NSPasteboardTypeTIFF]];
             return dib.length > 40 && roundTrip.size.width == 2 && roundTrip.size.height == 2 ? 0 : 8;
         }

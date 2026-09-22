@@ -137,7 +137,9 @@ static NSData *FCBMPFromDIB(NSData *dib) {
 - (void)setSessionActive:(BOOL)active;
 - (void)enqueue:(FCInput)input;
 - (void)publishFrame:(rdpGdi *)gdi;
+- (NSData *)DIBFromPasteboard:(NSPasteboard *)pasteboard;
 - (void)receiveClipboardDIB:(NSData *)dib;
+- (void)writeClipboardDIB:(NSData *)dib;
 - (NSString *)text:(NSString *)key;
 - (DWORD)certificateForHost:(NSString *)host port:(UINT16)port commonName:(NSString *)name subject:(NSString *)subject issuer:(NSString *)issuer fingerprint:(NSString *)fingerprint oldFingerprint:(NSString *)oldFingerprint flags:(DWORD)flags;
 @end
@@ -252,7 +254,7 @@ static NSData *FCBMPFromDIB(NSData *dib) {
     NSPasteboard *pasteboard = NSPasteboard.generalPasteboard;
     if (!active || self.connectionStatus != 2 || pasteboard.changeCount == _clipboardChange) return;
     _clipboardChange = pasteboard.changeCount;
-    NSData *image = FCDIBFromPasteboard(pasteboard);
+    NSData *image = [self DIBFromPasteboard:pasteboard];
     self.clipboardImage = image;
     NSString *text = [pasteboard stringForType:NSPasteboardTypeString];
     if (text.length > 512 * 1024) { self.clipboardText = nil; self.needsClipboardAnnouncement = image != nil; return; }
@@ -274,15 +276,19 @@ static NSData *FCBMPFromDIB(NSData *dib) {
 - (void)receiveClipboardDIB:(NSData *)dib {
     dispatch_async(dispatch_get_main_queue(), ^{
         if (!self.clipboardActive || !self->_sessionActive || !NSApp.isActive || !self.window.isKeyWindow || self.cancelled) return;
-        NSData *bmp = FCBMPFromDIB(dib);
-        NSImage *image = bmp ? [[NSImage alloc] initWithData:bmp] : nil;
-        NSData *tiff = image.TIFFRepresentation;
-        if (!tiff.length || tiff.length > FCClipboardImageMaximumBytes) return;
-        NSPasteboard *pasteboard = NSPasteboard.generalPasteboard;
-        [pasteboard clearContents];
-        [pasteboard setData:tiff forType:NSPasteboardTypeTIFF];
-        self->_clipboardChange = pasteboard.changeCount;
+        [self writeClipboardDIB:dib];
     });
+}
+- (NSData *)DIBFromPasteboard:(NSPasteboard *)pasteboard { return FCDIBFromPasteboard(pasteboard); }
+- (void)writeClipboardDIB:(NSData *)dib {
+    NSData *bmp = FCBMPFromDIB(dib);
+    NSImage *image = bmp ? [[NSImage alloc] initWithData:bmp] : nil;
+    NSData *tiff = image.TIFFRepresentation;
+    if (!tiff.length || tiff.length > FCClipboardImageMaximumBytes) return;
+    NSPasteboard *pasteboard = NSPasteboard.generalPasteboard;
+    [pasteboard clearContents];
+    [pasteboard setData:tiff forType:NSPasteboardTypeTIFF];
+    _clipboardChange = pasteboard.changeCount;
 }
 - (void)enqueue:(FCInput)input {
     if (self.cancelled || self.connectionStatus != 2) return;
