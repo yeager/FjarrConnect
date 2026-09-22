@@ -1,1 +1,2 @@
 "NSLocalNetworkUsageDescription" = "VNC-, RDP- und SSH-Server im lokalen Netzwerk finden.";
+"NSMicrophoneUsageDescription" = "Das Mikrofon dieses Macs mit einer RDP-Sitzung teilen, wenn die Mikrofonumleitung aktiviert ist.";

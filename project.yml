@@ -42,6 +42,7 @@ targets:
         LSApplicationCategoryType: public.app-category.utilities
         NSHumanReadableCopyright: "Copyright © 2026 Daniel Nylander"
         NSLocalNetworkUsageDescription: "Find VNC, RDP and SSH servers on your local network."
+        NSMicrophoneUsageDescription: "Share this Mac's microphone with an RDP session when you enable microphone redirection."
         NSBonjourServices:
           - _rfb._tcp
           - _rdp._tcp

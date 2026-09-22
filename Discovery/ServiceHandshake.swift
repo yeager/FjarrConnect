@@ -16,7 +16,7 @@ enum ServiceHandshake {
             guard bytes.count >= 12 else { return .incomplete }
             return Array(bytes[0..<4]) == Array("RFB ".utf8) && bytes[7] == 46 && bytes[11] == 10 &&
                 [4, 5, 6, 8, 9, 10].allSatisfy { (48...57).contains(bytes[$0]) } ? .matched : .invalid
-        case .rdp:
+        case .rdp, .remoteApp:
             guard bytes.count >= 4 else { return .incomplete }
             let length = Int(bytes[2]) << 8 | Int(bytes[3])
             guard bytes[0] == 3, bytes[1] == 0, (11...maximumReply).contains(length) else { return .invalid }

@@ -1,1 +1,2 @@
 "NSLocalNetworkUsageDescription" = "Etsi VNC-, RDP- ja SSH-palvelimia paikallisesta verkostasi.";
+"NSMicrophoneUsageDescription" = "Jaa tämän Macin mikrofoni RDP-istunnolle, kun otat mikrofonin uudelleenohjauksen käyttöön.";

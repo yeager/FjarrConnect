@@ -44,7 +44,7 @@ enum ProtocolRegistry {
     static func makeSession(for profile: ConnectionProfile, credentials: SessionCredentials) -> any RemoteSession {
         switch profile.transport {
         case .vnc: return VNCRemoteSession(profile: profile, password: credentials.password)
-        case .rdp: return RDPRemoteSession(profile: profile, password: credentials.password, gatewayPassword: credentials.gatewayPassword)
+        case .rdp, .remoteApp: return RDPRemoteSession(profile: profile, password: credentials.password, gatewayPassword: credentials.gatewayPassword)
         case .sftp: return SFTPRemoteSession(profile: profile)
         case .ssh: return SSHRemoteSession(profile: profile, password: credentials.password)
         }

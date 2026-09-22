@@ -27,6 +27,7 @@
 "field.port.format" = "ポート（デフォルト：%d）";
 "transport.vnc" = "VNC / 画面共有";
 "transport.rdp" = "RDP";
+"transport.remoteApp" = "RemoteApp";
 "transport.ssh" = "SSH";
 "group.ungrouped" = "接続";
 "status.idle" = "準備完了";
@@ -270,8 +271,8 @@
 "rdp.smartCard" = "スマートカードを共有";
 "rdp.audio" = "リモート音声をこのMacで再生";
 "rdp.microphone" = "このMacのマイクを共有";
-"rdp.devices.hint" = "デバイスリダイレクトは任意で、プロファイルごとに無効にできます。";
+"rdp.devices.hint" = "オーディオとマイクのリダイレクトは任意で、プロファイルごとに無効にできます。";
 "rdp.remoteApp" = "RemoteApp";
 "rdp.remoteApp.program" = "RemoteAppプログラム";
 "rdp.remoteApp.example" = "例: ||wordpad";
-"rdp.remoteApp.hint" = "完全なデスクトップの代わりに指定したWindows RemoteAppを起動します。クリップボードは利用でき、ファイル共有には共有フォルダーを使用します。";
+"rdp.remoteApp.hint" = "指定したWindows RemoteAppを専用のセッションタブで起動します。動的なデスクトップサイズ変更は無効で、ファイル共有には共有フォルダーを使用します。";

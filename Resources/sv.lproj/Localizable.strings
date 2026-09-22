@@ -33,6 +33,7 @@
 
 "transport.vnc"              = "VNC / Skärmdelning";
 "transport.rdp"              = "RDP";
+"transport.remoteApp"        = "RemoteApp";
 "transport.ssh"              = "SSH";
 
 
@@ -285,8 +286,8 @@
 "rdp.smartCard" = "Dela smartkort";
 "rdp.audio" = "Spela upp fjärrljud på denna Mac";
 "rdp.microphone" = "Dela denna Macs mikrofon";
-"rdp.devices.hint" = "Enhetsvidarebefordran är valfri och kan stängas av per profil.";
+"rdp.devices.hint" = "Ljud- och mikrofonvidarebefordran är valfri och kan stängas av per profil.";
 "rdp.remoteApp" = "RemoteApp";
 "rdp.remoteApp.program" = "RemoteApp-program";
 "rdp.remoteApp.example" = "till exempel ||wordpad";
-"rdp.remoteApp.hint" = "Startar angiven Windows RemoteApp i stället för ett helt skrivbord. Urklipp fungerar; fildelning använder delade mappar.";
+"rdp.remoteApp.hint" = "Startar angiven Windows RemoteApp i en egen sessionsflik. Dynamisk skrivbordsstorlek är avstängd; fildelning använder delade mappar.";

@@ -55,10 +55,6 @@ struct RDPOptions: Codable, Hashable {
     var gatewayPort: UInt16?
     var gatewayUsername: String?
     var sharedFolders: [String]?
-    // These redirections are opt-in. They can expose local devices to the
-    // remote desktop, so existing profiles keep them disabled.
-    var printerRedirection: Bool? = nil
-    var smartCardRedirection: Bool? = nil
     var audioRedirection: Bool? = nil
     var microphoneRedirection: Bool? = nil
     // A Windows RemoteApp executable or alias, for example "||wordpad".
@@ -68,8 +64,6 @@ struct RDPOptions: Codable, Hashable {
     var dynamicResolution: Bool?
 
     var resizesRemoteDesktop: Bool { dynamicResolution ?? true }
-    var redirectsPrinter: Bool { printerRedirection ?? false }
-    var redirectsSmartCard: Bool { smartCardRedirection ?? false }
     var redirectsAudio: Bool { audioRedirection ?? false }
     var redirectsMicrophone: Bool { microphoneRedirection ?? false }
     var remoteAppProgram: String? {

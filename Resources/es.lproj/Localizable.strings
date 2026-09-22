@@ -27,6 +27,7 @@
 "field.port.format" = "Puerto (predeterminado: %d)";
 "transport.vnc" = "VNC / Compartir pantalla";
 "transport.rdp" = "RDP";
+"transport.remoteApp" = "RemoteApp";
 "transport.ssh" = "SSH";
 "group.ungrouped" = "Conexiones";
 "status.idle" = "Listo";
@@ -270,8 +271,8 @@
 "rdp.smartCard" = "Compartir tarjetas inteligentes";
 "rdp.audio" = "Reproducir audio remoto en este Mac";
 "rdp.microphone" = "Compartir el micrófono de este Mac";
-"rdp.devices.hint" = "La redirección de dispositivos es opcional y puede desactivarse por perfil.";
+"rdp.devices.hint" = "La redirección de audio y micrófono es opcional y puede desactivarse por perfil.";
 "rdp.remoteApp" = "RemoteApp";
 "rdp.remoteApp.program" = "Programa RemoteApp";
 "rdp.remoteApp.example" = "por ejemplo ||wordpad";
-"rdp.remoteApp.hint" = "Inicia la RemoteApp de Windows indicada en lugar de un escritorio completo. El portapapeles funciona; el uso compartido de archivos usa carpetas compartidas.";
+"rdp.remoteApp.hint" = "Inicia la RemoteApp de Windows indicada en su propia pestaña de sesión. Se desactiva el cambio dinámico de tamaño del escritorio; los archivos usan carpetas compartidas.";

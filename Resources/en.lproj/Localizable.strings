@@ -33,6 +33,7 @@
 
 "transport.vnc"              = "VNC / Screen Sharing";
 "transport.rdp"              = "RDP";
+"transport.remoteApp"        = "RemoteApp";
 "transport.ssh"              = "SSH";
 
 
@@ -285,8 +286,8 @@
 "rdp.smartCard" = "Share smart cards";
 "rdp.audio" = "Play remote audio on this Mac";
 "rdp.microphone" = "Share this Mac's microphone";
-"rdp.devices.hint" = "Device redirection is optional and can be disabled per profile.";
+"rdp.devices.hint" = "Audio and microphone redirection are optional and can be disabled per profile.";
 "rdp.remoteApp" = "RemoteApp";
 "rdp.remoteApp.program" = "RemoteApp program";
 "rdp.remoteApp.example" = "for example ||wordpad";
-"rdp.remoteApp.hint" = "Starts the specified Windows RemoteApp instead of a full desktop. Clipboard works; file sharing uses shared folders.";
+"rdp.remoteApp.hint" = "Starts the specified Windows RemoteApp in its own session tab. Dynamic desktop resizing is disabled; file sharing uses shared folders.";

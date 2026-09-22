@@ -33,6 +33,7 @@
 
 "transport.vnc"              = "VNC / Skjermdeling";
 "transport.rdp"              = "RDP";
+"transport.remoteApp"        = "RemoteApp";
 "transport.ssh"              = "SSH";
 
 
@@ -285,8 +286,8 @@
 "rdp.smartCard" = "Del smartkort";
 "rdp.audio" = "Spill av ekstern lyd på denne Macen";
 "rdp.microphone" = "Del mikrofonen på denne Macen";
-"rdp.devices.hint" = "Enhetsvideresending er valgfri og kan deaktiveres per profil.";
+"rdp.devices.hint" = "Lyd- og mikrofonvideresending er valgfri og kan deaktiveres per profil.";
 "rdp.remoteApp" = "RemoteApp";
 "rdp.remoteApp.program" = "RemoteApp-program";
 "rdp.remoteApp.example" = "for eksempel ||wordpad";
-"rdp.remoteApp.hint" = "Starter den angitte Windows RemoteApp i stedet for et helt skrivebord. Utklippstavlen fungerer; fildeling bruker delte mapper.";
+"rdp.remoteApp.hint" = "Starter den angitte Windows RemoteApp i sin egen øktfane. Dynamisk skrivebordsstørrelse er deaktivert; fildeling bruker delte mapper.";

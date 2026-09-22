@@ -1,1 +1,2 @@
 "NSLocalNetworkUsageDescription" = "ローカルネットワーク上のVNC、RDP、SSHサーバを検索します。";
+"NSMicrophoneUsageDescription" = "マイクのリダイレクトを有効にすると、このMacのマイクをRDPセッションと共有します。";

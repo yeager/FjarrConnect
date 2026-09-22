@@ -258,7 +258,7 @@ struct ContentView: View {
     }
     private func requestConnect(_ profile: ConnectionProfile, forcePrompt: Bool = false) {
         if profile.transport == .ssh || profile.transport == .sftp { connection.connect(profile); return }
-        if profile.transport == .rdp && !RDPRemoteSession.isAvailable {
+        if (profile.transport == .rdp || profile.transport == .remoteApp) && !RDPRemoteSession.isAvailable {
             errorMessage = NSLocalizedString("rdp.install", comment: ""); return
         }
         do {
@@ -313,6 +313,6 @@ private struct SessionDetailView: View {
 
 extension RemoteTransport {
     var symbol: String {
-        switch self { case .vnc: return "display"; case .rdp: return "pc"; case .ssh: return "terminal"; case .sftp: return "folder" }
+        switch self { case .vnc: return "display"; case .rdp, .remoteApp: return "pc"; case .ssh: return "terminal"; case .sftp: return "folder" }
     }
 }

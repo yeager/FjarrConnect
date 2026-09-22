@@ -4,6 +4,7 @@ import Foundation
 enum RemoteTransport: String, Codable, CaseIterable, Identifiable {
     case vnc
     case rdp
+    case remoteApp
     case ssh
     case sftp
 
@@ -14,6 +15,7 @@ enum RemoteTransport: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .vnc: return "VNC / Screen Sharing"
         case .rdp: return "RDP"
+        case .remoteApp: return "RemoteApp"
         case .ssh: return "SSH"
         case .sftp: return "SFTP"
         }
@@ -25,7 +27,7 @@ enum RemoteTransport: String, Codable, CaseIterable, Identifiable {
     var defaultPort: UInt16 {
         switch self {
         case .vnc: return 5900
-        case .rdp: return 3389
+        case .rdp, .remoteApp: return 3389
         case .ssh, .sftp: return 22
         }
     }
@@ -33,7 +35,7 @@ enum RemoteTransport: String, Codable, CaseIterable, Identifiable {
     var uriScheme: String { rawValue }
 
     /// SSH is a terminal, not a framebuffer — the UI uses this to decide chrome.
-    var isGraphical: Bool { self == .vnc || self == .rdp }
+    var isGraphical: Bool { self == .vnc || self == .rdp || self == .remoteApp }
 }
 
 /// A saved machine — the app's analogue of a Remmina `.remmina` profile file.
@@ -102,6 +104,7 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         ConnectionURI.validHost(host) && port > 0 &&
         username?.contains(where: { $0.isNewline || $0.asciiValue == 0 }) != true &&
+        (transport != .remoteApp || rdp?.remoteAppProgram != nil) &&
         (ssh?.isValid ?? true) && (rdp?.isValid ?? true) && (links?.isValid ?? true)
     }
 

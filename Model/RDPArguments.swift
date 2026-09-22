@@ -9,14 +9,11 @@ enum RDPArguments {
                     "/title:FjärrConnect — \(title)", "/log-level:OFF"]
         // RemoteApp owns its window layout on the server; desktop resizing is
         // only valid for a full desktop session.
-        if profile.rdp?.resizesRemoteDesktop ?? true,
-           profile.rdp?.remoteAppProgram == nil { args.append("/dynamic-resolution") }
+        if profile.rdp?.resizesRemoteDesktop ?? true, profile.transport == .rdp { args.append("/dynamic-resolution") }
         args.append(profile.sharesClipboard ? "+clipboard" : "-clipboard")
-        if profile.rdp?.redirectsPrinter == true { args.append("/printer") }
-        if profile.rdp?.redirectsSmartCard == true { args.append("/smartcard") }
-        if profile.rdp?.redirectsAudio == true { args.append("/sound") }
-        if profile.rdp?.redirectsMicrophone == true { args.append("/microphone") }
-        if let remoteApp = profile.rdp?.remoteAppProgram { args.append("/app:\(remoteApp)") }
+        if profile.rdp?.redirectsAudio == true { args.append("/sound:sys:mac") }
+        if profile.rdp?.redirectsMicrophone == true { args.append("/microphone:sys:mac") }
+        if profile.transport == .remoteApp, let remoteApp = profile.rdp?.remoteAppProgram { args.append("/app:\(remoteApp)") }
         for (index, path) in (profile.rdp?.sharedFolders ?? []).enumerated() {
             args.append("/drive:Shared\(index + 1),\(path)")
         }

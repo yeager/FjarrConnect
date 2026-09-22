@@ -10,7 +10,7 @@ struct AdvancedConnectionOptions: View {
 
     var body: some View {
         DisclosureGroup("options.title") {
-            if transport.isGraphical { Toggle(transport == .rdp ? "options.rdpClipboard" : "options.clipboard", isOn: $clipboard) }
+            if transport.isGraphical { Toggle((transport == .rdp || transport == .remoteApp) ? "options.rdpClipboard" : "options.clipboard", isOn: $clipboard) }
             Section(transport.isGraphical ? "files.connection" : "options.ssh") {
                 if transport.isGraphical {
                     Text("files.connection.hint").font(.caption).foregroundStyle(.secondary)
@@ -60,7 +60,8 @@ struct AdvancedConnectionOptions: View {
                     Button("ssh.forward.add") { forwards.append(SSHForward()) }
                 }
             }
-            if transport == .rdp {
+            if transport == .rdp || transport == .remoteApp {
+                if transport == .rdp {
                 Section("rdp.display") {
                     Toggle("rdp.dynamicResolution", isOn: Binding(
                         get: { rdp.resizesRemoteDesktop },
@@ -68,17 +69,16 @@ struct AdvancedConnectionOptions: View {
                     ))
                     Text("rdp.dynamicResolution.hint").font(.caption).foregroundStyle(.secondary)
                 }
+                }
                 Section("rdp.devices") {
-                    Toggle("rdp.printer", isOn: Binding(get: { rdp.redirectsPrinter }, set: { rdp.printerRedirection = $0 }))
-                    Toggle("rdp.smartCard", isOn: Binding(get: { rdp.redirectsSmartCard }, set: { rdp.smartCardRedirection = $0 }))
                     Toggle("rdp.audio", isOn: Binding(get: { rdp.redirectsAudio }, set: { rdp.audioRedirection = $0 }))
                     Toggle("rdp.microphone", isOn: Binding(get: { rdp.redirectsMicrophone }, set: { rdp.microphoneRedirection = $0 }))
                     Text("rdp.devices.hint").font(.caption).foregroundStyle(.secondary)
                 }
-                Section("rdp.remoteApp") {
+                if transport == .remoteApp { Section("rdp.remoteApp") {
                     TextField("rdp.remoteApp.program", text: optional($rdp.remoteApp), prompt: Text("rdp.remoteApp.example"))
                     Text("rdp.remoteApp.hint").font(.caption).foregroundStyle(.secondary)
-                }
+                } }
                 Section("rdp.gateway") {
                     TextField("field.host", text: optional($rdp.gatewayHost))
                     TextField("rdp.gateway.port", value: $rdp.gatewayPort, format: .number)

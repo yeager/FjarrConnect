@@ -188,13 +188,14 @@ or an RDP-to-VNC gateway, rejects a display resize or disconnects during one, di
 **Adapt remote desktop to window size** in that profile’s Advanced options and
 reconnect. The remote desktop then keeps its initial size.
 
-RDP profiles can opt in to printer, smart-card, audio and microphone redirection when
-the server and bundled FreeRDP runtime support the relevant channel. They are off by
-default because they expose local devices to the remote session. A profile can also
-start a Windows **RemoteApp** by entering its server-published alias, such as
-`||wordpad`; it uses the same tab and clipboard policy as a desktop session. Shared
-folders remain the supported file flow. Clipboard file transfer is intentionally not
-enabled until it has been tested against supported Windows versions.
+RDP profiles can opt in to audio and microphone redirection. Both use FreeRDP's
+macOS audio backends and require server support; macOS asks for microphone permission
+when it is first used. Printer and smart-card redirection are unavailable in the bundled
+runtime and are not shown. **RemoteApp** is a separate session type: enter the
+server-published alias, such as `||wordpad`, and it opens in its own FjärrConnect tab
+without dynamic desktop resizing. Shared folders remain the supported file flow.
+Clipboard file transfer is intentionally not enabled until it has been tested against
+supported Windows versions.
 
 RDP currently presents one desktop surface per tab. Multi-monitor layouts and USB
 redirection are not exposed: MacFreeRDP cannot currently render multiple remote

@@ -90,14 +90,19 @@ final class ConnectionOptionsTests: XCTestCase {
         for flag in ["/printer", "/smartcard", "/sound", "/microphone", "/app:"] {
             XCTAssertFalse(defaults.contains(flag), flag)
         }
-        profile.rdp = RDPOptions(printerRedirection: true, smartCardRedirection: true,
-                                 audioRedirection: true, microphoneRedirection: true,
-                                 remoteApp: "||wordpad")
+        profile.rdp = RDPOptions(audioRedirection: true, microphoneRedirection: true)
         let arguments = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
-        for flag in ["/printer", "/smartcard", "/sound", "/microphone", "/app:||wordpad"] {
+        for flag in ["/sound:sys:mac", "/microphone:sys:mac"] {
             XCTAssertTrue(arguments.contains(flag + "\n"), flag)
         }
-        XCTAssertFalse(arguments.contains("/dynamic-resolution\n"))
+        XCTAssertTrue(arguments.contains("/dynamic-resolution\n"))
+        XCTAssertFalse(arguments.contains("/printer\n"))
+        XCTAssertFalse(arguments.contains("/smartcard\n"))
+        profile.transport = .remoteApp
+        profile.rdp?.remoteApp = "||wordpad"
+        let remoteApp = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
+        XCTAssertTrue(remoteApp.contains("/app:||wordpad\n"))
+        XCTAssertFalse(remoteApp.contains("/dynamic-resolution\n"))
         profile.rdp?.remoteApp = "wordpad\n/cert:ignore"
         XCTAssertFalse(profile.isValid)
     }

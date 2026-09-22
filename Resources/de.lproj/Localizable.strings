@@ -27,6 +27,7 @@
 "field.port.format" = "Port (Standard: %d)";
 "transport.vnc" = "VNC / Bildschirmfreigabe";
 "transport.rdp" = "RDP";
+"transport.remoteApp" = "RemoteApp";
 "transport.ssh" = "SSH";
 "group.ungrouped" = "Verbindungen";
 "status.idle" = "Bereit";
@@ -270,8 +271,8 @@
 "rdp.smartCard" = "Smartcards freigeben";
 "rdp.audio" = "Remote-Audio auf diesem Mac wiedergeben";
 "rdp.microphone" = "Mikrofon dieses Macs freigeben";
-"rdp.devices.hint" = "Geräteumleitung ist optional und kann je Profil deaktiviert werden.";
+"rdp.devices.hint" = "Audio- und Mikrofonumleitung sind optional und können je Profil deaktiviert werden.";
 "rdp.remoteApp" = "RemoteApp";
 "rdp.remoteApp.program" = "RemoteApp-Programm";
 "rdp.remoteApp.example" = "zum Beispiel ||wordpad";
-"rdp.remoteApp.hint" = "Startet die angegebene Windows-RemoteApp statt eines vollständigen Desktops. Die Zwischenablage funktioniert; Dateien werden über freigegebene Ordner geteilt.";
+"rdp.remoteApp.hint" = "Startet die angegebene Windows-RemoteApp in einem eigenen Sitzungs-Tab. Die dynamische Desktopgröße ist deaktiviert; Dateien werden über freigegebene Ordner geteilt.";

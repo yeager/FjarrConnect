@@ -27,6 +27,7 @@
 "field.port.format" = "Portti (oletus %d)";
 "transport.vnc" = "VNC / Näytönjako";
 "transport.rdp" = "RDP";
+"transport.remoteApp" = "RemoteApp";
 "transport.ssh" = "SSH";
 "group.ungrouped" = "Yhteydet";
 "status.idle" = "Valmis";
@@ -270,8 +271,8 @@
 "rdp.smartCard" = "Jaa älykortit";
 "rdp.audio" = "Toista etäääni tässä Macissa";
 "rdp.microphone" = "Jaa tämän Macin mikrofoni";
-"rdp.devices.hint" = "Laiteuudelleenohjaus on valinnainen ja sen voi poistaa käytöstä profiilikohtaisesti.";
+"rdp.devices.hint" = "Äänen ja mikrofonin uudelleenohjaus on valinnainen ja sen voi poistaa käytöstä profiilikohtaisesti.";
 "rdp.remoteApp" = "RemoteApp";
 "rdp.remoteApp.program" = "RemoteApp-ohjelma";
 "rdp.remoteApp.example" = "esimerkiksi ||wordpad";
-"rdp.remoteApp.hint" = "Käynnistää määritetyn Windows RemoteAppin koko työpöydän sijaan. Leikepöytä toimii; tiedostojen jako käyttää jaettuja kansioita.";
+"rdp.remoteApp.hint" = "Käynnistää määritetyn Windows RemoteAppin omalla istuntovälilehdellään. Työpöydän dynaaminen koonmuutos on poistettu käytöstä; tiedostojen jako käyttää jaettuja kansioita.";
