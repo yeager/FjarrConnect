@@ -15,9 +15,12 @@ enum SSHArguments {
     }
 
     static func connection(_ profile: ConnectionProfile, includeForwards: Bool = false) -> [String] {
-        var args = ["-o", "ConnectTimeout=15", "-o", "ServerAliveInterval=30",
-                    "-o", "ServerAliveCountMax=3", "-o", "StrictHostKeyChecking=ask",
+        var args = ["-o", "ConnectTimeout=15", "-o", "StrictHostKeyChecking=ask",
                     "-p", String(profile.port)]
+        if profile.ssh?.usesKeepAlive ?? true {
+            // OpenSSH sends encrypted protocol keep-alives only; nothing is written to the shell or command log.
+            args += ["-o", "ServerAliveInterval=30", "-o", "ServerAliveCountMax=3"]
+        }
         if let username = profile.username, !username.isEmpty { args += ["-l", username] }
         if let identity = profile.ssh?.identityFile { args += ["-i", identity] }
         if let jump = profile.ssh?.jumpDestination { args += ["-J", jump] }

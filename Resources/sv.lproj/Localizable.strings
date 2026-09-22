@@ -276,3 +276,6 @@
 "discovery.scan.start" = "Sök";
 "discovery.scan.empty" = "Inga matchande tjänster hittades. Kontrollera nätet, portarna, brandväggen och behörigheten för lokalt nätverk.";
 "discovery.scan.results" = "Hittade via nätverkssökning";
+"ssh.keepAlive" = "Håll anslutningen aktiv";
+"ssh.keepAlive.enable" = "Håll SSH-anslutningen aktiv när den är inaktiv";
+"ssh.keepAlive.hint" = "Skickar en krypterad SSH-kontroll var 30:e sekund. Inget visas i terminalen eller sparas i kommandologgen.";

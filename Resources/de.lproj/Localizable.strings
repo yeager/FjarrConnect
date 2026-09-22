@@ -261,3 +261,6 @@
 "discovery.scan.start" = "Suchen";
 "discovery.scan.empty" = "Keine passenden Dienste gefunden. Prüfe Netzwerk, Ports, Firewall und die Berechtigung für das lokale Netzwerk.";
 "discovery.scan.results" = "Per Netzwerksuche gefunden";
+"ssh.keepAlive" = "Verbindung aktiv halten";
+"ssh.keepAlive.enable" = "SSH-Verbindung bei Inaktivität aktiv halten";
+"ssh.keepAlive.hint" = "Sendet alle 30 Sekunden eine verschlüsselte SSH-Prüfung. Es wird nichts im Terminal angezeigt oder im Befehlsprotokoll gespeichert.";

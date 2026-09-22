@@ -261,3 +261,6 @@
 "discovery.scan.start" = "検索";
 "discovery.scan.empty" = "一致するサービスが見つかりません。ネットワーク、ポート、ファイアウォール、ローカルネットワーク権限を確認してください。";
 "discovery.scan.results" = "ネットワーク検索の結果";
+"ssh.keepAlive" = "接続を維持";
+"ssh.keepAlive.enable" = "アイドル時もSSH接続を維持";
+"ssh.keepAlive.hint" = "30秒ごとに暗号化されたSSHキープアライブを送信します。端末には表示されず、コマンドログにも記録されません。";

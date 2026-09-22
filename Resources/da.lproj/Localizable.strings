@@ -276,3 +276,6 @@
 "discovery.scan.start" = "Søg";
 "discovery.scan.empty" = "Ingen matchende tjenester fundet. Kontrollér netværket, portene, firewallen og tilladelsen til lokalt netværk.";
 "discovery.scan.results" = "Fundet via netværkssøgning";
+"ssh.keepAlive" = "Hold forbindelsen aktiv";
+"ssh.keepAlive.enable" = "Hold SSH-forbindelsen aktiv ved inaktivitet";
+"ssh.keepAlive.hint" = "Sender en krypteret SSH-kontrol hvert 30. sekund. Intet vises i terminalen eller gemmes i kommandologgen.";

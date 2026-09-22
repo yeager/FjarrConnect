@@ -39,6 +39,16 @@ final class ConnectionOptionsTests: XCTestCase {
         XCTAssertTrue(args.contains("ExitOnForwardFailure=yes"))
     }
 
+    func testSSHKeepAliveDefaultsOnAndCanBeDisabledPerProfile() throws {
+        let legacy = try JSONDecoder().decode(SSHOptions.self, from: Data("{}".utf8))
+        XCTAssertTrue(legacy.usesKeepAlive)
+        var profile = ConnectionProfile(name: "SSH", transport: .ssh, host: "host")
+        profile.ssh = SSHOptions(keepAlive: false)
+        let arguments = SSHArguments.make(profile)
+        XCTAssertFalse(arguments.contains("ServerAliveInterval=30"))
+        XCTAssertFalse(arguments.contains("ServerAliveCountMax=3"))
+    }
+
     func testServiceLinksRejectCredentialsAndUnexpectedSchemes() {
         for value in ["http://host", "https://user:secret@host", "https://host:0", "https://host:65536", "javascript:alert(1)"] {
             XCTAssertNil(HostLinks.url(value, scheme: "https"), value)

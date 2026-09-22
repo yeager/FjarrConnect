@@ -10,6 +10,10 @@ struct SSHOptions: Codable, Hashable {
     var jumpUsername: String?
     var forwards: [SSHForward]?
     var startDirectory: String?
+    // Nil keeps existing profiles protected from idle network timeouts.
+    var keepAlive: Bool?
+
+    var usesKeepAlive: Bool { keepAlive ?? true }
 
     var isValid: Bool {
         (host.map(ConnectionURI.validHost) ?? true) && (port ?? 22) > 0 &&

@@ -261,3 +261,6 @@
 "discovery.scan.start" = "Buscar";
 "discovery.scan.empty" = "No se encontraron servicios coincidentes. Comprueba la red, los puertos, el cortafuegos y el permiso de acceso a la red local.";
 "discovery.scan.results" = "Encontrados en la red";
+"ssh.keepAlive" = "Mantener la conexión activa";
+"ssh.keepAlive.enable" = "Mantener la conexión SSH activa durante la inactividad";
+"ssh.keepAlive.hint" = "Envía una comprobación SSH cifrada cada 30 segundos. No se muestra nada en el terminal ni se guarda en el registro de comandos.";

@@ -31,6 +31,13 @@ struct AdvancedConnectionOptions: View {
                 TextField("files.startDirectory", text: optional($ssh.startDirectory))
             }
             if transport == .ssh {
+                Section("ssh.keepAlive") {
+                    Toggle("ssh.keepAlive.enable", isOn: Binding(
+                        get: { ssh.usesKeepAlive },
+                        set: { ssh.keepAlive = $0 }
+                    ))
+                    Text("ssh.keepAlive.hint").font(.caption).foregroundStyle(.secondary)
+                }
                 Section("ssh.forwards") {
                     Text("ssh.forwards.hint").font(.caption).foregroundStyle(.secondary)
                     ForEach($forwards) { $forward in

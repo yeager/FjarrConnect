@@ -276,3 +276,6 @@
 "discovery.scan.start" = "Search";
 "discovery.scan.empty" = "No matching services found. Check the network, ports, firewall and Local Network permission.";
 "discovery.scan.results" = "Found by Network Search";
+"ssh.keepAlive" = "Keep connection alive";
+"ssh.keepAlive.enable" = "Keep SSH connection alive while idle";
+"ssh.keepAlive.hint" = "Sends an encrypted SSH keep-alive every 30 seconds. Nothing is shown in the terminal or recorded in the command log.";

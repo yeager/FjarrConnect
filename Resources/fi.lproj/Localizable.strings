@@ -261,3 +261,6 @@
 "discovery.scan.start" = "Etsi";
 "discovery.scan.empty" = "Vastaavia palveluja ei löytynyt. Tarkista verkko, portit, palomuuri ja paikallisen verkon käyttöoikeus.";
 "discovery.scan.results" = "Verkkohaulla löydetyt";
+"ssh.keepAlive" = "Pidä yhteys aktiivisena";
+"ssh.keepAlive.enable" = "Pidä SSH-yhteys aktiivisena käyttämättömänä";
+"ssh.keepAlive.hint" = "Lähettää salatun SSH-tarkistuksen 30 sekunnin välein. Mitään ei näytetä päätteessä eikä tallenneta komentolokiin.";

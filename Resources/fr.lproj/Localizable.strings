@@ -261,3 +261,6 @@
 "discovery.scan.start" = "Rechercher";
 "discovery.scan.empty" = "Aucun service correspondant trouvé. Vérifiez le réseau, les ports, le pare-feu et l’autorisation d’accès au réseau local.";
 "discovery.scan.results" = "Trouvés sur le réseau";
+"ssh.keepAlive" = "Maintenir la connexion active";
+"ssh.keepAlive.enable" = "Maintenir la connexion SSH active en cas d’inactivité";
+"ssh.keepAlive.hint" = "Envoie un contrôle SSH chiffré toutes les 30 secondes. Rien n’est affiché dans le terminal ni enregistré dans le journal des commandes.";
