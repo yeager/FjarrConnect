@@ -86,6 +86,10 @@ final class ConnectionOptionsTests: XCTestCase {
 
     func testRDPDeviceRedirectionAndRemoteAppAreExplicitPerProfile() throws {
         var profile = ConnectionProfile(name: "App", transport: .rdp, host: "desktop.local")
+        let defaults = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
+        for flag in ["/printer", "/smartcard", "/sound", "/microphone", "/app:"] {
+            XCTAssertFalse(defaults.contains(flag), flag)
+        }
         profile.rdp = RDPOptions(printerRedirection: true, smartCardRedirection: true,
                                  audioRedirection: true, microphoneRedirection: true,
                                  remoteApp: "||wordpad")
