@@ -66,6 +66,9 @@ on first launch. Never disable Gatekeeper globally to install the app.
   page in your browser. These use the system apps’ authentication.
 - **SSH command log:** enable separately for each saved SSH connection. Stores command
   names and timestamps in an encrypted local log, with no arguments or terminal transcript.
+- **Session recording:** record the embedded RDP or VNC desktop from its session header.
+  A red indicator remains visible while recording. Movies are saved locally as H.264 `.mov`
+  files in `~/Movies/FjarrConnect`; SSH and SFTP sessions cannot be recorded.
 - **Localized interface:** English, Swedish, Danish, Norwegian Bokmål, German, Finnish, French,
   Spanish and Japanese. Follows your macOS language preference; a language can also be
   selected for FjärrConnect in **System Settings → General → Language & Region → Applications**.

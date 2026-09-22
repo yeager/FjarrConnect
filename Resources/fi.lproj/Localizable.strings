@@ -276,3 +276,7 @@
 "rdp.remoteApp.program" = "RemoteApp-ohjelma";
 "rdp.remoteApp.example" = "esimerkiksi ||wordpad";
 "rdp.remoteApp.hint" = "Käynnistää määritetyn Windows RemoteAppin omalla istuntovälilehdellään. Työpöydän dynaaminen koonmuutos on poistettu käytöstä; tiedostojen jako käyttää jaettuja kansioita.";
+"record.start" = "Aloita tallennus";
+"record.stop" = "Lopeta tallennus";
+"record.recording" = "Tallennus käynnissä";
+"record.error" = "Istunnon tallennusta ei voitu tallentaa.";

@@ -5,11 +5,31 @@ import Combine
 final class SessionTab: ObservableObject, Identifiable {
     let id = UUID()
     let backend: any RemoteSession
-    private var subscription: AnyCancellable?
+    let recorder = SessionRecordingController()
+    private var subscriptions = Set<AnyCancellable>()
     init(backend: any RemoteSession) {
         self.backend = backend
-        subscription = backend.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
+        backend.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.backend.status.isFinished else { return }
+                self.recorder.stop()
+            }
+        }
+            .store(in: &subscriptions)
+        recorder.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &subscriptions)
     }
+
+    var canRecord: Bool { backend is any SessionRecordingSource }
+
+    func startRecording() {
+        guard let source = backend as? any SessionRecordingSource,
+              let view = source.recordingView else { return }
+        recorder.start(capturing: view, profileName: backend.profile.name)
+    }
+
+    func stopRecording() { recorder.stop() }
 }
 
 final class ConnectionManager: ObservableObject {
@@ -54,13 +74,14 @@ final class ConnectionManager: ObservableObject {
 
     func close(_ id: UUID) {
         guard let index = tabs.firstIndex(where: { $0.id == id }) else { return }
+        tabs[index].stopRecording()
         tabs[index].backend.stop()
         tabs.remove(at: index)
         if selectedID == id { selectedID = tabs.isEmpty ? nil : tabs[min(index, tabs.count - 1)].id }
     }
 
     func disconnectAll() {
-        tabs.forEach { $0.backend.stop() }
+        tabs.forEach { $0.stopRecording(); $0.backend.stop() }
         tabs.removeAll()
         selectedID = nil
     }

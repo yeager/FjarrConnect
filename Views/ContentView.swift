@@ -285,6 +285,24 @@ private struct SessionDetailView: View {
                 }
                 Spacer()
                 Text(tab.backend.status.label).font(.callout).foregroundStyle(.secondary)
+                if tab.canRecord {
+                    if tab.recorder.isRecording {
+                        Label("record.recording", systemImage: "record.circle.fill")
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(.red)
+                            .accessibilityIdentifier("recording.indicator")
+                    }
+                    Button {
+                        if tab.recorder.isRecording { tab.stopRecording() }
+                        else { tab.startRecording() }
+                    } label: {
+                        Image(systemName: tab.recorder.isRecording ? "stop.circle.fill" : "record.circle")
+                            .foregroundStyle(tab.recorder.isRecording ? .red : .primary)
+                    }
+                    .help(tab.recorder.isRecording ? "record.stop" : "record.start")
+                    .accessibilityIdentifier("session.record")
+                    .disabled(!tab.recorder.isRecording && (tab.backend.status.isFinished || !tab.backend.status.isActive))
+                }
                 if tab.backend.profile.transport == .ssh {
                     Button { showingCommandLog = true } label: { Image(systemName: "lock.doc") }
                         .help("ssh.log.title")
@@ -302,6 +320,10 @@ private struct SessionDetailView: View {
                 Label(notice, systemImage: "info.circle").foregroundStyle(.secondary)
                     .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                     .padding().frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if let recordingError = tab.recorder.errorMessage {
+                Label(recordingError, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(.orange).padding().frame(maxWidth: .infinity, alignment: .leading)
             }
             if tab.backend.status.isFinished && tab.backend.profile.transport != .ssh {
                 ContentUnavailableView("status.disconnected", systemImage: "network.slash", description: Text("session.retry"))

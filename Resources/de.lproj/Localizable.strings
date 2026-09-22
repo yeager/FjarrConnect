@@ -276,3 +276,7 @@
 "rdp.remoteApp.program" = "RemoteApp-Programm";
 "rdp.remoteApp.example" = "zum Beispiel ||wordpad";
 "rdp.remoteApp.hint" = "Startet die angegebene Windows-RemoteApp in einem eigenen Sitzungs-Tab. Die dynamische Desktopgröße ist deaktiviert; Dateien werden über freigegebene Ordner geteilt.";
+"record.start" = "Aufzeichnung starten";
+"record.stop" = "Aufzeichnung stoppen";
+"record.recording" = "Aufzeichnung läuft";
+"record.error" = "Die Sitzungsaufzeichnung konnte nicht gespeichert werden.";

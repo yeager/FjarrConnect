@@ -4,6 +4,7 @@ FjärrConnect 0.2.20 — reliable Mac verification.
 - The fallback requires one or more passing tests and zero failed tests; every other nonzero xcodebuild exit remains a build failure.
 - The same verification is used by CI and the release workflow on both Apple Silicon and Intel.
 - The release is verified by ARM/Intel regression, package, downloaded-app RDP and Gitleaks checks.
+- RDP and VNC session headers now include a Record control and active recording indicator. Recordings contain only the embedded remote desktop and are saved as local H.264 `.mov` files in `~/Movies/FjarrConnect`.
 
 Existing favorites, saved profiles, Keychain credentials and encrypted opt-in SSH command-name logs are retained. Saved profiles still use double-click to connect.
 

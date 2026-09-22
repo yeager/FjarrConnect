@@ -276,3 +276,7 @@
 "rdp.remoteApp.program" = "Programa RemoteApp";
 "rdp.remoteApp.example" = "por ejemplo ||wordpad";
 "rdp.remoteApp.hint" = "Inicia la RemoteApp de Windows indicada en su propia pestaña de sesión. Se desactiva el cambio dinámico de tamaño del escritorio; los archivos usan carpetas compartidas.";
+"record.start" = "Iniciar grabación";
+"record.stop" = "Detener grabación";
+"record.recording" = "Grabando";
+"record.error" = "No se pudo guardar la grabación de la sesión.";

@@ -7,7 +7,7 @@ import RoyalVNCKit
 ///
 /// RoyalVNCKit's `VNCCAFramebufferView` both renders the framebuffer and forwards
 /// local mouse/keyboard events to the server, so we don't inject input by hand.
-final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VNCClipboardDelegate {
+final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VNCClipboardDelegate, SessionRecordingSource {
     let profile: ConnectionProfile
     private var password: String?
     private var connectionDeadline: DispatchWorkItem?
@@ -25,6 +25,8 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
 
     /// Cached per remote framebuffer; a server resize replaces both buffer and view.
     private var framebufferView: VNCCAFramebufferView?
+
+    var recordingView: NSView? { framebufferView }
 
     init(profile: ConnectionProfile, password: String?) {
         self.profile = profile

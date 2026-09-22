@@ -276,3 +276,7 @@
 "rdp.remoteApp.program" = "Programme RemoteApp";
 "rdp.remoteApp.example" = "par exemple ||wordpad";
 "rdp.remoteApp.hint" = "Lance la RemoteApp Windows indiquée dans son propre onglet de session. Le redimensionnement dynamique du bureau est désactivé ; le partage de fichiers utilise les dossiers partagés.";
+"record.start" = "Démarrer l’enregistrement";
+"record.stop" = "Arrêter l’enregistrement";
+"record.recording" = "Enregistrement en cours";
+"record.error" = "L’enregistrement de la session n’a pas pu être enregistré.";

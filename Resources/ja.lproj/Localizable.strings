@@ -276,3 +276,7 @@
 "rdp.remoteApp.program" = "RemoteAppプログラム";
 "rdp.remoteApp.example" = "例: ||wordpad";
 "rdp.remoteApp.hint" = "指定したWindows RemoteAppを専用のセッションタブで起動します。動的なデスクトップサイズ変更は無効で、ファイル共有には共有フォルダーを使用します。";
+"record.start" = "録画を開始";
+"record.stop" = "録画を停止";
+"record.recording" = "録画中";
+"record.error" = "セッション録画を保存できませんでした。";

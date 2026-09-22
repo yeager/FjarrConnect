@@ -291,3 +291,7 @@
 "rdp.remoteApp.program" = "RemoteApp-program";
 "rdp.remoteApp.example" = "for eksempel ||wordpad";
 "rdp.remoteApp.hint" = "Starter den angitte Windows RemoteApp i sin egen øktfane. Dynamisk skrivebordsstørrelse er deaktivert; fildeling bruker delte mapper.";
+"record.start" = "Start opptak";
+"record.stop" = "Stopp opptak";
+"record.recording" = "Opptak pågår";
+"record.error" = "Øktopptaket kunne ikke lagres.";

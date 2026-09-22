@@ -291,3 +291,7 @@
 "rdp.remoteApp.program" = "RemoteApp program";
 "rdp.remoteApp.example" = "for example ||wordpad";
 "rdp.remoteApp.hint" = "Starts the specified Windows RemoteApp in its own session tab. Dynamic desktop resizing is disabled; file sharing uses shared folders.";
+"record.start" = "Start recording";
+"record.stop" = "Stop recording";
+"record.recording" = "Recording";
+"record.error" = "The session recording could not be saved.";

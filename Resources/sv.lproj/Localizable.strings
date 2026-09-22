@@ -291,3 +291,7 @@
 "rdp.remoteApp.program" = "RemoteApp-program";
 "rdp.remoteApp.example" = "till exempel ||wordpad";
 "rdp.remoteApp.hint" = "Startar angiven Windows RemoteApp i en egen sessionsflik. Dynamisk skrivbordsstorlek är avstängd; fildelning använder delade mappar.";
+"record.start" = "Starta inspelning";
+"record.stop" = "Stoppa inspelning";
+"record.recording" = "Inspelning pågår";
+"record.error" = "Sessionsinspelningen kunde inte sparas.";
