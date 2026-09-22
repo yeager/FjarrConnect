@@ -34,11 +34,21 @@ jobs:
       - name: Test
         run: |
           set -o pipefail
+          set +e
           python3 scripts/with-vnc-test-fixture.py xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
             -configuration Debug -destination 'platform=macOS' \
             -derivedDataPath build/test -resultBundlePath build/TestResults.xcresult \
             ARCHS="$(uname -m)" ONLY_ACTIVE_ARCH=YES \
             CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO test | tee build-test.log | xcbeautify
+          test_status=${PIPESTATUS[0]}
+          set -e
+          if [ "$test_status" -ne 0 ]; then
+            if [ "$test_status" -eq 65 ] && xcrun xcresulttool get test-results summary --path build/TestResults.xcresult --format json | python3 -c 'import json, sys; result = json.load(sys.stdin); sys.exit(0 if result.get("passedTests", 0) > 0 and result.get("failedTests") == 0 else 1)'; then
+              echo "::warning::xcodebuild returned 65 after a verified passing test result"
+            else
+              exit "$test_status"
+            fi
+          fi
       - name: Export UI screenshots
         if: always()
         run: |

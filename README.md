@@ -17,18 +17,18 @@ There are no Windows, Linux or mobile app targets.
 
 **[GitHub repository](https://github.com/yeager/FjarrConnect)**
 
-## Version 0.2.19
+## Version 0.2.20
 
-**[Download version 0.2.19](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.19)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.19-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.19-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.20](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.20)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.20-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.20-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.19 adds per-profile SSH keep-alives for idle sessions. They are enabled by
-default, use OpenSSH protocol messages only, and never appear in the terminal or command
-log. Saved profiles still connect on **double-click**; a single click only selects the
-profile. Saved profiles and Keychain passwords are retained.
+Version 0.2.20 makes Mac CI resilient to Xcode's spurious exit 65 after a verified passing
+test result. Real test failures still fail the build. Saved profiles still connect on
+**double-click**; a single click only selects the profile. Saved profiles and Keychain
+passwords are retained.
 
 Every release passes gitleaks, Mac regression tests, separate architecture packaging and
 checks of the downloaded app on both native Mac architectures before publication.
@@ -391,15 +391,15 @@ Development is on **`main`**.
   requests. The release workflow also requires a clean full-history scan.
   `.gitleaksignore` contains one exact historical finding for a removed, fictional
   README credential example. No scanner rule or source path is broadly excluded.
-- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.19`**, triggers a
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.20`**, triggers a
   fresh scan, test and build. GitHub publishes the release assets only when these pass.
 
 For maintainers, after the current `main` revision passes verification:
 
 ```bash
 git pull --ff-only
-git tag v0.2.19
-git push origin v0.2.19
+git tag v0.2.20
+git push origin v0.2.20
 ```
 
 Do not reuse or move an already published release tag. Use a new version for fixes.
