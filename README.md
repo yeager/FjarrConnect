@@ -11,45 +11,34 @@
   </p>
 </div>
 
-FjärrConnect brings **VNC / Mac Screen Sharing, RDP, SSH and SFTP** into one connection
-manager for **macOS 14 or later**, on **Apple Silicon (arm64) and Intel (x86_64)**.
-There are no Windows, Linux or mobile app targets.
+FjärrConnect is a macOS connection manager for **VNC / Mac Screen Sharing, RDP, SSH and SFTP**.
+It supports macOS 14 or later on Apple Silicon (arm64) and Intel (x86_64).
 
 **[GitHub repository](https://github.com/yeager/FjarrConnect)**
 
-## Version 0.2.21
+## Version 0.2.22
 
-**[Download version 0.2.21](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.21)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.21-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.21-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.22](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.22)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.22-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.22-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.21 adds local H.264 recording for embedded RDP and VNC sessions, with a
-Record control and active indicator in each graphical session tab. Recording captures
-only the visible remote desktop in the active tab; it excludes the sidebar, credentials
-dialogs and other tabs, and contains no audio. Mac CI continues to
-reject real test failures while tolerating Xcode's verified spurious exit 65. Saved
-profiles still connect on **double-click**; a single click only selects the profile.
+Version 0.2.22 adds H.264 recording for embedded RDP and VNC tabs. The Record button
+shows a red indicator while recording. Recordings include the remote desktop only—no
+sidebar, dialogs, other tabs or audio.
 
-Every release passes gitleaks, Mac regression tests, separate architecture packaging and
-checks of the downloaded app on both native Mac architectures before publication.
-
-The downloads use **ad-hoc signing**, not Developer ID signing or Apple
-notarization. macOS may require approval under **System Settings → Privacy & Security**
-on first launch. Never disable Gatekeeper globally to install the app.
+The downloads are ad-hoc signed and not notarized. macOS may ask for approval in
+**System Settings → Privacy & Security** on first launch.
 
 ## Features
 
-- **Favorites:** click the star beside a saved connection to pin it to the Favorites
-  section. Click again to remove it. Favorites persist between launches, work with
-  search, and preserve compatibility with existing saved profiles.
+- **Favorites:** star saved connections to pin them above the list.
 - **Saved connections:** create, edit and delete profiles with a name, host, port,
   protocol, username and optional group. Single-click to select a saved profile;
   **double-click to connect**, including favorites. Right-click for connection and editing actions.
-- **Session tabs:** keep multiple connections open and switch between them. Closing
-  a connected tab, the main window or the app asks for confirmation first. Cancel
-  leaves sessions and transfers running. RDP desktops stay inside their tabs.
+- **Session tabs:** open several connections at once. RDP and VNC desktops render inside
+  their tabs; closing a connected tab asks for confirmation.
 - **Search:** find saved connections by name, host, group or protocol, and filter
   discovered Macs by name.
 - **Quick connect:** press **⌘K**, enter an address, then press Return.
@@ -68,11 +57,9 @@ on first launch. Never disable Gatekeeper globally to install the app.
   page in your browser. These use the system apps’ authentication.
 - **SSH command log:** enable separately for each saved SSH connection. Stores command
   names and timestamps in an encrypted local log, with no arguments or terminal transcript.
-- **Session recording:** record the embedded RDP or VNC desktop from its session header.
-  A red indicator remains visible while recording. Movies are saved locally as H.264 `.mov`
-  files in `~/Movies/FjarrConnect`. Recording stops when the session disconnects or its
-  tab closes. It records the rendered remote desktop only and has no audio track; SSH and
-  SFTP sessions cannot be recorded.
+- **Session recording:** record embedded RDP or VNC desktops to H.264 `.mov` files in
+  `~/Movies/FjarrConnect`. Recording stops on disconnect or when the tab closes. SSH and
+  SFTP cannot be recorded.
 - **Localized interface:** English, Swedish, Danish, Norwegian Bokmål, German, Finnish, French,
   Spanish and Japanese. Follows your macOS language preference; a language can also be
   selected for FjärrConnect in **System Settings → General → Language & Region → Applications**.
@@ -95,9 +82,8 @@ authentication, enter that Mac account's short username and password. If the ser
 requires no authentication, leave both fields empty.
 
 **RDP is bundled:** no Homebrew installation is needed for the downloaded app.
-The CI/release pipeline builds a self-contained FreeRDP runtime for both Mac
-architectures. Each app loads its matching native library inside the app process;
-no separate client window or Homebrew installation is used. Unknown or changed
+Each app includes the matching FreeRDP runtime and loads it in the app process. No
+Homebrew installation or separate RDP window is used. Unknown or changed
 certificates show the server identity and SHA-256 fingerprint with **Cancel**,
 **Connect once**, and **Trust and connect** in the chosen interface language.
 Certificate verification remains enabled. The Windows desktop-start disconnection
@@ -165,9 +151,8 @@ Authentication stays in an embedded terminal; the file panel opens after it succ
 Uploads can also be started by dropping files onto the panel. Existing files require
 confirmation before replacement. Folders are transferred recursively without merging
 into existing folders; symbolic links and special files are rejected. Transfers use
-private staging files, and originals are preserved on failure. In version 0.2.21, cancelling an upload or download keeps the
-authenticated SSH connection and
-refreshes the file panel, so you can continue without signing in again.
+private staging files, and originals are preserved on failure. Cancelling a transfer
+keeps the authenticated SSH connection and refreshes the file panel.
 The file table also uses native row actions: single-click selects,
 double-click opens a folder or downloads a file, and right-click offers file
 actions. Double-click works across the row, including the size and date columns.
@@ -403,33 +388,19 @@ Xcode build does not automatically compile or bundle the RDP runtime.
 
 Development is on **`main`**.
 
-- **CI:** checks localizations and icons, runs macOS regression tests (including
-  encrypted SSH logging, Bash/Zsh integration, Keychain access, native profile/log UI
-  and profile controls in all nine languages,
-  password-authenticated VNC rendering, desktop resizing and recovery from black frames), builds both RDP
-  runtime slices and packages separate ARM64 and Intel apps. Packaging verifies the single
-  architecture of the app and all embedded native code, checks ad-hoc signatures, compares
-  all compiled translation tables against their source, and creates
-  a ZIP archive with a SHA-256 checksum. Separate Apple Silicon and Intel jobs
-  download their ZIP, verify it, start the actual app without Xcode search paths,
-  reproduce the missing-framework failure in a disposable copy, and exercise the
-  embedded RDP library against a disposable TLS negotiation fixture. The test
-  checks the certificate dialog and rejection in all nine languages. This checks
-  TLS/UI integration, not a full Windows logon. New commits automatically cancel
-  obsolete CI runs for the same branch; regression-test jobs have a 30-minute limit.
-- **gitleaks:** scans the complete repository history on pushes to `main` and pull
-  requests. The release workflow also requires a clean full-history scan.
-  `.gitleaksignore` contains one exact historical finding for a removed, fictional
-  README credential example. No scanner rule or source path is broadly excluded.
-- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.21`**, triggers a
-  fresh scan, test and build. GitHub publishes the release assets only when these pass.
+- **CI:** validates resources, runs macOS regression tests, builds FreeRDP for both
+  architectures, packages separate archives, and smoke-tests each downloaded app and
+  its embedded RDP runtime on native hardware.
+- **Gitleaks:** scans repository history on pushes, pull requests and releases.
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.22`**, runs the
+  same checks and publishes the architecture-specific archives after they pass.
 
 For maintainers, after the current `main` revision passes verification:
 
 ```bash
 git pull --ff-only
-git tag -a v0.2.21 -m 'FjärrConnect 0.2.21'
-git push origin v0.2.21
+git tag -a v0.2.22 -m 'FjärrConnect 0.2.22'
+git push origin v0.2.22
 ```
 
 Do not reuse or move an already published release tag. Use a new version for fixes.
