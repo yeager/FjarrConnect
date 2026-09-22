@@ -26,7 +26,9 @@ architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
 Version 0.2.21 adds local H.264 recording for embedded RDP and VNC sessions, with a
-Record control and active indicator in each graphical session tab. Mac CI continues to
+Record control and active indicator in each graphical session tab. Recording captures
+only the visible remote desktop in the active tab; it excludes the sidebar, credentials
+dialogs and other tabs, and contains no audio. Mac CI continues to
 reject real test failures while tolerating Xcode's verified spurious exit 65. Saved
 profiles still connect on **double-click**; a single click only selects the profile.
 
@@ -68,7 +70,9 @@ on first launch. Never disable Gatekeeper globally to install the app.
   names and timestamps in an encrypted local log, with no arguments or terminal transcript.
 - **Session recording:** record the embedded RDP or VNC desktop from its session header.
   A red indicator remains visible while recording. Movies are saved locally as H.264 `.mov`
-  files in `~/Movies/FjarrConnect`; SSH and SFTP sessions cannot be recorded.
+  files in `~/Movies/FjarrConnect`. Recording stops when the session disconnects or its
+  tab closes. It records the rendered remote desktop only and has no audio track; SSH and
+  SFTP sessions cannot be recorded.
 - **Localized interface:** English, Swedish, Danish, Norwegian Bokmål, German, Finnish, French,
   Spanish and Japanese. Follows your macOS language preference; a language can also be
   selected for FjärrConnect in **System Settings → General → Language & Region → Applications**.
@@ -161,8 +165,7 @@ Authentication stays in an embedded terminal; the file panel opens after it succ
 Uploads can also be started by dropping files onto the panel. Existing files require
 confirmation before replacement. Folders are transferred recursively without merging
 into existing folders; symbolic links and special files are rejected. Transfers use
-private staging files, and originals are preserved on failure. In the current
-published version (0.2.20), cancelling an upload or download keeps the
+private staging files, and originals are preserved on failure. In version 0.2.21, cancelling an upload or download keeps the
 authenticated SSH connection and
 refreshes the file panel, so you can continue without signing in again.
 The file table also uses native row actions: single-click selects,
@@ -183,8 +186,12 @@ RDP shared folders are explicitly selected in Advanced options and appear as
 `Shared1`, `Shared2`, etc. on the remote desktop. They grant read/write access to the
 selected directories. Paths containing commas are currently rejected by the native
 backend’s argument format. Remote Desktop server policy may disable drive or
-clipboard redirection. A gateway can reuse the desktop credentials or use a separate
-username/password, saved in a separate Keychain item when requested.
+clipboard redirection. An **RD Gateway** can be configured with its host, port (443 by default) and optional
+separate username. The embedded FreeRDP client uses the gateway transport over HTTPS.
+A gateway can reuse the desktop credentials or use a separate username/password, saved
+in a separate Keychain item when requested. Gateway certificate and authentication
+behavior still depend on the configured RD Gateway; the project does not claim an
+end-to-end validation against a production gateway.
 
 RDP adapts the remote desktop to the window size by default. If a legacy server,
 or an RDP-to-VNC gateway, rejects a display resize or disconnects during one, disable
@@ -200,10 +207,11 @@ without dynamic desktop resizing. Shared folders remain the supported file flow.
 Clipboard file transfer is intentionally not enabled until it has been tested against
 supported Windows versions.
 
-RemoteApp profile and session handling is covered by argument and session tests. The
-project currently has no Windows Server with a published RemoteApp alias available for
-an end-to-end RemoteApp launch test; that remains required before making a release
-claim about a particular RDS deployment.
+RemoteApp profile and session handling is covered by argument and session tests. A
+RemoteApp must use the alias published by the RDS administrator (for example
+`||wordpad`); it is not an arbitrary executable path. The project currently has no
+Windows Server with a published RemoteApp alias available for an end-to-end RemoteApp
+launch test, so a particular RDS deployment still needs that final validation.
 
 The project also has no RDS environment configured to allow practical audio and
 microphone-redirection testing. The per-profile controls remain opt-in and are only
@@ -413,15 +421,15 @@ Development is on **`main`**.
   requests. The release workflow also requires a clean full-history scan.
   `.gitleaksignore` contains one exact historical finding for a removed, fictional
   README credential example. No scanner rule or source path is broadly excluded.
-- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.20`**, triggers a
+- **Release:** a tag matching `MARKETING_VERSION`, such as **`v0.2.21`**, triggers a
   fresh scan, test and build. GitHub publishes the release assets only when these pass.
 
 For maintainers, after the current `main` revision passes verification:
 
 ```bash
 git pull --ff-only
-git tag v0.2.20
-git push origin v0.2.20
+git tag -a v0.2.21 -m 'FjärrConnect 0.2.21'
+git push origin v0.2.21
 ```
 
 Do not reuse or move an already published release tag. Use a new version for fixes.
