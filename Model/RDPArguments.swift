@@ -7,7 +7,10 @@ enum RDPArguments {
         let title = profile.name.components(separatedBy: .controlCharacters).joined(separator: " ")
         var args = ["/v:\(host):\(profile.port)", "/size:1280x800",
                     "/title:FjärrConnect — \(title)", "/log-level:OFF"]
-        if profile.rdp?.resizesRemoteDesktop ?? true { args.append("/dynamic-resolution") }
+        // RemoteApp owns its window layout on the server; desktop resizing is
+        // only valid for a full desktop session.
+        if profile.rdp?.resizesRemoteDesktop ?? true,
+           profile.rdp?.remoteAppProgram == nil { args.append("/dynamic-resolution") }
         args.append(profile.sharesClipboard ? "+clipboard" : "-clipboard")
         if profile.rdp?.redirectsPrinter == true { args.append("/printer") }
         if profile.rdp?.redirectsSmartCard == true { args.append("/smartcard") }

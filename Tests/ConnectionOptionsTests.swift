@@ -97,6 +97,7 @@ final class ConnectionOptionsTests: XCTestCase {
         for flag in ["/printer", "/smartcard", "/sound", "/microphone", "/app:||wordpad"] {
             XCTAssertTrue(arguments.contains(flag + "\n"), flag)
         }
+        XCTAssertFalse(arguments.contains("/dynamic-resolution\n"))
         profile.rdp?.remoteApp = "wordpad\n/cert:ignore"
         XCTAssertFalse(profile.isValid)
     }
