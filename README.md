@@ -159,7 +159,7 @@ Uploads can also be started by dropping files onto the panel. Existing files req
 confirmation before replacement. Folders are transferred recursively without merging
 into existing folders; symbolic links and special files are rejected. Transfers use
 private staging files, and originals are preserved on failure. In the current
-published version (0.2.17), cancelling an upload or download keeps the
+published version (0.2.20), cancelling an upload or download keeps the
 authenticated SSH connection and
 refreshes the file panel, so you can continue without signing in again.
 The file table also uses native row actions: single-click selects,
