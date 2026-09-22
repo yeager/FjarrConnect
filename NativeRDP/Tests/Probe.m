@@ -3,6 +3,15 @@
 #import <objc/runtime.h>
 #import "FCRDPView.h"
 #include <string.h>
+
+// These selectors are deliberately private to the native view. Declaring them
+// in this test-only category preserves compile-time checking without exposing
+// them through the shipping C API.
+@interface NSView (FCRDPClipboardProbe)
+- (void)clipboardTick;
+- (void)receiveClipboardDIB:(NSData *)dib;
+@end
+
 static NSString *expectedFingerprint;
 static NSString *expectedTitle;
 static BOOL sawCertificate;
