@@ -208,7 +208,7 @@
 
 "options.title" = "Advanced settings";
 
-"options.clipboard" = "Share text clipboard with the active session";
+"options.clipboard" = "Share text and image clipboard with the active session";
 "options.rdpClipboard" = "Share text and image clipboard with the active session";
 
 "options.ssh" = "SSH connection";

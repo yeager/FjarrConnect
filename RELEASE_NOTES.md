@@ -1,5 +1,6 @@
 Unreleased
 
+- Add bidirectional VNC clipboard support for text and standard DIB V5 images, with per-session isolation.
 - Add per-profile Wake-on-LAN and RDP network presets.
 - Let users select an RDP keyboard layout or map the current macOS input source automatically.
 - Verify VNC key events for Swedish, QWERTZ/AZERTY-style and Unicode characters; VNC layout negotiation is unavailable.
@@ -15,8 +16,7 @@ Known limitations: RDP file clipboard support is not enabled pending Windows int
 testing. VNC file transfer requires the server to advertise the legacy Tight channel.
 VNC uploads have no server acknowledgement and have not been verified against a real
 server; refresh the listing to check the result. SFTP remains the recommended file flow.
-VNC clipboard supports text only; clipboard
-file copying is not implemented.
+VNC clipboard supports text and standard DIB V5 images; clipboard file copying is not implemented.
 Multi-monitor RDP, USB redirection, RDP printer redirection and RDP smart-card redirection
 are not implemented. RDP audio and microphone redirection are unavailable pending
 macOS RDS integration testing. RemoteApp is a separate tabbed session type

@@ -193,7 +193,7 @@
 
 "options.title" = "詳細設定";
 
-"options.clipboard" = "アクティブなセッションとテキストのクリップボードを共有";
+"options.clipboard" = "アクティブなセッションとテキストおよび画像のクリップボードを共有";
 "options.rdpClipboard" = "アクティブなセッションとテキストおよび画像のクリップボードを共有";
 
 "options.ssh" = "SSH接続";

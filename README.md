@@ -81,7 +81,7 @@ The downloads are ad-hoc signed and not notarized. macOS may ask for approval in
 
 | Protocol | How it works | Authentication |
 |---|---|---|
-| VNC / Mac Screen Sharing | Embedded desktop through [RoyalVNCKit](https://github.com/royalapplications/royalvnc), with keyboard, mouse and clipboard support | VNC password or remote Mac username/password; optional Keychain storage |
+| VNC / Mac Screen Sharing | Embedded desktop through [RoyalVNCKit](https://github.com/royalapplications/royalvnc), with keyboard, mouse, text and image clipboard | VNC password or remote Mac username/password; optional Keychain storage |
 | SSH | Embedded [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) terminal running macOS `/usr/bin/ssh`, with optional encrypted keep-alives during idle periods | Your SSH configuration, keys and ssh-agent; passwords and new host-key confirmation in the terminal |
 | RDP | Embedded [FreeRDP](https://github.com/FreeRDP/FreeRDP) desktop or RemoteApp, keyboard/mouse, resizing, text and image clipboard, shared folders and RD Gateway over HTTPS | Username/password; localized certificate verification and separate gateway credentials |
 | SFTP | Built-in file panel using the authenticated OpenSSH connection | Keys/agent or interactive password and host-key prompts |
@@ -91,6 +91,10 @@ Screen Sharing** for a Mac account. The latter requires the account's short user
 and password, and the profile cannot be saved without a username. Standard VNC can
 still use a password without a username. If the server requires no authentication,
 leave both credentials empty.
+
+VNC clipboard synchronization follows the active session. Text and standard DIB V5
+images are supported when the server advertises the RFB extended-clipboard format;
+clipboard file transfer is not supported. Use the file panel or SFTP for files.
 
 **RDP is bundled:** no Homebrew installation is needed for the downloaded app.
 Each app includes the matching FreeRDP runtime and loads it in the app process. No
@@ -148,7 +152,7 @@ FjärrConnect's Local Network permission in System Settings.
 
 ## Clipboard, files and connection options
 
-VNC has a per-profile **Share text clipboard with the active session** setting. RDP
+VNC has a per-profile **Share text and image clipboard with the active session** setting. RDP
 has **Share text and image clipboard with the active session**, including screenshots
 copied in either direction with Windows peers that advertise the standard DIB image
 format. Only the selected session in the foreground window may synchronize clipboard
@@ -157,11 +161,11 @@ another server. Copy again after activating the intended tab. RDP’s standard m
 Edit menu actions send the corresponding Ctrl shortcuts to the remote application.
 
 VNC negotiates Unicode text with Extended Clipboard peers, including TigerVNC;
-legacy VNC peers are limited to Latin-1. Text is bounded to 1 MiB. VNC clipboard
-images, rich text and clipboard file copying are not implemented. The VNC extension and
-session policy are pinned to a tested fork revision. Extended Clipboard is
-proposed upstream in [RoyalVNCKit PR #38](https://github.com/royalapplications/royalvnc/pull/38);
-the active-session policy remains in FjärrConnect’s SDK fork.
+legacy VNC peers are limited to Latin-1. Text is bounded to 1 MiB. Standard DIB V5
+images are supported up to 8 MiB with Extended Clipboard peers. Rich text and clipboard
+file copying are not implemented. Use the VNC file panel or SFTP for files. DIB V5
+image support is in [RoyalVNCKit PR #3](https://github.com/yeager/royalvnc/pull/3),
+stacked on its bounded Tight file-transfer change.
 
 For files, choose **Files (SFTP)** from a host’s context menu. VNC/RDP profiles can
 specify a separate SSH address, port, username and starting directory under

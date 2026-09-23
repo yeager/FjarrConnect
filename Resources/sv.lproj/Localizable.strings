@@ -208,7 +208,7 @@
 
 "options.title" = "Avancerade inställningar";
 
-"options.clipboard" = "Dela texturklipp med den aktiva sessionen";
+"options.clipboard" = "Dela text och bilder via urklipp med den aktiva sessionen";
 "options.rdpClipboard" = "Dela text- och bildurklipp med den aktiva sessionen";
 
 "options.ssh" = "SSH-anslutning";

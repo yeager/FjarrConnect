@@ -8,9 +8,9 @@ options:
 
 packages:
   RoyalVNCKit:
-    # Adds separate advertised download/upload capabilities to the Tight file-transfer APIs in royalvnc#2.
+    # Includes bounded RFB extended-clipboard image support stacked on royalvnc#2.
     url: https://github.com/yeager/royalvnc
-    revision: "fcc9a436ae200c8c0e05011459c15810088e449e"
+    revision: "c80e255e4b05d07bb610a928784b7add56f5e9e6"
   SwiftTerm:
     url: https://github.com/migueldeicaza/SwiftTerm
     exactVersion: "1.10.1"

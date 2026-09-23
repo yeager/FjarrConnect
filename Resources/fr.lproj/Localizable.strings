@@ -193,7 +193,7 @@
 
 "options.title" = "Paramètres avancés";
 
-"options.clipboard" = "Partager le presse-papiers texte avec la session active";
+"options.clipboard" = "Partager le texte et les images du presse-papiers avec la session active";
 "options.rdpClipboard" = "Partager le presse-papiers texte et image avec la session active";
 
 "options.ssh" = "Connexion SSH";

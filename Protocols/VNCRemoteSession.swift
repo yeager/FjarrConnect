@@ -152,6 +152,15 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         clipboardBaseline = NSPasteboard.general.changeCount
     }
 
+    func connection(_ connection: VNCConnection, didReceiveClipboardImageData imageData: Data) {
+        guard acceptsClipboard(connection),
+              let image = VNCClipboardImageCodec.decode(imageData),
+              let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setData(png, forType: .png)
+        clipboardBaseline = NSPasteboard.general.changeCount
+    }
+
     func makeScreenView() -> AnyView {
         if let view = framebufferView {
             return AnyView(FramebufferViewWrapper(nsView: view, shouldFocus: status == .connected))
