@@ -20,7 +20,10 @@ struct CredentialsView: View {
         VStack(alignment: .leading, spacing: 18) {
             Label("auth.title", systemImage: "lock.shield").font(.title2.bold())
             Text(profile.uri).foregroundStyle(.secondary).textSelection(.enabled)
-            TextField(LocalizedStringKey(profile.transport == .vnc ? "field.vncUsername" : "field.username"), text: $username)
+            TextField(LocalizedStringKey(profile.transport == .vnc
+                ? (profile.usesMacScreenSharingAuthentication ? "field.vncUsernameRequired" : "field.vncUsername")
+                : "field.username"), text: $username)
+                .accessibilityIdentifier("auth.username")
             SecureField("field.password", text: $password).accessibilityIdentifier("auth.password")
             if profile.rdp?.gatewayHost != nil, let gatewayUser = profile.rdp?.gatewayUsername {
                 Text(gatewayUser).font(.caption).foregroundStyle(.secondary)
@@ -42,6 +45,7 @@ struct CredentialsView: View {
                 }.keyboardShortcut(.defaultAction)
                     .disabled(profile.transport == .vnc && profile.usesMacScreenSharingAuthentication &&
                               username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityIdentifier("auth.connect")
             }
         }.textFieldStyle(.roundedBorder).padding(24).frame(width: 420)
     }

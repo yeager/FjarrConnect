@@ -129,6 +129,35 @@ final class ConnectionUITests: XCTestCase {
         app.buttons["auth.cancel"].click()
     }
 
+    func testMacScreenSharingCredentialsMarkUsernameAsRequired() throws {
+        continueAfterFailure = false
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let profile: [String: Any] = [
+            "id": UUID().uuidString, "name": "Remote Mac", "transport": "vnc",
+            "host": "mac.invalid", "port": 5900, "macScreenSharing": true
+        ]
+        try JSONSerialization.data(withJSONObject: [profile]).write(to: file)
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = file.path
+        app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        app.launch()
+        defer { app.terminate() }
+        let row = app.buttons["connect.Remote Mac"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 15))
+        row.doubleClick()
+        let username = app.textFields["auth.username"]
+        XCTAssertTrue(username.waitForExistence(timeout: 5))
+        XCTAssertEqual(username.placeholderValue, "Username (required)")
+        XCTAssertFalse(app.buttons["auth.connect"].isEnabled)
+        username.click(); username.typeText("macuser")
+        XCTAssertTrue(app.buttons["auth.connect"].isEnabled)
+        app.buttons["auth.cancel"].click()
+    }
+
     func testLocalizedProfileEditorInEveryLanguage() throws {
         continueAfterFailure = false
         let languages = [
