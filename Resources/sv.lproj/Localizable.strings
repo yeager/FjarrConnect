@@ -367,3 +367,7 @@
 "record.retention.never" = "Behåll alla inspelningar";
 
 "record.cleanup.done" = "%d inspelning(ar) borttagna.";
+
+"ssh.startCommand" = "Startkommando";
+
+"ssh.startCommand.hint" = "Körs som ett fjärrkommandoargument och tolkas aldrig av ett lokalt skal.";

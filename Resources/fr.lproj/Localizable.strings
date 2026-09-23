@@ -352,3 +352,7 @@
 "record.retention.never" = "Conserver tous les enregistrements";
 
 "record.cleanup.done" = "%d enregistrement(s) supprimé(s).";
+
+"ssh.startCommand" = "Commande de démarrage";
+
+"ssh.startCommand.hint" = "Exécutée comme un argument de commande distante et jamais interprétée par un shell local.";

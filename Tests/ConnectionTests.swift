@@ -62,11 +62,17 @@ final class ConnectionTests: XCTestCase {
     }
 
     func testSSHArgumentsKeepUserDataSeparate() {
-        let profile = ConnectionProfile(name: "test", transport: .ssh, host: "host", username: "name;echo example")
+        var profile = ConnectionProfile(name: "test", transport: .ssh, host: "host", username: "name;echo example")
+        profile.ssh = SSHOptions(startCommand: "uptime && whoami")
         let args = SSHArguments.make(profile)
-        XCTAssertEqual(Array(args.suffix(2)), ["--", "host"])
+        XCTAssertEqual(Array(args.suffix(3)), ["--", "host", "uptime && whoami"])
         XCTAssertTrue(args.contains("name;echo example"))
         XCTAssertTrue(args.contains("StrictHostKeyChecking=ask"))
+        profile.ssh?.startCommand = "line one\nline two"
+        XCTAssertFalse(profile.isValid)
+        profile.ssh?.startCommand = "uptime"
+        profile.logsSSHCommands = true
+        XCTAssertFalse(profile.isValid)
     }
     func testRDPCredentialsUsePipeFormatAndRejectLineInjection() throws {
         let profile = ConnectionProfile(name: "test", transport: .rdp, host: "::1", username: "test user")

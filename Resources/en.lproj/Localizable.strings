@@ -367,3 +367,7 @@
 "record.retention.never" = "Keep all recordings";
 
 "record.cleanup.done" = "%d recording(s) removed.";
+
+"ssh.startCommand" = "Start command";
+
+"ssh.startCommand.hint" = "Runs as one remote command argument; it is never interpreted by a local shell.";

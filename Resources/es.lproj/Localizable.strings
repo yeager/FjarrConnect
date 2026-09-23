@@ -352,3 +352,7 @@
 "record.retention.never" = "Conservar todas las grabaciones";
 
 "record.cleanup.done" = "Se eliminaron %d grabación(es).";
+
+"ssh.startCommand" = "Comando inicial";
+
+"ssh.startCommand.hint" = "Se ejecuta como un argumento de comando remoto y nunca se interpreta mediante un shell local.";

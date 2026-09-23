@@ -352,3 +352,7 @@
 "record.retention.never" = "すべての録画を保持";
 
 "record.cleanup.done" = "%d件の録画を削除しました。";
+
+"ssh.startCommand" = "開始コマンド";
+
+"ssh.startCommand.hint" = "1つのリモートコマンド引数として実行され、ローカルシェルでは解釈されません。";

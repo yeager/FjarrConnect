@@ -10,6 +10,8 @@ struct SSHOptions: Codable, Hashable {
     var jumpUsername: String?
     var forwards: [SSHForward]?
     var startDirectory: String?
+    /// Passed as one remote SSH command, never through a local shell.
+    var startCommand: String?
     // Nil keeps existing profiles protected from idle network timeouts.
     var keepAlive: Bool?
 
@@ -22,7 +24,8 @@ struct SSHOptions: Codable, Hashable {
         (jumpHost.map(ConnectionOptions.validJumpHost) ?? true) && (jumpPort ?? 22) > 0 &&
         (jumpUsername.map { !$0.isEmpty && $0.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || "._-".contains($0)) } } ?? true) &&
         (forwards ?? []).allSatisfy(\.isValid) &&
-        (startDirectory.map(ConnectionOptions.validValue) ?? true)
+        (startDirectory.map(ConnectionOptions.validValue) ?? true) &&
+        (startCommand.map { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && ConnectionOptions.validValue($0) } ?? true)
     }
 
     var jumpDestination: String? {

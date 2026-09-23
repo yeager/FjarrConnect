@@ -367,3 +367,7 @@
 "record.retention.never" = "Behold alle opptak";
 
 "record.cleanup.done" = "%d opptak fjernet.";
+
+"ssh.startCommand" = "Startkommando";
+
+"ssh.startCommand.hint" = "Kjøres som ett eksternt kommandoargument og tolkes aldri av et lokalt skall.";

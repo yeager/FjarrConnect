@@ -11,7 +11,11 @@ enum SSHArguments {
     }
 
     static func make(_ profile: ConnectionProfile) -> [String] {
-        ["-tt"] + connection(profile, includeForwards: true) + ["--", profile.host]
+        var arguments = ["-tt"] + connection(profile, includeForwards: true) + ["--", profile.host]
+        if let command = profile.ssh?.startCommand?.trimmingCharacters(in: .whitespacesAndNewlines), !command.isEmpty {
+            arguments.append(command)
+        }
+        return arguments
     }
 
     static func connection(_ profile: ConnectionProfile, includeForwards: Bool = false) -> [String] {

@@ -68,6 +68,7 @@ struct ProfileEditorView: View {
                         Text("ssh.authentication").font(.caption).foregroundStyle(.secondary)
                         if transport == .ssh { Toggle("ssh.log.enable", isOn: $logsSSHCommands)
                             .toggleStyle(.checkbox)
+                            .disabled(!(ssh.startCommand?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true))
                             .accessibilityIdentifier("profile.sshLogging")
                         Text("ssh.log.hint").font(.caption).foregroundStyle(.secondary) }
                     } else {

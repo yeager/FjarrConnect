@@ -29,6 +29,10 @@ struct AdvancedConnectionOptions: View {
                 TextField("ssh.jump.port", value: $ssh.jumpPort, format: .number)
                 TextField("ssh.jump.username", text: optional($ssh.jumpUsername))
                 TextField("files.startDirectory", text: optional($ssh.startDirectory))
+                if transport == .ssh {
+                    TextField("ssh.startCommand", text: optional($ssh.startCommand))
+                    Text("ssh.startCommand.hint").font(.caption).foregroundStyle(.secondary)
+                }
             }
             if transport == .ssh {
                 Section("ssh.keepAlive") {

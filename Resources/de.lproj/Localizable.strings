@@ -352,3 +352,7 @@
 "record.retention.never" = "Alle Aufnahmen behalten";
 
 "record.cleanup.done" = "%d Aufnahme(n) entfernt.";
+
+"ssh.startCommand" = "Startbefehl";
+
+"ssh.startCommand.hint" = "Wird als ein Remote-Befehlsargument ausgeführt und nie durch eine lokale Shell interpretiert.";

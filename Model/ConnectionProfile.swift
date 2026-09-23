@@ -122,7 +122,8 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
         ConnectionURI.validHost(host) && port > 0 &&
         username?.contains(where: { $0.isNewline || $0.asciiValue == 0 }) != true &&
         (transport != .remoteApp || rdp?.remoteAppProgram != nil) &&
-        (ssh?.isValid ?? true) && (rdp?.isValid ?? true) && (links?.isValid ?? true)
+        (ssh?.isValid ?? true) && (rdp?.isValid ?? true) && (links?.isValid ?? true) &&
+        !(logsSSHCommands && !(ssh?.startCommand?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true))
     }
 
     var fileProfile: ConnectionProfile {

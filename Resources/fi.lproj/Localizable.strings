@@ -352,3 +352,7 @@
 "record.retention.never" = "Säilytä kaikki tallenteet";
 
 "record.cleanup.done" = "%d tallenne(tta) poistettiin.";
+
+"ssh.startCommand" = "Aloituskomento";
+
+"ssh.startCommand.hint" = "Suoritetaan yhtenä etäkomentoargumenttina eikä sitä koskaan tulkita paikallisessa komentotulkissa.";
