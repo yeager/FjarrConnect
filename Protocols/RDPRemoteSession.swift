@@ -80,12 +80,36 @@ final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource {
     deinit { timer?.invalidate(); if let pointer { runtime?.stop(pointer) } }
     func makeScreenView() -> AnyView {
         guard let screen else { return AnyView(ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)) }
-        return AnyView(RDPDesktopView(screen: screen))
+        return AnyView(RDPDesktopView(screen: screen, shouldFocus: status == .connected))
     }
 }
 
 private struct RDPDesktopView: NSViewRepresentable {
     let screen: NSView
-    func makeNSView(context: Context) -> NSView { screen }
-    func updateNSView(_ view: NSView, context: Context) {}
+    let shouldFocus: Bool
+
+    final class Coordinator {
+        var requestedInitialFocus = false
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeNSView(context: Context) -> NSView {
+        requestInitialFocus(for: screen, coordinator: context.coordinator)
+        return screen
+    }
+    func updateNSView(_ view: NSView, context: Context) {
+        requestInitialFocus(for: view, coordinator: context.coordinator)
+    }
+    private func requestInitialFocus(for view: NSView, coordinator: Coordinator) {
+        guard shouldFocus, !coordinator.requestedInitialFocus else { return }
+        func focus(_ attempt: Int) {
+            guard !coordinator.requestedInitialFocus else { return }
+            guard let window = view.window else {
+                if attempt < 5 { DispatchQueue.main.async { focus(attempt + 1) } }
+                return
+            }
+            coordinator.requestedInitialFocus = window.makeFirstResponder(view)
+        }
+        DispatchQueue.main.async { focus(0) }
+    }
 }

@@ -96,7 +96,7 @@ final class SSHRemoteSession: NSObject, RemoteSession, LocalProcessTerminalViewD
     }
     func makeScreenView() -> AnyView {
         AnyView(Group {
-            if let terminal { TerminalWrapper(view: terminal) }
+            if let terminal { TerminalWrapper(view: terminal, shouldFocus: status == .running) }
         })
     }
     func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}
@@ -115,6 +115,28 @@ final class SSHRemoteSession: NSObject, RemoteSession, LocalProcessTerminalViewD
 
 private struct TerminalWrapper: NSViewRepresentable {
     let view: LocalProcessTerminalView
-    func makeNSView(context: Context) -> LocalProcessTerminalView { view }
-    func updateNSView(_ nsView: LocalProcessTerminalView, context: Context) {}
+    let shouldFocus: Bool
+    final class Coordinator {
+        var requestedInitialFocus = false
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeNSView(context: Context) -> LocalProcessTerminalView {
+        requestInitialFocus(for: view, coordinator: context.coordinator)
+        return view
+    }
+    func updateNSView(_ nsView: LocalProcessTerminalView, context: Context) {
+        requestInitialFocus(for: nsView, coordinator: context.coordinator)
+    }
+    private func requestInitialFocus(for view: LocalProcessTerminalView, coordinator: Coordinator) {
+        guard shouldFocus, !coordinator.requestedInitialFocus else { return }
+        func focus(_ attempt: Int) {
+            guard !coordinator.requestedInitialFocus else { return }
+            guard let window = view.window else {
+                if attempt < 5 { DispatchQueue.main.async { focus(attempt + 1) } }
+                return
+            }
+            coordinator.requestedInitialFocus = window.makeFirstResponder(view)
+        }
+        DispatchQueue.main.async { focus(0) }
+    }
 }

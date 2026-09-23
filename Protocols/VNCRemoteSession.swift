@@ -120,7 +120,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
 
     func makeScreenView() -> AnyView {
         if let view = framebufferView {
-            return AnyView(FramebufferViewWrapper(nsView: view))
+            return AnyView(FramebufferViewWrapper(nsView: view, shouldFocus: status == .connected))
         } else {
             return AnyView(
                 VStack(spacing: 12) {
@@ -279,19 +279,23 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
 /// Bridges the cached AppKit framebuffer view into SwiftUI.
 private struct FramebufferViewWrapper: NSViewRepresentable {
     let nsView: VNCCAFramebufferView
+    let shouldFocus: Bool
     func makeNSView(context: Context) -> FramebufferContainer {
         let container = FramebufferContainer(frame: nsView.frame)
         container.show(nsView)
+        if shouldFocus { container.requestInitialFocus() }
         return container
     }
     func updateNSView(_ container: FramebufferContainer, context: Context) {
         container.show(nsView)
+        if shouldFocus { container.requestInitialFocus() }
     }
 }
 
 /// SwiftUI retains the host while a server resize replaces its AppKit child.
 private final class FramebufferContainer: NSView {
     private var framebufferView: VNCCAFramebufferView?
+    private var requestedInitialFocus = false
 
     func show(_ view: VNCCAFramebufferView) {
         guard framebufferView !== view else { return }
@@ -302,5 +306,18 @@ private final class FramebufferContainer: NSView {
         view.autoresizingMask = [.width, .height]
         addSubview(view)
         if restoreFocus { window?.makeFirstResponder(view) }
+    }
+
+    func requestInitialFocus() {
+        guard !requestedInitialFocus else { return }
+        func focus(_ attempt: Int) {
+            guard !self.requestedInitialFocus, let framebufferView = self.framebufferView else { return }
+            guard let window = self.window else {
+                if attempt < 5 { DispatchQueue.main.async { focus(attempt + 1) } }
+                return
+            }
+            self.requestedInitialFocus = window.makeFirstResponder(framebufferView)
+        }
+        DispatchQueue.main.async { focus(0) }
     }
 }
