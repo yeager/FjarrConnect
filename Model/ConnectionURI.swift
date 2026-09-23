@@ -39,7 +39,8 @@ enum ConnectionURI {
         let username = components.user.flatMap { $0.isEmpty ? nil : $0 }
         guard username?.contains(where: { $0.isNewline || $0.asciiValue == 0 }) != true else { return nil }
         return ConnectionProfile(name: host, transport: transport, host: host,
-                                 port: UInt16(rawPort), username: username)
+                                 port: UInt16(rawPort), username: username,
+                                 usesMacScreenSharingAuthentication: transport == .vnc)
     }
 
     static func validHost(_ host: String) -> Bool {

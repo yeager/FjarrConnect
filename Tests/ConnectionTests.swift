@@ -53,10 +53,16 @@ final class ConnectionTests: XCTestCase {
     }
 
     func testQuickConnectDefaultsAndProtocols() {
-        XCTAssertEqual(ConnectionURI.profile(from: " studio.local ")?.port, 5900)
+        let defaultVNC = ConnectionURI.profile(from: " studio.local ")
+        XCTAssertEqual(defaultVNC?.port, 5900)
+        XCTAssertTrue(defaultVNC?.usesMacScreenSharingAuthentication == true)
+        XCTAssertFalse(defaultVNC?.isValid ?? true, "Mac Screen Sharing needs a username")
         XCTAssertEqual(ConnectionURI.profile(from: "ssh://user@host")?.port, 22)
         XCTAssertEqual(ConnectionURI.profile(from: "RDP://host:3390")?.transport, .rdp)
-        XCTAssertEqual(ConnectionURI.profile(from: "vnc://host:65535")?.port, 65535)
+        let explicitVNC = ConnectionURI.profile(from: "vnc://host:65535")
+        XCTAssertEqual(explicitVNC?.port, 65535)
+        XCTAssertTrue(explicitVNC?.usesMacScreenSharingAuthentication == true)
+        XCTAssertEqual(ConnectionURI.profile(from: "vnc://account@host")?.username, "account")
     }
     func testInvalidAddressesDoNotTrapOrSilentlyChangeMeaning() {
         for input in ["", " ", "vnc://host:65536", "vnc://host:0", "vnc://host:-1",
