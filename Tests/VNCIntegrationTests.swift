@@ -42,6 +42,10 @@ final class VNCIntegrationTests: XCTestCase {
         try exerciseServer(requiresUsername: false, resize: true)
     }
 
+    func testConnectedVNCDesktopReceivesInitialKeyboardFocus() throws {
+        try exerciseServer(requiresUsername: false, verifyInitialFocus: true)
+    }
+
     func testInternationalKeyboardCharactersReachVNCServer() throws {
         try exerciseServer(requiresUsername: false, keyboard: true)
     }
@@ -81,6 +85,7 @@ final class VNCIntegrationTests: XCTestCase {
 
     private func exerciseServer(requiresUsername: Bool, requiresPassword: Bool = false,
                                 blackInitially: Bool = false, resize: Bool = false, keyboard: Bool = false,
+                                verifyInitialFocus: Bool = false,
                                 unsupportedSecurity: Bool = false, tightFileTransfer: Bool = false,
                                 tightDownloadOnly: Bool = false, uploadFile: URL? = nil,
                                 expectedUpload: Data? = nil) throws {
@@ -160,6 +165,7 @@ final class VNCIntegrationTests: XCTestCase {
             try assertRenderedDesktop(session, isBlack: blackInitially)
             if resize { try assertResize(session, trigger: URL(fileURLWithPath: portFile.path + ".resize")) }
             if keyboard { try assertKeyboardCharacters(session, receivedKeys: URL(fileURLWithPath: portFile.path + ".keys")) }
+            if verifyInitialFocus { try assertInitialFocus(session) }
             if blackInitially {
                 let warning = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                     session.notice == NSLocalizedString("vnc.blackScreen", comment: "")
@@ -296,12 +302,6 @@ final class VNCIntegrationTests: XCTestCase {
             framebuffer(in: host)?.framebufferSize == CGSize(width: 2, height: 2)
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [original], timeout: 5), .completed)
-        let initiallyFocused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            guard let view = framebuffer(in: host) else { return false }
-            return window.firstResponder === view
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [initiallyFocused], timeout: 5), .completed,
-                       "A connected VNC desktop should receive keyboard focus without a click")
         let originalView = try XCTUnwrap(framebuffer(in: host))
         let originalCursor = originalView.currentCursor
         XCTAssertEqual(originalCursor.image.size, CGSize(width: 2, height: 2))
@@ -330,6 +330,33 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertGreaterThan(cursorPixel.greenComponent, 0.95)
         XCTAssertGreaterThan(cursorPixel.blueComponent, 0.95)
         XCTAssertEqual(session.status, .connected)
+    }
+
+    private func assertInitialFocus(_ session: VNCRemoteSession) throws {
+        let host = NSHostingView(rootView: session.makeScreenView())
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.makeKeyAndOrderFront(nil)
+        defer { window.close() }
+        func framebuffer(in view: NSView) -> VNCCAFramebufferView? {
+            if let frame = view as? VNCCAFramebufferView { return frame }
+            return view.subviews.lazy.compactMap { framebuffer(in: $0) }.first
+        }
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            framebuffer(in: host)?.framebufferSize == CGSize(width: 2, height: 2)
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed)
+        guard window.isKeyWindow else {
+            throw XCTSkip("Initial keyboard focus requires an unlocked macOS window session")
+        }
+        let focused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let view = framebuffer(in: host) else { return false }
+            return window.firstResponder === view
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [focused], timeout: 5), .completed,
+                       "A connected VNC desktop should receive keyboard focus without a click")
     }
 
     private func assertRenderedDesktop(_ session: VNCRemoteSession, isBlack: Bool) throws {
