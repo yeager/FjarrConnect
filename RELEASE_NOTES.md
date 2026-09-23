@@ -1,3 +1,23 @@
+Unreleased
+
+- Add per-profile Wake-on-LAN and RDP network presets.
+- Show connection latency, negotiated RDP codec and reconnection state in session health.
+- Carry files dropped on an RDP or VNC desktop into the same host's SFTP upload queue.
+- Expand saved diagnostic reports with app, macOS and architecture details while
+  omitting the endpoint, credentials and server output.
+- Keep file clipboard transfer unavailable for RDP and VNC; use SFTP or shared folders.
+
+Known limitations: RDP file clipboard support is not enabled pending Windows integration
+testing. VNC clipboard supports text only; clipboard file copying is not implemented.
+Multi-monitor RDP, USB redirection, RDP printer redirection and RDP smart-card redirection
+are not implemented. RDP audio and microphone redirection are opt-in and require server
+support, but await RDS integration testing. RemoteApp is a separate tabbed session type
+with dynamic desktop resizing disabled, but end-to-end launch verification awaits a
+Windows Server with a published alias. VNC VeNCrypt/TLS and RSA-AES authentication are
+not implemented. See the README for protocol details.
+
+---
+
 FjärrConnect 0.2.23
 
 - Documents embedded RDP and VNC recording, including its local H.264 `.mov` output, red recording indicator and no-audio scope.

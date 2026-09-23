@@ -58,6 +58,7 @@ The downloads are ad-hoc signed and not notarized. macOS may ask for approval in
   forwards; configure an RDP gateway and explicitly shared folders; and opt in to
   at most three reconnection attempts for a dropped session in the same tab. Add a
   host MAC address to send a Wake-on-LAN magic packet from the profile’s context menu.
+  Wake-on-LAN depends on the host, network adapter and local network configuration.
 - **Host links:** open a configured SMB share in Finder or an HTTPS administration
   page in your browser. These use the system apps’ authentication.
 - **SSH command log:** enable separately for each saved SSH connection. Stores command
