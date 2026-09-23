@@ -387,3 +387,10 @@
 "rdp.network.balanced" = "Equilibrado";
 "rdp.network.lan" = "Red local";
 "rdp.network.hint" = "Usa los ajustes de red de FreeRDP para este perfil.";
+
+/* Wake-on-LAN */
+"wol.title" = "Wake-on-LAN";
+"wol.mac" = "Dirección MAC";
+"wol.wake" = "Activar equipo";
+"wol.hint" = "Envía un paquete mágico en la red local antes de conectar.";
+"wol.error" = "No se pudo enviar el paquete Wake-on-LAN.";

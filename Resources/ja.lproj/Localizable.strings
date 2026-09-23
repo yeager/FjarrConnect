@@ -387,3 +387,10 @@
 "rdp.network.balanced" = "バランス";
 "rdp.network.lan" = "ローカルネットワーク";
 "rdp.network.hint" = "このプロファイルに FreeRDP のネットワークプリセットを使用します。";
+
+/* Wake-on-LAN */
+"wol.title" = "Wake-on-LAN";
+"wol.mac" = "MAC アドレス";
+"wol.wake" = "デバイスを起動";
+"wol.hint" = "接続前にローカルネットワークへマジックパケットを送信します。";
+"wol.error" = "Wake-on-LAN パケットを送信できませんでした。";

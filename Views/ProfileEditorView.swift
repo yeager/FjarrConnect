@@ -21,6 +21,7 @@ struct ProfileEditorView: View {
     @State private var clipboard: Bool
     @State private var forwards: [SSHForward]
     @State private var automaticReconnect: Bool
+    @State private var wakeOnLANMac: String
     @State private var errorMessage: String?
 
     init(profile: ConnectionProfile?) {
@@ -31,6 +32,7 @@ struct ProfileEditorView: View {
         _clipboard = State(initialValue: profile?.sharesClipboard ?? true)
         _forwards = State(initialValue: profile?.ssh?.forwards ?? [])
         _automaticReconnect = State(initialValue: profile?.reconnectsAutomatically ?? false)
+        _wakeOnLANMac = State(initialValue: profile?.wakeOnLANMac ?? "")
         _name = State(initialValue: profile?.name ?? "")
         _transport = State(initialValue: profile?.transport ?? .vnc)
         _host = State(initialValue: profile?.host ?? "")
@@ -83,7 +85,7 @@ struct ProfileEditorView: View {
                         }
                     }
                 }
-                AdvancedConnectionOptions(transport: transport, ssh: $ssh, rdp: $rdp, links: $links, clipboard: $clipboard, forwards: $forwards, automaticReconnect: $automaticReconnect)
+                AdvancedConnectionOptions(transport: transport, ssh: $ssh, rdp: $rdp, links: $links, clipboard: $clipboard, forwards: $forwards, automaticReconnect: $automaticReconnect, wakeOnLANMac: $wakeOnLANMac)
             }.formStyle(.grouped)
             if let errorMessage { Text(errorMessage).foregroundStyle(.red).textSelection(.enabled) }
             HStack {
@@ -112,6 +114,7 @@ struct ProfileEditorView: View {
         result.rdp = rdp
         result.links = links
         result.clipboardEnabled = clipboard
+        result.wakeOnLANMac = wakeOnLANMac.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : wakeOnLANMac.trimmingCharacters(in: .whitespacesAndNewlines)
         result.requiresBiometricUnlock = transport.isGraphical && requiresBiometricUnlock
         result.tags = Array(Set(tags.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty })).sorted { $0.localizedStandardCompare($1) == .orderedAscending }

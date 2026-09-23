@@ -59,6 +59,9 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
     var rdp: RDPOptions?
     var links: HostLinks?
     var clipboardEnabled: Bool?
+    /// Optional Wake-on-LAN target. A MAC address is not secret and is kept
+    /// with the profile so a user can wake a powered-off host before connecting.
+    var wakeOnLANMac: String?
     var sharesClipboard: Bool { clipboardEnabled ?? true }
 
     // Optional on disk so profiles created before favorites decode unchanged.
@@ -130,6 +133,7 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
         ConnectionURI.validHost(host) && port > 0 &&
         username?.contains(where: { $0.isNewline || $0.asciiValue == 0 }) != true &&
         (transport != .remoteApp || rdp?.remoteAppProgram != nil) &&
+        (wakeOnLANMac.map(WakeOnLAN.isValidMAC) ?? true) &&
         (ssh?.isValid ?? true) && (rdp?.isValid ?? true) && (links?.isValid ?? true) &&
         !(logsSSHCommands && !(ssh?.startCommand?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true))
     }

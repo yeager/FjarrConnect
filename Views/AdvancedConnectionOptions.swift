@@ -8,12 +8,17 @@ struct AdvancedConnectionOptions: View {
     @Binding var clipboard: Bool
     @Binding var forwards: [SSHForward]
     @Binding var automaticReconnect: Bool
+    @Binding var wakeOnLANMac: String
 
     var body: some View {
         DisclosureGroup("options.title") {
             Section("session.reconnect") {
                 Toggle("session.reconnect.enable", isOn: $automaticReconnect)
                 Text("session.reconnect.hint").font(.caption).foregroundStyle(.secondary)
+            }
+            Section("wol.title") {
+                TextField("wol.mac", text: $wakeOnLANMac)
+                Text("wol.hint").font(.caption).foregroundStyle(.secondary)
             }
             if transport.isGraphical { Toggle((transport == .rdp || transport == .remoteApp) ? "options.rdpClipboard" : "options.clipboard", isOn: $clipboard) }
             Section(transport.isGraphical ? "files.connection" : "options.ssh") {

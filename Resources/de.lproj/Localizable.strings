@@ -387,3 +387,10 @@
 "rdp.network.balanced" = "Ausgeglichen";
 "rdp.network.lan" = "Lokales Netzwerk";
 "rdp.network.hint" = "Verwendet FreeRDP-Netzwerkvorgaben für dieses Profil.";
+
+/* Wake-on-LAN */
+"wol.title" = "Wake-on-LAN";
+"wol.mac" = "MAC-Adresse";
+"wol.wake" = "Gerät wecken";
+"wol.hint" = "Sendet vor der Verbindung ein Magic Packet im lokalen Netzwerk.";
+"wol.error" = "Wake-on-LAN-Paket konnte nicht gesendet werden.";

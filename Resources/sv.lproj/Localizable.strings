@@ -402,3 +402,10 @@
 "rdp.network.balanced" = "Balanserad";
 "rdp.network.lan" = "Lokalt nätverk";
 "rdp.network.hint" = "Använder FreeRDP:s nätverksförval för denna profil.";
+
+/* Wake-on-LAN */
+"wol.title" = "Wake-on-LAN";
+"wol.mac" = "MAC-adress";
+"wol.wake" = "Väck enhet";
+"wol.hint" = "Skickar ett magic packet på det lokala nätverket före anslutning.";
+"wol.error" = "Kunde inte skicka Wake-on-LAN-paketet.";

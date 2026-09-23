@@ -402,3 +402,10 @@
 "rdp.network.balanced" = "Balanced";
 "rdp.network.lan" = "LAN";
 "rdp.network.hint" = "Uses FreeRDP network presets for this profile.";
+
+/* Wake-on-LAN */
+"wol.title" = "Wake-on-LAN";
+"wol.mac" = "MAC address";
+"wol.wake" = "Wake device";
+"wol.hint" = "Sends a local network magic packet before connecting.";
+"wol.error" = "Could not send the Wake-on-LAN packet.";

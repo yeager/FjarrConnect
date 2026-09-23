@@ -387,3 +387,10 @@
 "rdp.network.balanced" = "Tasapainoinen";
 "rdp.network.lan" = "Lähiverkko";
 "rdp.network.hint" = "Käyttää tämän profiilin FreeRDP-verkon esiasetuksia.";
+
+/* Wake-on-LAN */
+"wol.title" = "Wake-on-LAN";
+"wol.mac" = "MAC-osoite";
+"wol.wake" = "Herätä laite";
+"wol.hint" = "Lähettää lähiverkkoon magic packet -paketin ennen yhteyttä.";
+"wol.error" = "Wake-on-LAN-paketin lähetys epäonnistui.";

@@ -223,6 +223,12 @@ struct ContentView: View {
             Button("files.title") { connection.connect(profile.fileProfile) }
             Button("links.smb") { if let url = profile.serviceURL("smb") { NSWorkspace.shared.open(url) } }
             Button("links.web") { if let url = profile.serviceURL("https") { NSWorkspace.shared.open(url) } }
+            if let mac = profile.wakeOnLANMac {
+                Button("wol.wake") { WakeOnLAN.send(mac: mac) { [weak profiles] sent in
+                    guard !sent else { return }
+                    DispatchQueue.main.async { profiles?.errorMessage = NSLocalizedString("wol.error", comment: "") }
+                } }
+            }
             Button(profile.isFavorite ? "favorite.remove" : "favorite.add") { toggleFavorite(profile) }
             Button("action.edit") { editing = profile }
             if profile.transport == .ssh {

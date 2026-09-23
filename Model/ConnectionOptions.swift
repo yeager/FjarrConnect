@@ -1,4 +1,48 @@
 import Foundation
+import Network
+
+enum WakeOnLAN {
+    static func isValidMAC(_ value: String) -> Bool { bytes(for: value) != nil }
+
+    static func magicPacket(mac: String) -> Data? {
+        guard let mac = bytes(for: mac) else { return nil }
+        var packet = Data(repeating: 0xFF, count: 6)
+        for _ in 0..<16 { packet.append(mac) }
+        return packet
+    }
+
+    static func send(mac: String, completion: @escaping (Bool) -> Void) {
+        guard let packet = magicPacket(mac: mac) else { completion(false); return }
+        let connection = NWConnection(host: "255.255.255.255", port: 9, using: .udp)
+        let resultLock = NSLock()
+        var completed = false
+        func finish(_ sent: Bool) {
+            resultLock.lock()
+            defer { resultLock.unlock() }
+            guard !completed else { return }
+            completed = true
+            completion(sent)
+        }
+        connection.stateUpdateHandler = { state in
+            if case .failed = state { finish(false); connection.cancel() }
+        }
+        connection.start(queue: DispatchQueue(label: "se.fjarrconnect.wol"))
+        connection.send(content: packet, completion: .contentProcessed { error in
+            finish(error == nil); connection.cancel()
+        })
+    }
+
+    private static func bytes(for value: String) -> Data? {
+        let pieces = value.split(whereSeparator: { $0 == ":" || $0 == "-" })
+        guard pieces.count == 6 else { return nil }
+        var result = Data(); result.reserveCapacity(6)
+        for piece in pieces {
+            guard piece.count == 2, let byte = UInt8(piece, radix: 16) else { return nil }
+            result.append(byte)
+        }
+        return result
+    }
+}
 
 struct SSHOptions: Codable, Hashable {
     var host: String?

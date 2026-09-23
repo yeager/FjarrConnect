@@ -2,6 +2,14 @@ import XCTest
 @testable import FjarrConnect
 
 final class ConnectionTests: XCTestCase {
+    func testWakeOnLANValidatesMACAndBuildsMagicPacket() throws {
+        let packet = try XCTUnwrap(WakeOnLAN.magicPacket(mac: "01:23:45:67:89:ab"))
+        XCTAssertEqual(packet.count, 102)
+        XCTAssertEqual(Array(packet.prefix(6)), Array(repeating: 0xFF, count: 6))
+        XCTAssertEqual(Array(packet.suffix(6)), [1, 35, 69, 103, 137, 171])
+        XCTAssertNotNil(WakeOnLAN.magicPacket(mac: "01-23-45-67-89-ab"))
+        XCTAssertNil(WakeOnLAN.magicPacket(mac: "not-a-mac"))
+    }
     func testLegacyProfileDefaultsToNotFavorite() throws {
         let json = """
         {"id":"11111111-1111-1111-1111-111111111111","name":"Studio","transport":"vnc","host":"studio.local","port":5900}
