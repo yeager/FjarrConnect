@@ -326,3 +326,16 @@
 
 "menu.favorites" = "Favorites";
 "menu.favorites.empty" = "No favorites saved";
+
+// Encrypted profile transfer
+"profiles.transfer" = "Profile import and export";
+"profiles.transfer.hint" = "Exports are encrypted and never include Keychain passwords. Imported profiles are added without credentials.";
+"profiles.export" = "Export encrypted profiles";
+"profiles.import" = "Import encrypted profiles";
+"profiles.export.done" = "Encrypted profile export saved.";
+"profiles.import.done" = "Imported %d profiles without credentials.";
+"profiles.transfer.error" = "The encrypted profile transfer could not be completed. Check the file and export password.";
+"profiles.transfer.password.hint" = "Choose the temporary password that protects this export. It is not saved.";
+"profiles.transfer.password" = "Export password";
+"profiles.transfer.confirm" = "Confirm export password";
+"action.continue" = "Continue";

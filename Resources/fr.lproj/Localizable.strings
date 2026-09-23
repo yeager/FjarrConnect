@@ -311,3 +311,16 @@
 
 "menu.favorites" = "Favoris";
 "menu.favorites.empty" = "Aucun favori enregistré";
+
+// Encrypted profile transfer
+"profiles.transfer" = "Importation et exportation de profils";
+"profiles.transfer.hint" = "Les exports sont chiffrés et n’incluent jamais les mots de passe du trousseau. Les profils importés sont ajoutés sans identifiants.";
+"profiles.export" = "Exporter les profils chiffrés";
+"profiles.import" = "Importer les profils chiffrés";
+"profiles.export.done" = "Export de profils chiffré enregistré.";
+"profiles.import.done" = "%d profils importés sans identifiants.";
+"profiles.transfer.error" = "Le transfert de profils chiffré n’a pas pu être effectué. Vérifiez le fichier et le mot de passe d’exportation.";
+"profiles.transfer.password.hint" = "Choisissez le mot de passe temporaire qui protège cet export. Il n’est pas enregistré.";
+"profiles.transfer.password" = "Mot de passe d’exportation";
+"profiles.transfer.confirm" = "Confirmer le mot de passe d’exportation";
+"action.continue" = "Continuer";

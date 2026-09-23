@@ -326,3 +326,16 @@
 
 "menu.favorites" = "Favoritter";
 "menu.favorites.empty" = "Ingen lagrede favoritter";
+
+// Encrypted profile transfer
+"profiles.transfer" = "Profilimport og -eksport";
+"profiles.transfer.hint" = "Eksporten er kryptert og inneholder aldri passord fra Nøkkelring. Importerte profiler legges til uten legitimasjon.";
+"profiles.export" = "Eksporter krypterte profiler";
+"profiles.import" = "Importer krypterte profiler";
+"profiles.export.done" = "Kryptert profileksport lagret.";
+"profiles.import.done" = "Importerte %d profiler uten legitimasjon.";
+"profiles.transfer.error" = "Den krypterte profiloverføringen kunne ikke fullføres. Kontroller filen og eksportpassordet.";
+"profiles.transfer.password.hint" = "Velg det midlertidige passordet som beskytter eksporten. Det lagres ikke.";
+"profiles.transfer.password" = "Eksportpassord";
+"profiles.transfer.confirm" = "Bekreft eksportpassord";
+"action.continue" = "Fortsett";

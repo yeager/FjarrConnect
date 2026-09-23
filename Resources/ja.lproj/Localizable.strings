@@ -311,3 +311,16 @@
 
 "menu.favorites" = "お気に入り";
 "menu.favorites.empty" = "保存されたお気に入りはありません";
+
+// Encrypted profile transfer
+"profiles.transfer" = "プロファイルのインポートとエクスポート";
+"profiles.transfer.hint" = "エクスポートは暗号化され、キーチェーンのパスワードは含まれません。インポートしたプロファイルは認証情報なしで追加されます。";
+"profiles.export" = "暗号化したプロファイルをエクスポート";
+"profiles.import" = "暗号化したプロファイルをインポート";
+"profiles.export.done" = "暗号化したプロファイルのエクスポートを保存しました。";
+"profiles.import.done" = "認証情報なしで%d個のプロファイルをインポートしました。";
+"profiles.transfer.error" = "暗号化したプロファイル転送を完了できませんでした。ファイルとエクスポートパスワードを確認してください。";
+"profiles.transfer.password.hint" = "このエクスポートを保護する一時パスワードを選択してください。保存されません。";
+"profiles.transfer.password" = "エクスポートパスワード";
+"profiles.transfer.confirm" = "エクスポートパスワードを確認";
+"action.continue" = "続ける";

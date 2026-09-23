@@ -326,3 +326,16 @@
 
 "menu.favorites" = "Favoriter";
 "menu.favorites.empty" = "Inga sparade favoriter";
+
+// Encrypted profile transfer
+"profiles.transfer" = "Profilimport och -export";
+"profiles.transfer.hint" = "Exporten krypteras och innehåller aldrig lösenord från Nyckelring. Importerade profiler läggs till utan inloggningsuppgifter.";
+"profiles.export" = "Exportera krypterade profiler";
+"profiles.import" = "Importera krypterade profiler";
+"profiles.export.done" = "Krypterad profilexport sparad.";
+"profiles.import.done" = "Importerade %d profiler utan inloggningsuppgifter.";
+"profiles.transfer.error" = "Den krypterade profilöverföringen kunde inte slutföras. Kontrollera filen och exportlösenordet.";
+"profiles.transfer.password.hint" = "Välj det tillfälliga lösenord som skyddar exporten. Det sparas inte.";
+"profiles.transfer.password" = "Exportlösenord";
+"profiles.transfer.confirm" = "Bekräfta exportlösenord";
+"action.continue" = "Fortsätt";

@@ -128,4 +128,24 @@ final class ConnectionTests: XCTestCase {
         store.markUsed(newer.id, now: Date(timeIntervalSince1970: 2))
         XCTAssertEqual(store.recent.map(\.id), [newer.id, older.id])
     }
+
+    func testEncryptedProfileTransferExcludesCredentialsAndImportsNewIdentities() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = ProfileStore(fileURL: directory.appendingPathComponent("source.json"))
+        let profile = ConnectionProfile(name: "Private desktop", transport: .rdp, host: "private.example", username: "admin")
+        try source.save(profile, password: nil)
+        let exported = try source.encryptedExport(passphrase: "fixture-export-passphrase")
+        let document = String(decoding: exported, as: UTF8.self)
+        XCTAssertFalse(document.contains("private.example"))
+        XCTAssertFalse(document.contains("admin"))
+
+        let destination = ProfileStore(fileURL: directory.appendingPathComponent("destination.json"))
+        XCTAssertThrowsError(try destination.importEncryptedProfiles(exported, passphrase: "incorrect-passphrase"))
+        XCTAssertEqual(try destination.importEncryptedProfiles(exported, passphrase: "fixture-export-passphrase"), 1)
+        let imported = try XCTUnwrap(destination.profiles.first)
+        XCTAssertEqual(imported.host, profile.host)
+        XCTAssertEqual(imported.username, profile.username)
+        XCTAssertNotEqual(imported.id, profile.id)
+    }
 }

@@ -1,5 +1,19 @@
 import Foundation
 import Combine
+import CryptoKit
+import Security
+
+private struct EncryptedProfileExport: Codable {
+    static let version = 1
+    let version: Int
+    let iterations: Int
+    let salt: Data
+    let ciphertext: Data
+}
+
+enum ProfileTransferError: Error {
+    case emptyPassphrase, unsupportedFormat, invalidProfiles
+}
 
 final class ProfileStore: ObservableObject {
     @Published private(set) var profiles: [ConnectionProfile] = []
@@ -58,6 +72,48 @@ final class ProfileStore: ObservableObject {
         try? save(profile, password: nil)
     }
 
+    /// Produces an encrypted transfer document. Connection passwords are kept in
+    /// the Keychain and are not present in `ConnectionProfile`, so they cannot be
+    /// exported by this method.
+    func encryptedExport(passphrase: String) throws -> Data {
+        guard !passphrase.isEmpty else { throw ProfileTransferError.emptyPassphrase }
+        let salt = try Self.randomBytes(count: 16)
+        let iterations = 120_000
+        let plaintext = try JSONEncoder().encode(profiles)
+        let key = Self.key(passphrase: passphrase, salt: salt, iterations: iterations)
+        let sealed = try AES.GCM.seal(plaintext, using: key)
+        guard let ciphertext = sealed.combined else { throw ProfileTransferError.unsupportedFormat }
+        return try JSONEncoder().encode(EncryptedProfileExport(version: EncryptedProfileExport.version,
+                                                                 iterations: iterations,
+                                                                 salt: salt,
+                                                                 ciphertext: ciphertext))
+    }
+
+    /// Imports profiles as new identities. The export contains no credentials,
+    /// so importing never reads or writes Keychain items for the source profiles.
+    @discardableResult
+    func importEncryptedProfiles(_ data: Data, passphrase: String) throws -> Int {
+        guard !passphrase.isEmpty else { throw ProfileTransferError.emptyPassphrase }
+        let document = try JSONDecoder().decode(EncryptedProfileExport.self, from: data)
+        guard document.version == EncryptedProfileExport.version,
+              (10_000...500_000).contains(document.iterations), document.salt.count == 16,
+              let sealed = try? AES.GCM.SealedBox(combined: document.ciphertext) else {
+            throw ProfileTransferError.unsupportedFormat
+        }
+        let key = Self.key(passphrase: passphrase, salt: document.salt, iterations: document.iterations)
+        let plaintext = try AES.GCM.open(sealed, using: key)
+        var imported = try JSONDecoder().decode([ConnectionProfile].self, from: plaintext)
+        guard imported.allSatisfy(\.isValid) else { throw ProfileTransferError.invalidProfiles }
+        for index in imported.indices {
+            // Imported profiles never inherit an identity that may have an
+            // unrelated Keychain item on this Mac.
+            imported[index].id = UUID()
+        }
+        guard !imported.isEmpty else { return 0 }
+        try persist(profiles + imported, credentialID: UUID(), password: nil, gatewayPassword: nil)
+        return imported.count
+    }
+
     var grouped: [(group: String, profiles: [ConnectionProfile])] {
         Dictionary(grouping: profiles.filter { !$0.isFavorite }) { $0.group ?? NSLocalizedString("group.ungrouped", comment: "") }
             .map { (group: $0.key, profiles: $0.value.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }) }
@@ -87,5 +143,27 @@ final class ProfileStore: ObservableObject {
             throw error
         }
         profiles = next
+    }
+
+    private static func randomBytes(count: Int) throws -> Data {
+        var bytes = Data(count: count)
+        let status = bytes.withUnsafeMutableBytes { buffer in
+            SecRandomCopyBytes(kSecRandomDefault, count, buffer.baseAddress!)
+        }
+        guard status == errSecSuccess else { throw KeychainStore.Failure(status: status) }
+        return bytes
+    }
+
+    private static func key(passphrase: String, salt: Data, iterations: Int) -> SymmetricKey {
+        let password = Data(passphrase.utf8)
+        var material = salt
+        material.append(password)
+        var digest = Data(SHA256.hash(data: material))
+        for _ in 1..<iterations {
+            var round = digest
+            round.append(material)
+            digest = Data(SHA256.hash(data: round))
+        }
+        return SymmetricKey(data: digest)
     }
 }

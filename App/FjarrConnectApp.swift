@@ -58,6 +58,7 @@ struct FjarrConnectApp: App {
 
         Settings {
             SettingsView()
+                .environmentObject(profiles)
         }
 
         .commands {

@@ -311,3 +311,16 @@
 
 "menu.favorites" = "Suosikit";
 "menu.favorites.empty" = "Ei tallennettuja suosikkeja";
+
+// Encrypted profile transfer
+"profiles.transfer" = "Profiilien tuonti ja vienti";
+"profiles.transfer.hint" = "Viennit salataan eivätkä ne sisällä koskaan avainnipun salasanoja. Tuodut profiilit lisätään ilman tunnistetietoja.";
+"profiles.export" = "Vie salatut profiilit";
+"profiles.import" = "Tuo salatut profiilit";
+"profiles.export.done" = "Salattu profiilivienti tallennettu.";
+"profiles.import.done" = "Tuotiin %d profiilia ilman tunnistetietoja.";
+"profiles.transfer.error" = "Salattua profiilisiirtoa ei voitu suorittaa. Tarkista tiedosto ja vientisalasana.";
+"profiles.transfer.password.hint" = "Valitse väliaikainen salasana, joka suojaa viennin. Sitä ei tallenneta.";
+"profiles.transfer.password" = "Vientisalasana";
+"profiles.transfer.confirm" = "Vahvista vientisalasana";
+"action.continue" = "Jatka";

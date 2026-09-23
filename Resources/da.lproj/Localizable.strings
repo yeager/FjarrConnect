@@ -326,3 +326,16 @@
 
 "menu.favorites" = "Favoritter";
 "menu.favorites.empty" = "Ingen gemte favoritter";
+
+// Encrypted profile transfer
+"profiles.transfer" = "Profilimport og -eksport";
+"profiles.transfer.hint" = "Eksporten er krypteret og indeholder aldrig adgangskoder fra Nøglering. Importerede profiler tilføjes uden legitimationsoplysninger.";
+"profiles.export" = "Eksportér krypterede profiler";
+"profiles.import" = "Importér krypterede profiler";
+"profiles.export.done" = "Krypteret profileksport gemt.";
+"profiles.import.done" = "Importerede %d profiler uden legitimationsoplysninger.";
+"profiles.transfer.error" = "Den krypterede profiloverførsel kunne ikke fuldføres. Kontrollér filen og eksportadgangskoden.";
+"profiles.transfer.password.hint" = "Vælg den midlertidige adgangskode, der beskytter eksporten. Den gemmes ikke.";
+"profiles.transfer.password" = "Eksportadgangskode";
+"profiles.transfer.confirm" = "Bekræft eksportadgangskode";
+"action.continue" = "Fortsæt";

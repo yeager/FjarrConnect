@@ -311,3 +311,16 @@
 
 "menu.favorites" = "Favoritos";
 "menu.favorites.empty" = "No hay favoritos guardados";
+
+// Encrypted profile transfer
+"profiles.transfer" = "Importación y exportación de perfiles";
+"profiles.transfer.hint" = "Las exportaciones se cifran y nunca incluyen contraseñas del llavero. Los perfiles importados se añaden sin credenciales.";
+"profiles.export" = "Exportar perfiles cifrados";
+"profiles.import" = "Importar perfiles cifrados";
+"profiles.export.done" = "Exportación de perfiles cifrada guardada.";
+"profiles.import.done" = "Se importaron %d perfiles sin credenciales.";
+"profiles.transfer.error" = "No se pudo completar la transferencia de perfiles cifrada. Comprueba el archivo y la contraseña de exportación.";
+"profiles.transfer.password.hint" = "Elige la contraseña temporal que protege esta exportación. No se guarda.";
+"profiles.transfer.password" = "Contraseña de exportación";
+"profiles.transfer.confirm" = "Confirmar contraseña de exportación";
+"action.continue" = "Continuar";

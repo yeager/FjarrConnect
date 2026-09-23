@@ -330,6 +330,11 @@ The JSON contains connection details and favorite state, **not passwords**. VNC/
 passwords are stored as per-profile Keychain items. When editing a profile, enable
 **Change saved password** to replace it; an empty replacement removes the saved password.
 
+Under **Settings → Advanced**, profiles can be exported as an AES-GCM encrypted file
+using a temporary export password. The password is not saved, and neither desktop nor
+gateway Keychain passwords are included. Import adds new profile identities, so it
+cannot reuse a Keychain item that belongs to an existing profile.
+
 Saving reports errors instead of silently losing changes. An unreadable or corrupt
 profile file is preserved and blocks further saves so it cannot be overwritten by
 an empty connection list. Back up the file before repairing or removing it.
