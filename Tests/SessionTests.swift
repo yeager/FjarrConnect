@@ -139,6 +139,33 @@ final class SessionTests: XCTestCase {
         wait(for: [settled], timeout: 2)
     }
 
+    func testSupersededBackendCannotScheduleAnotherReconnect() throws {
+        var sessions: [TestSession] = []
+        let manager = ConnectionManager { profile, _ in
+            let session = TestSession(profile: profile)
+            sessions.append(session)
+            return session
+        }
+        var profile = ConnectionProfile(name: "Office", host: "office.local")
+        profile.reconnectsAutomatically = true
+        manager.connect(profile)
+        sessions[0].status = .disconnected(reason: "network")
+
+        let restarted = expectation(description: "replacement session starts")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+            XCTAssertEqual(sessions.count, 2)
+            // The old backend may still emit a final notification after it has
+            // been replaced. It must not create a third session.
+            sessions[0].status = .disconnected(reason: "late notification")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+                XCTAssertEqual(sessions.count, 2)
+                manager.disconnectAll()
+                restarted.fulfill()
+            }
+        }
+        wait(for: [restarted], timeout: 3)
+    }
+
 }
 
 private final class TestSession: RemoteSession {

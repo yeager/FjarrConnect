@@ -8,6 +8,7 @@ final class SessionTab: ObservableObject, Identifiable {
     @Published private(set) var backend: any RemoteSession
     let recorder = SessionRecordingController()
     private var subscriptions = Set<AnyCancellable>()
+    private var backendSubscription: AnyCancellable?
     private let credentials: SessionCredentials
     private let makeSession: (ConnectionProfile, SessionCredentials) -> any RemoteSession
     private var reconnectWork: DispatchWorkItem?
@@ -27,7 +28,8 @@ final class SessionTab: ObservableObject, Identifiable {
     }
 
     private func bind(_ backend: any RemoteSession) {
-        backend.objectWillChange.sink { [weak self] _ in
+        backendSubscription?.cancel()
+        backendSubscription = backend.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
@@ -40,7 +42,6 @@ final class SessionTab: ObservableObject, Identifiable {
                 }
             }
         }
-            .store(in: &subscriptions)
     }
 
     var canRecord: Bool { backend is any SessionRecordingSource }
