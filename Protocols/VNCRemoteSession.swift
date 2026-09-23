@@ -20,9 +20,22 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
 
     @Published private(set) var status: SessionStatus = .idle
     @Published private(set) var notice: String?
+    @Published private(set) var fileTransferAvailable = false
+    @Published private(set) var fileUploadAvailable = false
+    @Published private(set) var isUploadingFile = false
+    @Published private(set) var remoteFiles: [VNCRemoteFile] = []
+    @Published private(set) var fileListRevision = 0
+    @Published private(set) var isLoadingRemoteFiles = false
+    @Published private(set) var remoteDirectory = "/"
+    @Published private(set) var fileTransferNotice: String?
 
     private var connection: VNCConnection?
     private let logger = VNCPrintLogger()
+    private var downloadDestination: URL?
+    private var downloadSize: UInt64 = 0
+    private var downloadHandle: FileHandle?
+    private var downloadTemporaryURL: URL?
+    private static let maximumFileTransferBytes: UInt64 = 256 * 1024 * 1024
 
     /// Cached per remote framebuffer; a server resize replaces both buffer and view.
     private var framebufferView: VNCCAFramebufferView?
@@ -56,6 +69,14 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         )
 
         let connection = VNCConnection(settings: settings, logger: logger)
+        // VeNCrypt and ARD authentication remain preferred by RoyalVNCKit. Tight
+        // is selected only when neither stronger mode is offered, so its
+        // advertised file-transfer extension can be discovered when available.
+        connection.prefersTightSecurityForFileTransfer = true
+        connection.fileTransferHandler = { [weak self, weak connection] event in
+            guard let self, let connection, self.connection === connection else { return }
+            self.handleFileTransfer(event)
+        }
         connection.delegate = self
         connection.clipboardDelegate = self
         self.connection = connection
@@ -77,6 +98,17 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         frameCheck?.cancel()
         frameCheck = nil
         notice = nil
+        fileTransferAvailable = false
+        fileUploadAvailable = false
+        isUploadingFile = false
+        remoteFiles = []
+        isLoadingRemoteFiles = false
+        fileTransferNotice = nil
+        downloadDestination = nil
+        try? downloadHandle?.close()
+        downloadHandle = nil
+        if let downloadTemporaryURL { try? FileManager.default.removeItem(at: downloadTemporaryURL) }
+        downloadTemporaryURL = nil
         connectionDeadline?.cancel()
         connectionDeadline = nil
         password = nil
@@ -146,9 +178,18 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
                 self.connectionDeadline?.cancel()
                 self.password = nil
                 self.status = .connected
+                self.fileTransferAvailable = connection.canDownloadFiles
+                self.fileUploadAvailable = connection.canUploadFiles
                 self.checkInitialImage(connection, after: 8)
             case .disconnecting: self.status = .disconnecting
             case .disconnected:
+                self.fileTransferAvailable = false
+                self.fileUploadAvailable = false
+                if self.isUploadingFile {
+                    self.isUploadingFile = false
+                    self.fileTransferNotice = NSLocalizedString("vnc.files.uploadFailed", comment: "")
+                }
+                self.remoteFiles = []
                 self.frameCheck?.cancel()
                 self.notice = nil
                 self.connectionDeadline?.cancel()
@@ -162,6 +203,178 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
                 self.status = .disconnected(reason: reason)
             }
         }
+    }
+
+    func browseRemoteFiles(_ directory: String) {
+        guard fileTransferAvailable, status == .connected,
+              directory.hasPrefix("/"), !directory.split(separator: "/").contains("..") else { return }
+        do {
+            remoteDirectory = directory
+            remoteFiles = []
+            isLoadingRemoteFiles = true
+            try connection?.requestFileList(directory: directory)
+            fileTransferNotice = nil
+        } catch {
+            isLoadingRemoteFiles = false
+            fileTransferNotice = NSLocalizedString("vnc.files.failed", comment: "")
+        }
+    }
+
+    func downloadRemoteFile(_ file: VNCRemoteFile, to destination: URL) {
+        guard fileTransferAvailable, status == .connected, !file.isDirectory,
+              file.size <= Self.maximumFileTransferBytes else {
+            fileTransferNotice = NSLocalizedString("vnc.files.downloadFailed", comment: "")
+            return
+        }
+        let path = remoteDirectory == "/" ? "/\(file.name)" : "\(remoteDirectory)/\(file.name)"
+        let temporary = destination.deletingLastPathComponent()
+            .appendingPathComponent(".\(UUID().uuidString).fjarr-partial")
+        guard FileManager.default.createFile(atPath: temporary.path, contents: nil),
+              let handle = try? FileHandle(forWritingTo: temporary) else {
+            fileTransferNotice = NSLocalizedString("vnc.files.downloadFailed", comment: "")
+            return
+        }
+        downloadDestination = destination
+        downloadTemporaryURL = temporary
+        downloadSize = file.size
+        downloadHandle = handle
+        do {
+            try connection?.requestFileDownload(path: path)
+            fileTransferNotice = NSLocalizedString("vnc.files.downloading", comment: "")
+        } catch {
+            failFileTransfer()
+            fileTransferNotice = NSLocalizedString("vnc.files.downloadFailed", comment: "")
+        }
+    }
+
+    func uploadLocalFile(_ source: URL, overwrite: Bool = false) {
+        guard fileUploadAvailable, !isUploadingFile, status == .connected,
+              source.isFileURL,
+              let connection,
+              (try? source.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) != true else {
+            fileTransferNotice = NSLocalizedString("vnc.files.uploadFailed", comment: "")
+            return
+        }
+        let name = source.lastPathComponent
+        guard !name.isEmpty, !name.contains("/"), !name.contains("\\"),
+              !name.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7f }) else {
+            fileTransferNotice = NSLocalizedString("vnc.files.uploadFailed", comment: "")
+            return
+        }
+        if !overwrite, remoteFiles.contains(where: { $0.name == name }) {
+            fileTransferNotice = NSLocalizedString("vnc.files.uploadExists", comment: "")
+            return
+        }
+        let path = remoteDirectory == "/" ? "/\(name)" : "\(remoteDirectory)/\(name)"
+        let accessGranted = source.startAccessingSecurityScopedResource()
+        isUploadingFile = true
+        fileTransferNotice = NSLocalizedString("vnc.files.uploading", comment: "")
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            defer { if accessGranted { source.stopAccessingSecurityScopedResource() } }
+            do {
+                let attributes = try FileManager.default.attributesOfItem(atPath: source.path)
+                guard attributes[.type] as? FileAttributeType == .typeRegular,
+                      let size = (attributes[.size] as? NSNumber)?.uint64Value,
+                      size <= Self.maximumFileTransferBytes else {
+                    throw VNCFileUploadError.invalidFile
+                }
+                let modificationDate = attributes[.modificationDate] as? Date ?? Date()
+                let modificationTime = UInt32(max(0, min(Double(UInt32.max), modificationDate.timeIntervalSince1970)))
+                let handle = try FileHandle(forReadingFrom: source)
+                defer { try? handle.close() }
+                try connection.requestFileUpload(path: path)
+                var transferred: UInt64 = 0
+                while let chunk = try handle.read(upToCount: 65_535), !chunk.isEmpty {
+                    guard UInt64(chunk.count) <= size - min(transferred, size) else {
+                        throw VNCFileUploadError.invalidFile
+                    }
+                    try connection.sendFileUploadData(chunk)
+                    transferred += UInt64(chunk.count)
+                }
+                guard transferred == size else { throw VNCFileUploadError.invalidFile }
+                try connection.finishFileUpload(modificationTime: modificationTime)
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.connection === connection else { return }
+                    self.isUploadingFile = false
+                    self.fileTransferNotice = NSLocalizedString("vnc.files.uploadSent", comment: "")
+                }
+            } catch {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.connection === connection else { return }
+                    self.isUploadingFile = false
+                    self.fileTransferNotice = NSLocalizedString("vnc.files.uploadFailed", comment: "")
+                }
+            }
+        }
+    }
+
+    private func handleFileTransfer(_ event: VNCFileTransferEvent) {
+        switch event {
+        case .fileList(let files):
+            remoteFiles = files
+            isLoadingRemoteFiles = false
+            fileListRevision &+= 1
+            fileTransferNotice = nil
+        case .downloadData(let data):
+            guard downloadDestination != nil,
+                  let handle = downloadHandle,
+                  let currentOffset = try? handle.offset(),
+                  currentOffset <= Self.maximumFileTransferBytes,
+                  UInt64(data.count) <= Self.maximumFileTransferBytes - currentOffset,
+                  UInt64(data.count) <= downloadSize - min(currentOffset, downloadSize) else {
+                failFileTransfer()
+                return
+            }
+            do {
+                try handle.write(contentsOf: data)
+            } catch {
+                failFileTransfer()
+            }
+        case .downloadFinished:
+            guard let destination = downloadDestination, let temporary = downloadTemporaryURL,
+                  let handle = downloadHandle, let currentOffset = try? handle.offset(),
+                  currentOffset == downloadSize else {
+                failFileTransfer()
+                return
+            }
+            do {
+                try handle.synchronize()
+                try handle.close()
+                if FileManager.default.fileExists(atPath: destination.path) {
+                    _ = try FileManager.default.replaceItemAt(destination, withItemAt: temporary)
+                } else {
+                    try FileManager.default.moveItem(at: temporary, to: destination)
+                }
+                fileTransferNotice = NSLocalizedString("vnc.files.downloadComplete", comment: "")
+            } catch {
+                try? FileManager.default.removeItem(at: temporary)
+                fileTransferNotice = NSLocalizedString("vnc.files.downloadFailed", comment: "")
+            }
+            clearDownloadState()
+        case .failed:
+            isLoadingRemoteFiles = false
+            isUploadingFile = false
+            failFileTransfer()
+            fileTransferNotice = NSLocalizedString("vnc.files.failed", comment: "")
+        @unknown default:
+            isLoadingRemoteFiles = false
+            isUploadingFile = false
+            failFileTransfer()
+            fileTransferNotice = NSLocalizedString("vnc.files.failed", comment: "")
+        }
+    }
+
+    private func clearDownloadState() {
+        downloadDestination = nil
+        downloadTemporaryURL = nil
+        downloadSize = 0
+        try? downloadHandle?.close()
+        downloadHandle = nil
+    }
+
+    private func failFileTransfer() {
+        if let downloadTemporaryURL { try? FileManager.default.removeItem(at: downloadTemporaryURL) }
+        clearDownloadState()
     }
 
     func connection(_ connection: VNCConnection,
@@ -284,6 +497,8 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
             : NSLocalizedString("session.timeout", comment: "")
     }
 }
+
+private enum VNCFileUploadError: Error { case invalidFile }
 
 /// Bridges the cached AppKit framebuffer view into SwiftUI.
 private struct FramebufferViewWrapper: NSViewRepresentable {

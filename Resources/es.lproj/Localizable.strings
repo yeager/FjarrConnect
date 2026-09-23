@@ -21,7 +21,7 @@
 "field.protocol" = "Protocolo";
 "field.host" = "Servidor";
 "field.username" = "Nombre de usuario";
-"field.vncUsername" = "Nombre de usuario (opcional para VNC)";
+"field.vncUsername" = "Nombre de usuario";
 "field.password" = "Contraseña";
 "field.group" = "Grupo";
 "field.port.format" = "Puerto (predeterminado: %d)";
@@ -52,7 +52,10 @@
 "auth.title" = "Identifícate para conectarte";
 "auth.remember" = "Recordar en el Llavero";
 "auth.hint" = "Para RDP, usa una cuenta con permiso para conectarse al equipo remoto.";
-"auth.vnc.hint" = "VNC estándar solo usa una contraseña; deja el nombre de usuario vacío. Introduce un nombre de usuario solo si el servidor requiere una cuenta, como en Compartir pantalla de Mac. Deja la contraseña vacía si no se necesita autenticación.";
+"vnc.authenticationMode" = "Autenticación";
+"vnc.authentication.standard" = "VNC estándar (contraseña)";
+"vnc.authentication.mac" = "Compartir pantalla de Mac (nombre de usuario obligatorio)";
+"auth.vnc.hint" = "Compartir pantalla de Mac requiere el nombre corto y la contraseña de una cuenta de macOS autorizada. VNC estándar solo usa una contraseña.";
 "profile.delete.title" = "¿Eliminar esta conexión guardada?";
 "quickconnect.invalid" = "Introduce un servidor o una dirección vnc://, ssh:// o rdp:// con un puerto entre 1 y 65535. Escribe las contraseñas en el diálogo de identificación.";
 "session.retry" = "Comprueba la dirección y las credenciales y vuelve a conectarte.";
@@ -69,7 +72,7 @@
 "vnc.ardAuthenticationTimeout" = "Compartir pantalla del Mac no respondió después de la autenticación. Comprueba que la cuenta tenga permiso en Compartir pantalla y desactiva y activa el servicio en el Mac remoto.";
 "vnc.usernameRequired" = "Este servidor requiere un nombre de usuario. Introduce el nombre corto y la contraseña de la cuenta del Mac remoto y comprueba que la cuenta tiene permiso para compartir la pantalla.";
 "vnc.connectionFailed" = "La conexión VNC falló. Comprueba la dirección y el puerto y confirma que Compartir pantalla o el servicio VNC está activado en el equipo remoto y que la cuenta tiene permiso.";
-"vnc.unsupportedSecurity" = "Este servidor requiere un método de seguridad VNC que FjärrConnect aún no admite, como VeNCrypt/TLS o RSA-AES. Usa la autenticación VNC estándar o selecciona una configuración de seguridad compatible en el servidor.";
+"vnc.unsupportedSecurity" = "El servidor ofrece un método de seguridad VNC que FjärrConnect no puede usar. RSA-AES y los subtipos VeNCrypt no compatibles no están admitidos. Usa VeNCrypt/TLS con certificado o la autenticación VNC estándar, o selecciona una configuración compatible en el servidor.";
 "rdp.error.network" = "No se pudo acceder al servidor. Comprueba que el escritorio remoto está activado y que la dirección y el puerto son accesibles.";
 "rdp.error.authentication" = "El servidor rechazó la identificación. Comprueba el nombre de usuario, la contraseña y el permiso para usar el escritorio remoto.";
 "rdp.error.certificate" = "Falló la conexión segura. Comprueba el certificado del servidor y los ajustes de TLS.";
@@ -198,7 +201,12 @@
 
 "options.choose" = "Elegir…";
 
-"ssh.identity" = "Archivo de clave privada";
+"ssh.identity" = "Clave privada de este perfil";
+"ssh.identity.hint" = "Elige la clave privada que usarán las conexiones SSH y SFTP de este perfil. OpenSSH solicitará la frase de contraseña en el terminal si está cifrada. Déjalo vacío para usar la configuración SSH o ssh-agent.";
+"ssh.identity.section" = "Clave privada de este perfil";
+"ssh.identity.chooseTitle" = "Elegir clave privada";
+"ssh.identity.chooseMessage" = "Elige un archivo de clave SSH privada para este perfil.";
+"ssh.identity.clear" = "Borrar clave del perfil";
 
 "ssh.jump.host" = "Host de salto";
 
@@ -298,6 +306,20 @@
 "settings.scanConcurrency.hint" = "Más pruebas aceleran la búsqueda, pero generan más tráfico de red.";
 "settings.appearance" = "Apariencia";
 "settings.connections" = "Conexiones";
+"settings.keyboard" = "Teclado";
+"settings.keyboardLayout" = "Distribución del teclado RDP";
+"settings.keyboardLayout.automatic" = "Automática (fuente de entrada de macOS)";
+"settings.keyboardLayout.usEnglish" = "Inglés de EE. UU.";
+"settings.keyboardLayout.britishEnglish" = "Inglés británico";
+"settings.keyboardLayout.german" = "Alemán";
+"settings.keyboardLayout.french" = "Francés";
+"settings.keyboardLayout.swedish" = "Sueco";
+"settings.keyboardLayout.danish" = "Danés";
+"settings.keyboardLayout.norwegian" = "Noruego bokmål";
+"settings.keyboardLayout.finnish" = "Finés";
+"settings.keyboardLayout.spanish" = "Español";
+"settings.keyboardLayout.italian" = "Italiano";
+"settings.keyboardLayout.hint" = "El modo automático asigna la fuente de entrada actual de macOS a una distribución RDP cuando es posible. VNC sigue la fuente activa de macOS y no negocia la distribución.";
 "settings.autoHideSidebarWhileConnected" = "Ocultar la barra lateral izquierda mientras haya conexión";
 "settings.autoHideSessionTabsWhileConnected" = "Ocultar las pestañas de sesión mientras haya conexión";
 
@@ -394,3 +416,24 @@
 "wol.wake" = "Activar equipo";
 "wol.hint" = "Envía un paquete mágico en la red local antes de conectar.";
 "wol.error" = "No se pudo enviar el paquete Wake-on-LAN.";
+
+/* Tight VNC file transfer */
+"vnc.files.title" = "Archivos VNC (Tight)";
+"vnc.files.parent" = "Carpeta superior";
+"vnc.files.refresh" = "Actualizar";
+"vnc.files.upload" = "Subir";
+"vnc.files.download" = "Descargar";
+"vnc.files.open" = "Abrir carpeta";
+"vnc.files.empty" = "Esta carpeta está vacía.";
+"vnc.files.notSupported" = "El servidor no anuncia el canal antiguo de transferencia Tight. Usa SFTP en su lugar.";
+"vnc.files.hint" = "Disponible solo en servidores que anuncian transferencia Tight. Límite de 256 MiB por archivo.";
+"vnc.files.failed" = "Error en la operación de archivos VNC.";
+"vnc.files.uploadUnavailable" = "El servidor no anuncia el canal de carga Tight. Se recomienda SFTP para transferir archivos.";
+"vnc.files.uploadHint" = "La carga requiere que el servidor anuncie la función de carga de archivos Tight. Se recomienda SFTP para transferir archivos. El límite es de 256 MiB por archivo.";
+"vnc.files.uploading" = "Subiendo…";
+"vnc.files.uploadSent" = "Se enviaron los datos. Actualiza la carpeta para comprobarlo; VNC no confirma que el archivo se haya guardado.";
+"vnc.files.uploadFailed" = "Error al subir. El archivo puede estar incompleto; comprueba el archivo remoto antes de volver a intentarlo.";
+"vnc.files.uploadExists" = "Ya existe un archivo con este nombre.";
+"vnc.files.downloadFailed" = "No se pudo descargar el archivo o supera 256 MiB.";
+"vnc.files.downloading" = "Descargando…";
+"vnc.files.downloadComplete" = "Descarga completada.";

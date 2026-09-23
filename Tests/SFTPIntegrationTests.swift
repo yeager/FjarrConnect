@@ -72,6 +72,20 @@ final class SFTPIntegrationTests: XCTestCase {
         XCTAssertNil(session.errorMessage)
     }
 
+    func testSSHProfileIdentityAuthenticatesInEmbeddedTerminal() throws {
+        let server = try SFTPServerFixture()
+        defer { server.close() }
+        let session = SSHRemoteSession(profile: server.terminalProfile(), password: nil,
+                                       processEnvironment: server.terminalEnvironment,
+                                       additionalArguments: server.terminalArguments)
+        defer { session.stop() }
+        session.start()
+        let authenticated = (try? waitUntil(timeout: 8) {
+            session.diagnosticText.contains("SSH_KEY_AUTH_OK") || session.status.isFinished
+        }) != nil && session.diagnosticText.contains("SSH_KEY_AUTH_OK")
+        XCTAssertTrue(authenticated, session.diagnosticText)
+    }
+
     func testClosingTransferPreservesDestinationAndOtherSession() throws {
         try interruptTransfer(closeSession: true)
     }
@@ -241,6 +255,9 @@ private final class SFTPServerFixture {
     let directory: URL
     let remote: URL
     let clientConfiguration: URL
+    let sshHome: URL
+    let terminalEnvironment: [String]
+    let terminalArguments: [String]
     private let process = Process()
     private let port: UInt16
 
@@ -248,14 +265,24 @@ private final class SFTPServerFixture {
         directory = URL(fileURLWithPath: "/tmp/fjarr-sftp-test-" + UUID().uuidString)
         remote = directory.appendingPathComponent("remote")
         clientConfiguration = directory.appendingPathComponent("ssh.conf")
+        sshHome = directory.appendingPathComponent("home")
+        terminalEnvironment = ["HOME=\(sshHome.path)", "PATH=/usr/bin:/bin:/usr/sbin:/sbin",
+                              "LANG=en_US.UTF-8", "TMPDIR=/tmp"]
+        terminalArguments = ["-o", "UserKnownHostsFile=\(sshHome.appendingPathComponent(".ssh/known_hosts").path)",
+                             "-o", "GlobalKnownHostsFile=/dev/null", "-o", "IdentityAgent=none",
+                             "-o", "IdentitiesOnly=yes"]
         try FileManager.default.createDirectory(at: remote, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        try FileManager.default.createDirectory(at: sshHome.appendingPathComponent(".ssh"), withIntermediateDirectories: true,
+                                                attributes: [.posixPermissions: 0o700])
         port = try Self.unusedPort()
         do {
             for (name, phrase) in [("host", ""), ("client", passphrase)] {
                 try Self.run("/usr/bin/ssh-keygen", ["-q", "-t", "ed25519", "-N", phrase, "-f", directory.appendingPathComponent(name).path])
             }
             let key = try String(contentsOf: directory.appendingPathComponent("host.pub"), encoding: .utf8)
-            try "[127.0.0.1]:\(port) \(key)".write(to: directory.appendingPathComponent("known_hosts"), atomically: true, encoding: .utf8)
+            let knownHost = "[127.0.0.1]:\(port) \(key)"
+            try knownHost.write(to: directory.appendingPathComponent("known_hosts"), atomically: true, encoding: .utf8)
+            try knownHost.write(to: sshHome.appendingPathComponent(".ssh/known_hosts"), atomically: true, encoding: .utf8)
             let serverConfiguration = directory.appendingPathComponent("sshd.conf")
             try """
             Port \(port)
@@ -305,6 +332,13 @@ private final class SFTPServerFixture {
     func profile(name: String) -> ConnectionProfile {
         var profile = ConnectionProfile(name: name, transport: .sftp, host: "127.0.0.1", port: port, username: NSUserName())
         profile.ssh = SSHOptions(startDirectory: remote.path)
+        return profile
+    }
+    func terminalProfile() -> ConnectionProfile {
+        var profile = ConnectionProfile(name: "SSH key fixture", transport: .ssh, host: "127.0.0.1",
+                                        port: port, username: NSUserName())
+        profile.ssh = SSHOptions(identityFile: directory.appendingPathComponent("client").path,
+                                 startCommand: "printf SSH_KEY_AUTH_OK")
         return profile
     }
     func close() {

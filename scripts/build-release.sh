@@ -13,10 +13,22 @@ python3 scripts/check-resources.py --app "$APP"
 mkdir -p "$APP/Contents/Frameworks" "$APP/Contents/Resources/Licenses"
 ARTIFACT="build/rdp-artifacts/rdp-$ARCH"
 OUTPUT="build/rdp-output/$ARCH"
+LOCAL_BUILD="build/rdp-$ARCH/FreeRDP-build"
 RUNTIME_ROOT="$ARTIFACT"
-if [ -f "$OUTPUT/libFjarrRDP.dylib" ] && { [ ! -f "$ARTIFACT/libFjarrRDP.dylib" ] || [ "$OUTPUT/libFjarrRDP.dylib" -nt "$ARTIFACT/libFjarrRDP.dylib" ]; }; then RUNTIME_ROOT="$OUTPUT"; fi
-cp "$RUNTIME_ROOT/libFjarrRDP.dylib" "$APP/Contents/Frameworks/libFjarrRDP.dylib"
-cp "$RUNTIME_ROOT/Licenses/"* "$APP/Contents/Resources/Licenses/"
+RUNTIME="$ARTIFACT/libFjarrRDP.dylib"
+for candidate in "$OUTPUT/libFjarrRDP.dylib" "$LOCAL_BUILD/libFjarrRDP.dylib"; do
+  if [ -f "$candidate" ] && { [ ! -f "$RUNTIME" ] || [ "$candidate" -nt "$RUNTIME" ]; }; then
+    RUNTIME="$candidate"
+    RUNTIME_ROOT="${candidate%/libFjarrRDP.dylib}"
+  fi
+done
+test -f "$RUNTIME"
+cp "$RUNTIME" "$APP/Contents/Frameworks/libFjarrRDP.dylib"
+LICENSE_ROOT="$RUNTIME_ROOT"
+if [ "$LICENSE_ROOT" = "$LOCAL_BUILD" ]; then LICENSE_ROOT="$OUTPUT"; fi
+if [ ! -d "$LICENSE_ROOT/Licenses" ]; then LICENSE_ROOT="$ARTIFACT"; fi
+test -d "$LICENSE_ROOT/Licenses"
+cp "$LICENSE_ROOT/Licenses/"* "$APP/Contents/Resources/Licenses/"
 # Every executable, including the required embedded VNC framework, is single-architecture.
 test -f "$APP/Contents/Frameworks/RoyalVNCKit.framework/Versions/A/RoyalVNCKit"
 while IFS= read -r binary; do

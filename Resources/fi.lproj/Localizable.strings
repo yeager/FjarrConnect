@@ -21,7 +21,7 @@
 "field.protocol" = "Protokolla";
 "field.host" = "Palvelin";
 "field.username" = "Käyttäjätunnus";
-"field.vncUsername" = "Käyttäjätunnus (valinnainen VNC:ssä)";
+"field.vncUsername" = "Käyttäjätunnus";
 "field.password" = "Salasana";
 "field.group" = "Ryhmä";
 "field.port.format" = "Portti (oletus %d)";
@@ -52,7 +52,10 @@
 "auth.title" = "Kirjaudu muodostaaksesi yhteyden";
 "auth.remember" = "Muista Avainnipussa";
 "auth.hint" = "Käytä RDP-yhteyteen tiliä, jolla on oikeus muodostaa yhteys etätietokoneeseen.";
-"auth.vnc.hint" = "Tavallinen VNC käyttää vain salasanaa; jätä käyttäjätunnus tyhjäksi. Anna käyttäjätunnus vain, jos palvelin vaatii käyttäjätilin, esimerkiksi Macin näytönjaossa. Jätä salasana tyhjäksi, jos kirjautumista ei tarvita.";
+"vnc.authenticationMode" = "Todennus";
+"vnc.authentication.standard" = "Tavallinen VNC (salasana)";
+"vnc.authentication.mac" = "Macin näytönjako (käyttäjätunnus pakollinen)";
+"auth.vnc.hint" = "Macin näytönjako vaatii lyhyen käyttäjätunnuksen ja salasanan macOS-tililtä, jolla on jakamisoikeus. Tavallinen VNC käyttää vain salasanaa.";
 "profile.delete.title" = "Poistetaanko tämä tallennettu yhteys?";
 "quickconnect.invalid" = "Anna palvelin tai vnc://-, ssh://- tai rdp://-osoite ja portti väliltä 1–65535. Kirjoita salasanat kirjautumisikkunaan.";
 "session.retry" = "Tarkista osoite ja kirjautumistiedot ja yhdistä uudelleen.";
@@ -69,7 +72,7 @@
 "vnc.ardAuthenticationTimeout" = "Macin näytönjako ei vastannut todennuksen jälkeen. Tarkista, että tilillä on Näytönjaon käyttöoikeus, ja poista palvelu käytöstä ja ota se uudelleen käyttöön etä-Macissa.";
 "vnc.usernameRequired" = "Palvelin vaatii käyttäjätunnuksen. Anna etä-Macin tilin lyhyt käyttäjätunnus ja salasana ja tarkista, että tilillä on Näytönjaon käyttöoikeus.";
 "vnc.connectionFailed" = "VNC-yhteys epäonnistui. Tarkista osoite ja portti ja vahvista sitten, että Näytönjako tai VNC-palvelu on käytössä etätietokoneessa ja että tilillä on käyttöoikeus.";
-"vnc.unsupportedSecurity" = "Palvelin vaatii VNC-suojausmenetelmän, jota FjärrConnect ei vielä tue, kuten VeNCrypt/TLS:n tai RSA-AES:n. Käytä tavallista VNC-todennusta tai valitse palvelimesta yhteensopiva suojausasetus.";
+"vnc.unsupportedSecurity" = "Palvelin tarjoaa VNC-suojausmenetelmän, jota FjärrConnect ei voi käyttää. RSA-AES- ja tukemattomia VeNCrypt-alatyyppejä ei tueta. Käytä varmenteella todennettua VeNCrypt/TLS:ää tai tavallista VNC-todennusta tai valitse palvelimesta yhteensopiva suojausasetus.";
 "rdp.error.network" = "Palvelimeen ei saatu yhteyttä. Tarkista, että etätyöpöytä on käytössä ja osoite ja portti ovat saavutettavissa.";
 "rdp.error.authentication" = "Palvelin hylkäsi kirjautumisen. Tarkista käyttäjätunnus, salasana ja etätyöpöydän käyttöoikeus.";
 "rdp.error.certificate" = "Suojattu yhteys epäonnistui. Tarkista palvelimen varmenne ja TLS-asetukset.";
@@ -198,7 +201,12 @@
 
 "options.choose" = "Valitse…";
 
-"ssh.identity" = "Yksityisen avaimen tiedosto";
+"ssh.identity" = "Profiilin yksityinen avain";
+"ssh.identity.hint" = "Valitse tämän profiilin SSH- ja SFTP-yhteyksissä käytettävä yksityinen avain. OpenSSH pyytää salatun avaimen tunnuslausetta päätteessä. Jätä tyhjäksi, jos käytät SSH-määrityksiä tai ssh-agentia.";
+"ssh.identity.section" = "Profiilin yksityinen avain";
+"ssh.identity.chooseTitle" = "Valitse yksityinen avain";
+"ssh.identity.chooseMessage" = "Valitse tälle profiilille yksityinen SSH-avaintiedosto.";
+"ssh.identity.clear" = "Tyhjennä profiilin avain";
 
 "ssh.jump.host" = "Välityspalvelin";
 
@@ -298,6 +306,20 @@
 "settings.scanConcurrency.hint" = "Useammat tarkistukset nopeuttavat hakua, mutta lisäävät verkkoliikennettä.";
 "settings.appearance" = "Ulkoasu";
 "settings.connections" = "Yhteydet";
+"settings.keyboard" = "Näppäimistö";
+"settings.keyboardLayout" = "RDP-näppäimistöasettelu";
+"settings.keyboardLayout.automatic" = "Automaattinen (macOS-syöttölähde)";
+"settings.keyboardLayout.usEnglish" = "Yhdysvaltain englanti";
+"settings.keyboardLayout.britishEnglish" = "Britannian englanti";
+"settings.keyboardLayout.german" = "Saksa";
+"settings.keyboardLayout.french" = "Ranska";
+"settings.keyboardLayout.swedish" = "Ruotsi";
+"settings.keyboardLayout.danish" = "Tanska";
+"settings.keyboardLayout.norwegian" = "Norjan bokmål";
+"settings.keyboardLayout.finnish" = "Suomi";
+"settings.keyboardLayout.spanish" = "Espanja";
+"settings.keyboardLayout.italian" = "Italia";
+"settings.keyboardLayout.hint" = "Automaattinen tila yhdistää nykyisen macOS-syöttölähteen RDP-asetteluun, kun mahdollista. VNC käyttää aktiivista macOS-syöttölähdettä eikä neuvottele asettelua.";
 "settings.autoHideSidebarWhileConnected" = "Piilota vasen sivupalkki yhteyden aikana";
 "settings.autoHideSessionTabsWhileConnected" = "Piilota istuntovälilehdet yhteyden aikana";
 
@@ -394,3 +416,24 @@
 "wol.wake" = "Herätä laite";
 "wol.hint" = "Lähettää lähiverkkoon magic packet -paketin ennen yhteyttä.";
 "wol.error" = "Wake-on-LAN-paketin lähetys epäonnistui.";
+
+/* Tight VNC file transfer */
+"vnc.files.title" = "VNC-tiedostot (Tight)";
+"vnc.files.parent" = "Yläkansio";
+"vnc.files.refresh" = "Päivitä";
+"vnc.files.upload" = "Lähetä";
+"vnc.files.download" = "Lataa";
+"vnc.files.open" = "Avaa kansio";
+"vnc.files.empty" = "Kansio on tyhjä.";
+"vnc.files.notSupported" = "Palvelin ei ilmoita vanhaa Tight-tiedostonsiirtokanavaa. Käytä sen sijaan SFTP:tä.";
+"vnc.files.hint" = "Käytettävissä vain palvelimilla, jotka ilmoittavat Tight-tiedostonsiirron. Tiedoston enimmäiskoko on 256 MiB.";
+"vnc.files.failed" = "VNC-tiedostotoiminto epäonnistui.";
+"vnc.files.uploadUnavailable" = "Palvelin ei ilmoita Tight-lähetyskanavaa. Tiedostojen siirtoon suositellaan SFTP:tä.";
+"vnc.files.uploadHint" = "Lähetys edellyttää, että palvelin ilmoittaa Tight-tiedostolähetyksen tuesta. Tiedostojen siirtoon suositellaan SFTP:tä. Tiedoston enimmäiskoko on 256 MiB.";
+"vnc.files.uploading" = "Lähetetään…";
+"vnc.files.uploadSent" = "Lähetystiedot lähetetty. Päivitä kansio tarkistaaksesi tuloksen; VNC ei vahvista tiedoston tallennusta.";
+"vnc.files.uploadFailed" = "Lähetys epäonnistui. Tiedosto voi olla puutteellinen; tarkista etätiedosto ennen uutta yritystä.";
+"vnc.files.uploadExists" = "Samanniminen tiedosto on jo olemassa.";
+"vnc.files.downloadFailed" = "Tiedoston lataus epäonnistui tai koko ylitti 256 MiB.";
+"vnc.files.downloading" = "Ladataan…";
+"vnc.files.downloadComplete" = "Lataus valmis.";

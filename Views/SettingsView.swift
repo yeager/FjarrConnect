@@ -13,6 +13,7 @@ struct SettingsView: View {
     @AppStorage(AppSettings.scanTimeout) private var scanTimeout = 2.0
     @AppStorage(AppSettings.scanConcurrency) private var scanConcurrency = 32
     @AppStorage(AppSettings.recordingRetentionDays) private var recordingRetentionDays = 30
+    @AppStorage(AppSettings.keyboardLayout) private var keyboardLayout = RDPKeyboardLayout.automatic.rawValue
     @State private var transfer: ProfileTransfer?
     @State private var transferMessage: String?
     @State private var showingRecordings = false
@@ -29,6 +30,16 @@ struct SettingsView: View {
                 Section("settings.connections") {
                     Toggle("settings.autoStartDiscovery", isOn: $autoStartDiscovery)
                     Toggle("settings.confirmClosingSessions", isOn: $confirmClosingSessions)
+                }
+                Section("settings.keyboard") {
+                    Picker("settings.keyboardLayout", selection: $keyboardLayout) {
+                        ForEach(RDPKeyboardLayout.allCases) { layout in
+                            Text(layout.titleKey).tag(layout.rawValue)
+                        }
+                    }
+                    Text("settings.keyboardLayout.hint")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
             .formStyle(.grouped)
@@ -103,7 +114,10 @@ struct SettingsView: View {
 
     private func chooseExternalImport() {
         let panel = NSOpenPanel()
-        panel.allowedFileTypes = ["rdp", "vnc"]
+        panel.allowedContentTypes = [
+            UTType(filenameExtension: "rdp") ?? .data,
+            UTType(filenameExtension: "vnc") ?? .data
+        ]
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }

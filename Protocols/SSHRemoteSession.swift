@@ -13,10 +13,15 @@ final class SSHRemoteSession: NSObject, RemoteSession, LocalProcessTerminalViewD
     private var loggingFailed = false
     private let logStore: SSHCommandLogStore
     private let logQueue = DispatchQueue(label: "se.fjarrconnect.ssh-command-log")
+    private let processEnvironment: [String]
+    private let additionalArguments: [String]
 
-    init(profile: ConnectionProfile, password: String?, logStore: SSHCommandLogStore = .shared) {
+    init(profile: ConnectionProfile, password: String?, logStore: SSHCommandLogStore = .shared,
+         processEnvironment: [String] = SSHArguments.environment(), additionalArguments: [String] = []) {
         self.profile = profile
         self.logStore = logStore
+        self.processEnvironment = processEnvironment
+        self.additionalArguments = additionalArguments
         loggingEnabled = profile.logsSSHCommands
         super.init()
     }
@@ -27,7 +32,7 @@ final class SSHRemoteSession: NSObject, RemoteSession, LocalProcessTerminalViewD
         view.processDelegate = self
         view.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
         terminal = view
-        var arguments = SSHArguments.make(profile)
+        var arguments = SSHArguments.make(profile, additionalConnectionArguments: additionalArguments)
         if profile.logsSSHCommands {
             notice = NSLocalizedString("ssh.log.waiting", comment: "")
             arguments.append(SSHCommandLogging.remoteCommand)
@@ -36,8 +41,7 @@ final class SSHRemoteSession: NSObject, RemoteSession, LocalProcessTerminalViewD
                 self?.receiveLogEvent(event)
             }
         }
-        view.startProcess(executable: "/usr/bin/ssh", args: arguments,
-                          environment: SSHArguments.environment())
+        view.startProcess(executable: "/usr/bin/ssh", args: arguments, environment: processEnvironment)
         guard view.process.running else {
             status = .disconnected(reason: NSLocalizedString("ssh.ended", comment: ""))
             return

@@ -28,12 +28,37 @@ struct AdvancedConnectionOptions: View {
                     TextField("options.port", value: $ssh.port, format: .number)
                     TextField("field.username", text: optional($ssh.username))
                 }
-                HStack {
-                    TextField("ssh.identity", text: optional($ssh.identityFile))
-                    Button("options.choose") {
-                        let panel = NSOpenPanel(); panel.showsHiddenFiles = true; panel.canChooseDirectories = false
-                        if panel.runModal() == .OK { ssh.identityFile = panel.url?.path }
+                if transport == .ssh || transport == .sftp {
+                    Section("ssh.identity.section") {
+                        HStack {
+                            TextField("ssh.identity", text: optional($ssh.identityFile))
+                                .accessibilityIdentifier("profile.sshIdentityPath")
+                            Button("options.choose") {
+                                let panel = NSOpenPanel()
+                                panel.title = NSLocalizedString("ssh.identity.chooseTitle", comment: "")
+                                panel.message = NSLocalizedString("ssh.identity.chooseMessage", comment: "")
+                                panel.showsHiddenFiles = true
+                                panel.canChooseDirectories = false
+                                panel.canChooseFiles = true
+                                if panel.runModal() == .OK { ssh.identityFile = panel.url?.path }
+                            }
+                            .accessibilityIdentifier("profile.sshIdentityChoose")
+                            if ssh.identityFile != nil {
+                                Button("ssh.identity.clear") { ssh.identityFile = nil }
+                                    .accessibilityIdentifier("profile.sshIdentityClear")
+                            }
+                        }
+                        Text("ssh.identity.hint").font(.caption).foregroundStyle(.secondary)
                     }
+                } else {
+                    HStack {
+                        TextField("ssh.identity", text: optional($ssh.identityFile))
+                        Button("options.choose") {
+                            let panel = NSOpenPanel(); panel.showsHiddenFiles = true; panel.canChooseDirectories = false
+                            if panel.runModal() == .OK { ssh.identityFile = panel.url?.path }
+                        }
+                    }
+                    Text("ssh.identity.hint").font(.caption).foregroundStyle(.secondary)
                 }
                 TextField("ssh.jump.host", text: optional($ssh.jumpHost))
                 TextField("ssh.jump.port", value: $ssh.jumpPort, format: .number)

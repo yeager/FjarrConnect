@@ -11,9 +11,15 @@
 #include <freerdp/graphics.h>
 #include <freerdp/input.h>
 #include <freerdp/error.h>
+#include <freerdp/utils/cliprdr_utils.h>
+#include <winpr/clipboard.h>
+#include <winpr/shell.h>
 #include <winpr/input.h>
 #include <winpr/synch.h>
 #include <winpr/wlog.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <stdatomic.h>
 #include <stdint.h>
 
@@ -22,6 +28,9 @@ typedef struct {
     rdpClientContext common;
     __unsafe_unretained FCRDPView *view; // Worker retains the view until context_free.
     CliprdrClientContext *clipboard;
+    wClipboard *fileClipboard;
+    UINT32 fileGroupDescriptorFormat;
+    _Atomic(UINT32) serverClipboardFlags;
     DispClientContext *display;
     _Atomic(BOOL) displayReady;
     _Atomic(BOOL) clipboardReady;
@@ -42,6 +51,18 @@ static void FCAnnounceClipboard(FCContext *context);
 // file header. Keep this bounded because clipboard redirection is remote input.
 static const NSUInteger FCClipboardImageMaximumBytes = 64 * 1024 * 1024;
 static const uint64_t FCClipboardImageMaximumPixels = 32ULL * 1024 * 1024;
+static const NSUInteger FCClipboardMaximumFiles = 32;
+#define FCClipboardMaximumNameCharacters 259
+static const uint64_t FCClipboardMaximumFileBytes = UINT32_MAX;
+static const UINT32 FCClipboardMaximumFileReadBytes = 4 * 1024 * 1024;
+// Keep the protocol path disabled until it passes an actual Windows paste test.
+// Local manifest and bounded-range tests remain available in the meantime.
+static const BOOL FCClipboardFileTransferEnabled = NO;
+#if !defined(NDEBUG)
+#define FCClipboardLog(format, ...) NSLog((@"FCRDP clipboard " format), ##__VA_ARGS__)
+#else
+#define FCClipboardLog(format, ...) ((void)0)
+#endif
 
 static uint16_t FCReadLE16(const uint8_t *bytes) {
     return (uint16_t)bytes[0] | ((uint16_t)bytes[1] << 8);
@@ -115,6 +136,40 @@ static NSData *FCBMPFromDIB(NSData *dib) {
     return bmp;
 }
 
+static NSData *FCClipboardFileContents(NSURL *url, uint64_t expectedSize, UINT32 flags,
+                                      uint64_t offset, UINT32 requestedLength) {
+    if (!url.isFileURL || (flags != FILECONTENTS_SIZE && flags != FILECONTENTS_RANGE)) return nil;
+    int fd = open(url.fileSystemRepresentation, O_RDONLY | O_NOFOLLOW | O_CLOEXEC);
+    struct stat info = {0};
+    if (fd < 0 || fstat(fd, &info) != 0 || !S_ISREG(info.st_mode) || info.st_size < 0 ||
+        (uint64_t)info.st_size != expectedSize) {
+        if (fd >= 0) close(fd);
+        return nil;
+    }
+
+    NSData *payload = nil;
+    if (flags == FILECONTENTS_SIZE) {
+        uint64_t littleEndianSize = CFSwapInt64HostToLittle(expectedSize);
+        payload = [NSData dataWithBytes:&littleEndianSize length:sizeof(littleEndianSize)];
+    } else if (requestedLength <= FCClipboardMaximumFileReadBytes && offset <= expectedSize) {
+        if (requestedLength == 0 && expectedSize == 0) { close(fd); return [NSData data]; }
+        if (requestedLength == 0) return nil;
+        const uint32_t length = (uint32_t)MIN((uint64_t)requestedLength, expectedSize - offset);
+        if (length == 0) { close(fd); return [NSData data]; }
+        NSMutableData *data = [NSMutableData dataWithLength:length];
+        size_t received = 0;
+        while (received < length) {
+            ssize_t count = pread(fd, (uint8_t *)data.mutableBytes + received,
+                                  length - received, (off_t)(offset + received));
+            if (count <= 0) break;
+            received += (size_t)count;
+        }
+        if (received == length) payload = data;
+    }
+    close(fd);
+    return payload;
+}
+
 @interface FCRDPView : NSView <NSTextInputClient>
 @property(nonatomic, readonly) NSDictionary<NSString *, NSString *> *translations;
 @property(atomic) int connectionStatus;
@@ -124,6 +179,8 @@ static NSData *FCBMPFromDIB(NSData *dib) {
 @property(atomic) BOOL clipboardActive;
 @property(atomic, copy) NSData *clipboardText;
 @property(atomic, copy) NSData *clipboardImage;
+@property(atomic, copy) NSData *clipboardFileDescriptors;
+@property(atomic, copy) NSArray<NSURL *> *clipboardFiles;
 @property(atomic) uint32_t clipboardRequestedFormat;
 @property(atomic) BOOL needsClipboardAnnouncement;
 @property(atomic) BOOL clipboardAllowed;
@@ -136,9 +193,15 @@ static NSData *FCBMPFromDIB(NSData *dib) {
 - (void)start;
 - (void)stop;
 - (void)setSessionActive:(BOOL)active;
+- (void)captureClipboardFromPasteboard:(NSPasteboard *)pasteboard;
 - (void)enqueue:(FCInput)input;
 - (void)publishFrame:(rdpGdi *)gdi;
 - (NSData *)DIBFromPasteboard:(NSPasteboard *)pasteboard;
+- (NSArray<NSURL *> *)clipboardFileURLsFromPasteboard:(NSPasteboard *)pasteboard;
+- (NSData *)fileDescriptorDataForURLs:(NSArray<NSURL *> *)urls;
+- (NSData *)clipboardFileContentsForURL:(NSURL *)url expectedSize:(uint64_t)expectedSize
+                                  flags:(uint32_t)flags offset:(uint64_t)offset requestedLength:(uint32_t)requestedLength;
+- (NSData *)unicodeInputDataForText:(NSString *)text;
 - (void)receiveClipboardDIB:(NSData *)dib;
 - (void)writeClipboardDIB:(NSData *)dib;
 - (NSString *)text:(NSString *)key;
@@ -231,6 +294,8 @@ static NSData *FCBMPFromDIB(NSData *dib) {
     self.clipboardActive = NO;
     self.clipboardText = nil;
     self.clipboardImage = nil;
+    self.clipboardFileDescriptors = nil;
+    self.clipboardFiles = nil;
     [_clipboardTimer invalidate]; _clipboardTimer = nil;
     if (_certificateAlert) [NSApp abortModal];
     [_lock lock];
@@ -243,28 +308,122 @@ static NSData *FCBMPFromDIB(NSData *dib) {
     self.clipboardActive = active && NSApp.isActive && self.window.isKeyWindow && self.clipboardAllowed;
     // Changing tabs never uploads a clipboard copied in another session.
     _clipboardChange = NSPasteboard.generalPasteboard.changeCount;
-    if (!active) { self.clipboardText = nil; self.clipboardImage = nil; }
+    if (!active) {
+        self.clipboardText = nil; self.clipboardImage = nil;
+        self.clipboardFileDescriptors = nil; self.clipboardFiles = nil;
+    }
 }
 - (void)clipboardTick {
     BOOL active = _sessionActive && NSApp.isActive && self.window.isKeyWindow && self.clipboardAllowed;
     if (self.clipboardActive != active) {
         self.clipboardActive = active;
         _clipboardChange = NSPasteboard.generalPasteboard.changeCount;
-        if (!active) { self.clipboardText = nil; self.clipboardImage = nil; [self releaseInput]; }
+        if (!active) {
+            self.clipboardText = nil; self.clipboardImage = nil;
+            self.clipboardFileDescriptors = nil; self.clipboardFiles = nil;
+            [self releaseInput];
+        }
     }
     NSPasteboard *pasteboard = NSPasteboard.generalPasteboard;
     if (!active || self.connectionStatus != 2 || pasteboard.changeCount == _clipboardChange) return;
     _clipboardChange = pasteboard.changeCount;
+    [self captureClipboardFromPasteboard:pasteboard];
+}
+- (void)captureClipboardFromPasteboard:(NSPasteboard *)pasteboard {
+    NSArray<NSURL *> *fileURLs = [self clipboardFileURLsFromPasteboard:pasteboard];
+    self.clipboardFiles = fileURLs;
+    self.clipboardFileDescriptors = [self fileDescriptorDataForURLs:fileURLs];
+    FCClipboardLog(@"local-files count=%lu descriptor-bytes=%lu active=%d",
+                   (unsigned long)fileURLs.count, (unsigned long)self.clipboardFileDescriptors.length, self.clipboardActive);
     NSData *image = [self DIBFromPasteboard:pasteboard];
     self.clipboardImage = image;
-    NSString *text = [pasteboard stringForType:NSPasteboardTypeString];
-    if (text.length > 512 * 1024) { self.clipboardText = nil; self.needsClipboardAnnouncement = image != nil; return; }
-    text = [[text stringByReplacingOccurrencesOfString:@"\r\n" withString:@"\n"] stringByReplacingOccurrencesOfString:@"\n" withString:@"\r\n"];
-    NSMutableData *data = [[text dataUsingEncoding:NSUTF16LittleEndianStringEncoding] mutableCopy];
-    if (!data || data.length > 1024 * 1024) { self.clipboardText = nil; self.needsClipboardAnnouncement = image != nil; return; }
-    const uint16_t nul = 0; [data appendBytes:&nul length:2];
-    self.clipboardText = data;
+    // Finder may expose a path as plain text as well as a file URL. Do not
+    // accidentally copy a local path to Windows as ordinary clipboard text.
+    NSString *text = fileURLs.count ? nil : [pasteboard stringForType:NSPasteboardTypeString];
+    if (text.length > 512 * 1024) self.clipboardText = nil;
+    else {
+        text = [[text stringByReplacingOccurrencesOfString:@"\r\n" withString:@"\n"] stringByReplacingOccurrencesOfString:@"\n" withString:@"\r\n"];
+        NSMutableData *data = [[text dataUsingEncoding:NSUTF16LittleEndianStringEncoding] mutableCopy];
+        if (data && data.length <= 1024 * 1024) {
+            const uint16_t nul = 0; [data appendBytes:&nul length:2];
+            self.clipboardText = data;
+        } else self.clipboardText = nil;
+    }
     self.needsClipboardAnnouncement = YES;
+}
+- (NSArray<NSURL *> *)clipboardFileURLsFromPasteboard:(NSPasteboard *)pasteboard {
+    // Finder's file-url objects can resolve to an internal /.file/id=… URL,
+    // which is not a readable path. Prefer its filename list when available.
+    NSArray *paths = [pasteboard propertyListForType:@"NSFilenamesPboardType"];
+    NSMutableArray<NSURL *> *candidates = [NSMutableArray new];
+    if ([paths isKindOfClass:NSArray.class]) {
+        for (id path in paths) {
+            if ([path isKindOfClass:NSString.class] && [path length] > 0)
+                [candidates addObject:[NSURL fileURLWithPath:path]];
+        }
+    }
+    if (candidates.count == 0) {
+        NSArray *objects = [pasteboard readObjectsForClasses:@[NSURL.class]
+                                                      options:@{ NSPasteboardURLReadingFileURLsOnlyKey: @YES }];
+        if ([objects isKindOfClass:NSArray.class]) {
+            for (id object in objects) if ([object isKindOfClass:NSURL.class]) [candidates addObject:object];
+        }
+    }
+    if (candidates.count == 0) return @[];
+    NSMutableArray<NSURL *> *files = [NSMutableArray arrayWithCapacity:MIN(candidates.count, FCClipboardMaximumFiles)];
+    NSMutableSet<NSString *> *seen = [NSMutableSet new];
+    for (NSURL *candidate in candidates) {
+        if (files.count >= FCClipboardMaximumFiles) break;
+        NSURL *url = [candidate URLByStandardizingPath];
+        if (!url.isFileURL || !url.path.length || [seen containsObject:url.path]) continue;
+        struct stat info = {0};
+        if (lstat(url.fileSystemRepresentation, &info) != 0 || !S_ISREG(info.st_mode) ||
+            info.st_size < 0 || (uint64_t)info.st_size > FCClipboardMaximumFileBytes) continue;
+        [seen addObject:url.path];
+        [files addObject:url];
+    }
+    return files.copy;
+}
+- (NSData *)fileDescriptorDataForURLs:(NSArray<NSURL *> *)urls {
+    if (urls.count == 0 || urls.count > FCClipboardMaximumFiles) return nil;
+    FILEDESCRIPTORW *descriptors = calloc(urls.count, sizeof(FILEDESCRIPTORW));
+    if (!descriptors) return nil;
+    BOOL valid = YES;
+    for (NSUInteger index = 0; index < urls.count; index++) {
+        NSURL *url = urls[index];
+        struct stat info = {0};
+        NSString *name = url.lastPathComponent.precomposedStringWithCanonicalMapping;
+        if (lstat(url.fileSystemRepresentation, &info) != 0 || !S_ISREG(info.st_mode) || info.st_size < 0 ||
+            (uint64_t)info.st_size > FCClipboardMaximumFileBytes || name.length == 0 ||
+            name.length > FCClipboardMaximumNameCharacters || [name containsString:@"/"] ||
+            [name containsString:@"\\"] || [name containsString:@"\n"] || [name containsString:@"\r"]) {
+            valid = NO; break;
+        }
+        FILEDESCRIPTORW *descriptor = &descriptors[index];
+        descriptor->dwFlags = FD_ATTRIBUTES | FD_FILESIZE;
+        descriptor->dwFileAttributes = 0x80; // FILE_ATTRIBUTE_NORMAL
+        descriptor->nFileSizeHigh = (DWORD)((uint64_t)info.st_size >> 32);
+        descriptor->nFileSizeLow = (DWORD)((uint64_t)info.st_size & UINT32_MAX);
+        unichar characters[FCClipboardMaximumNameCharacters] = {0};
+        [name getCharacters:characters range:NSMakeRange(0, name.length)];
+        for (NSUInteger character = 0; character < name.length; character++)
+            descriptor->cFileName[character] = (WCHAR)characters[character];
+    }
+    BYTE *serialized = NULL;
+    UINT32 serializedLength = 0;
+    UINT status = valid ? cliprdr_serialize_file_list(descriptors, (UINT32)urls.count, &serialized, &serializedLength) : ERROR_INVALID_DATA;
+    free(descriptors);
+    if (status != CHANNEL_RC_OK || !serialized || serializedLength == 0 || serializedLength > 1024 * 1024) {
+        free(serialized);
+        return nil;
+    }
+    NSData *result = [NSData dataWithBytes:serialized length:serializedLength];
+    free(serialized);
+    return result;
+}
+- (NSData *)clipboardFileContentsForURL:(NSURL *)url expectedSize:(uint64_t)expectedSize
+                                  flags:(uint32_t)flags offset:(uint64_t)offset requestedLength:(uint32_t)requestedLength {
+    return FCClipboardFileContents(url, expectedSize, flags, offset, requestedLength);
 }
 - (void)receiveClipboard:(NSString *)text {
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -307,6 +466,9 @@ static NSData *FCBMPFromDIB(NSData *dib) {
     rdpContext *base = freerdp_client_context_new(&entry);
     if (!base) { self.errorCode = 0xFFFFFFFF; self.connectionStatus = 3; return; }
     FCContext *ctx = (FCContext *)base; ctx->view = self;
+    ctx->fileClipboard = ClipboardCreate();
+    if (ctx->fileClipboard)
+        ctx->fileGroupDescriptorFormat = ClipboardRegisterFormat(ctx->fileClipboard, "FileGroupDescriptorW");
     freerdp *instance = base->instance;
     instance->PreConnect = FCPreConnect; instance->PostConnect = FCPostConnect; instance->PostDisconnect = FCPostDisconnect;
     instance->VerifyCertificateEx = FCCertificate; instance->VerifyChangedCertificateEx = FCChangedCertificate;
@@ -349,8 +511,10 @@ static NSData *FCBMPFromDIB(NSData *dib) {
     if (!connected && !self.cancelled && self.errorCode == 0) self.errorCode = FREERDP_ERROR_CONNECT_FAILED;
     freerdp_disconnect(instance);
     [_lock lock]; _context = NULL; [_input removeAllObjects]; [_lock unlock];
+    if (ctx->fileClipboard) { ClipboardDestroy(ctx->fileClipboard); ctx->fileClipboard = NULL; }
     freerdp_client_context_free(base);
-    self.clipboardText = nil; self.clipboardImage = nil; self.connectionStatus = 3;
+    self.clipboardText = nil; self.clipboardImage = nil;
+    self.clipboardFileDescriptors = nil; self.clipboardFiles = nil; self.connectionStatus = 3;
     dispatch_async(dispatch_get_main_queue(), ^{ [self->_clipboardTimer invalidate]; self->_clipboardTimer = nil; });
 }
 - (void)setFrameSize:(NSSize)newSize {
@@ -439,7 +603,15 @@ static NSData *FCBMPFromDIB(NSData *dib) {
 // Standard macOS Edit menu shortcuts operate on the remote application.
 - (void)copy:(id)sender { [self sendControlShortcut:8]; }
 - (void)cut:(id)sender { [self sendControlShortcut:7]; }
-- (void)paste:(id)sender { [self clipboardTick]; [self sendControlShortcut:9]; }
+- (void)paste:(id)sender {
+    BOOL active = _sessionActive && NSApp.isActive && self.window.isKeyWindow && self.clipboardAllowed;
+    if (active && self.connectionStatus == 2) {
+        NSPasteboard *pasteboard = NSPasteboard.generalPasteboard;
+        _clipboardChange = pasteboard.changeCount;
+        [self captureClipboardFromPasteboard:pasteboard];
+    }
+    [self sendControlShortcut:9];
+}
 - (void)selectAll:(id)sender { [self sendControlShortcut:0]; }
 - (void)flagsChanged:(NSEvent *)event {
     NSEventModifierFlags mask = 0;
@@ -465,13 +637,26 @@ static NSData *FCBMPFromDIB(NSData *dib) {
     NSString *text = [string isKindOfClass:NSAttributedString.class] ? [string string] : string;
     [self unmarkText];
     if (text.length > 1024 * 1024) return;
+    NSData *input = [self unicodeInputDataForText:text];
     [self enqueue:^(FCContext *ctx) {
-        for (NSUInteger i = 0; i < text.length; i++) {
-            unichar ch = [text characterAtIndex:i];
-            freerdp_input_send_unicode_keyboard_event(ctx->common.context.input, KBD_FLAGS_DOWN, ch);
-            freerdp_input_send_unicode_keyboard_event(ctx->common.context.input, KBD_FLAGS_RELEASE, ch);
+        const uint8_t *bytes = input.bytes;
+        for (NSUInteger i = 0; i < input.length; i += sizeof(uint16_t)) {
+            uint16_t unit = 0;
+            memcpy(&unit, bytes + i, sizeof(unit));
+            unit = CFSwapInt16LittleToHost(unit);
+            freerdp_input_send_unicode_keyboard_event(ctx->common.context.input, KBD_FLAGS_DOWN, unit);
+            freerdp_input_send_unicode_keyboard_event(ctx->common.context.input, KBD_FLAGS_RELEASE, unit);
         }
     }];
+}
+- (NSData *)unicodeInputDataForText:(NSString *)text {
+    NSMutableData *input = [NSMutableData dataWithLength:text.length * sizeof(uint16_t)];
+    uint8_t *bytes = input.mutableBytes;
+    for (NSUInteger i = 0; i < text.length; i++) {
+        uint16_t unit = CFSwapInt16HostToLittle([text characterAtIndex:i]);
+        memcpy(bytes + i * sizeof(unit), &unit, sizeof(unit));
+    }
+    return input;
 }
 - (void)doCommandBySelector:(SEL)selector {
     NSEvent *event = NSApp.currentEvent;
@@ -585,32 +770,49 @@ static BOOL FCPointerDefault(rdpContext *context) {
 static BOOL FCPointerNull(rdpContext *context) {
     FCRDPView *view = FCView(context); dispatch_async(dispatch_get_main_queue(), ^{ view.remoteCursor = [[NSCursor alloc] initWithImage:[[NSImage alloc] initWithSize:NSMakeSize(1,1)] hotSpot:NSZeroPoint]; [view.window invalidateCursorRectsForView:view]; }); return TRUE;
 }
-static UINT FCClipCapabilities(CliprdrClientContext *clip, const CLIPRDR_CAPABILITIES *caps) { return CHANNEL_RC_OK; }
+static UINT FCClipCapabilities(CliprdrClientContext *clip, const CLIPRDR_CAPABILITIES *caps) {
+    FCContext *ctx = clip->custom;
+    for (UINT32 index = 0; index < caps->cCapabilitiesSets; index++) {
+        const CLIPRDR_CAPABILITY_SET *set = &caps->capabilitySets[index];
+        if (set->capabilitySetType == CB_CAPSTYPE_GENERAL && set->capabilitySetLength >= CB_CAPSTYPE_GENERAL_LEN) {
+            ctx->serverClipboardFlags = ((const CLIPRDR_GENERAL_CAPABILITY_SET *)set)->generalFlags;
+            FCClipboardLog(@"server-flags=0x%08x stream-files=%d", ctx->serverClipboardFlags,
+                           (ctx->serverClipboardFlags & CB_STREAM_FILECLIP_ENABLED) != 0);
+            break;
+        }
+    }
+    return CHANNEL_RC_OK;
+}
 static UINT FCClipReady(CliprdrClientContext *clip, const CLIPRDR_MONITOR_READY *ready) {
     FCContext *ctx = clip->custom;
-    CLIPRDR_GENERAL_CAPABILITY_SET general = {CB_CAPSTYPE_GENERAL, CB_CAPSTYPE_GENERAL_LEN, CB_CAPS_VERSION_2, CB_USE_LONG_FORMAT_NAMES};
+    CLIPRDR_GENERAL_CAPABILITY_SET general = {CB_CAPSTYPE_GENERAL, CB_CAPSTYPE_GENERAL_LEN, CB_CAPS_VERSION_2,
+        CB_USE_LONG_FORMAT_NAMES};
+    if (FCClipboardFileTransferEnabled && ctx->fileGroupDescriptorFormat && ctx->view.clipboardAllowed)
+        general.generalFlags |= CB_STREAM_FILECLIP_ENABLED;
     CLIPRDR_CAPABILITIES caps = {0}; caps.cCapabilitiesSets = 1; caps.capabilitySets = (CLIPRDR_CAPABILITY_SET *)&general;
     UINT result = clip->ClientCapabilities(clip, &caps); ctx->clipboardReady = TRUE;
+    FCClipboardLog(@"client-flags=0x%08x result=%u", general.generalFlags, result);
     FCAnnounceClipboard(ctx); return result;
 }
 static void FCAnnounceClipboard(FCContext *ctx) {
     if (!ctx->clipboard) return;
-    CLIPRDR_FORMAT formats[2] = { {CF_DIB, NULL}, {CF_UNICODETEXT, NULL} };
+    CLIPRDR_FORMAT formats[3] = {0};
     CLIPRDR_FORMAT_LIST list = {0};
     if (ctx->view.clipboardActive) {
-        // Keep DIB first when both formats are available, which lets Windows
-        // paste a copied screenshot as an image instead of choosing its text.
-        if (ctx->view.clipboardImage && ctx->view.clipboardText) {
-            list.formats = formats;
-            list.numFormats = 2;
-        } else if (ctx->view.clipboardImage) {
-            list.formats = &formats[0];
-            list.numFormats = 1;
-        } else if (ctx->view.clipboardText) {
-            list.formats = &formats[1];
-            list.numFormats = 1;
-        }
+        // Finder may publish both a file URL and its path as text. Only the
+        // descriptor format is sent for that clipboard to avoid leaking paths.
+        if (FCClipboardFileTransferEnabled && ctx->view.clipboardFileDescriptors.length && ctx->fileGroupDescriptorFormat &&
+            (ctx->serverClipboardFlags & CB_STREAM_FILECLIP_ENABLED))
+            formats[list.numFormats++] = (CLIPRDR_FORMAT){ctx->fileGroupDescriptorFormat, "FileGroupDescriptorW"};
+        // Keep DIB ahead of text so Windows pastes an image when both exist.
+        if (ctx->view.clipboardImage) formats[list.numFormats++] = (CLIPRDR_FORMAT){CF_DIB, NULL};
+        if (ctx->view.clipboardText) formats[list.numFormats++] = (CLIPRDR_FORMAT){CF_UNICODETEXT, NULL};
     }
+    list.formats = formats;
+    FCClipboardLog(@"announce count=%u files=%lu image=%d text=%d server-stream-files=%d",
+                   list.numFormats, (unsigned long)ctx->view.clipboardFiles.count,
+                   ctx->view.clipboardImage != nil, ctx->view.clipboardText != nil,
+                   (ctx->serverClipboardFlags & CB_STREAM_FILECLIP_ENABLED) != 0);
     ctx->clipboard->ClientFormatList(ctx->clipboard, &list);
 }
 static UINT FCClipList(CliprdrClientContext *clip, const CLIPRDR_FORMAT_LIST *list) {
@@ -639,13 +841,56 @@ static UINT FCClipRequest(CliprdrClientContext *clip, const CLIPRDR_FORMAT_DATA_
     if (ctx->view.clipboardActive) {
         if (request->requestedFormatId == CF_DIB) data = ctx->view.clipboardImage;
         else if (request->requestedFormatId == CF_UNICODETEXT) data = ctx->view.clipboardText;
+        else if (FCClipboardFileTransferEnabled && request->requestedFormatId == ctx->fileGroupDescriptorFormat &&
+                 (ctx->serverClipboardFlags & CB_STREAM_FILECLIP_ENABLED)) data = ctx->view.clipboardFileDescriptors;
     }
     CLIPRDR_FORMAT_DATA_RESPONSE response = {0}; response.common.msgFlags = CB_RESPONSE_FAIL;
-    const NSUInteger maximum = request->requestedFormatId == CF_DIB ? FCClipboardImageMaximumBytes : 1024 * 1024 + 2;
+    const NSUInteger maximum = request->requestedFormatId == CF_DIB ? FCClipboardImageMaximumBytes :
+        (request->requestedFormatId == ctx->fileGroupDescriptorFormat ? 1024 * 1024 : 1024 * 1024 + 2);
     if (data && data.length <= maximum) {
         response.common.msgFlags = CB_RESPONSE_OK; response.common.dataLen = (UINT32)data.length; response.requestedFormatData = data.bytes;
     }
+    FCClipboardLog(@"format-request id=0x%08x available=%d bytes=%lu", request->requestedFormatId,
+                   data != nil, (unsigned long)data.length);
     return clip->ClientFormatDataResponse(clip, &response);
+}
+static UINT FCClipFileContentsRequest(CliprdrClientContext *clip, const CLIPRDR_FILE_CONTENTS_REQUEST *request) {
+    FCContext *ctx = clip->custom;
+    CLIPRDR_FILE_CONTENTS_RESPONSE response = {0};
+    response.common.msgType = CB_FILECONTENTS_RESPONSE;
+    response.common.msgFlags = CB_RESPONSE_FAIL;
+    response.streamId = request->streamId;
+    FCClipboardLog(@"file-request index=%u flags=0x%08x requested=%u", request->listIndex,
+                   request->dwFlags, request->cbRequested);
+    if (!FCClipboardFileTransferEnabled || !ctx->view.clipboardActive ||
+        !(ctx->serverClipboardFlags & CB_STREAM_FILECLIP_ENABLED) ||
+        !ctx->view.clipboardFiles.count || !ctx->view.clipboardFileDescriptors.length ||
+        request->listIndex >= ctx->view.clipboardFiles.count)
+        return clip->ClientFileContentsResponse(clip, &response);
+
+    FILEDESCRIPTORW *descriptors = NULL;
+    UINT32 descriptorCount = 0;
+    NSData *descriptorData = ctx->view.clipboardFileDescriptors;
+    UINT parsed = cliprdr_parse_file_list(descriptorData.bytes, (UINT32)descriptorData.length, &descriptors, &descriptorCount);
+    if (parsed != CHANNEL_RC_OK || !descriptors || request->listIndex >= descriptorCount) {
+        free(descriptors);
+        return clip->ClientFileContentsResponse(clip, &response);
+    }
+    const FILEDESCRIPTORW descriptor = descriptors[request->listIndex];
+    free(descriptors);
+    const uint64_t expectedSize = ((uint64_t)descriptor.nFileSizeHigh << 32) | descriptor.nFileSizeLow;
+
+    NSURL *url = ctx->view.clipboardFiles[request->listIndex];
+    const uint64_t offset = ((uint64_t)request->nPositionHigh << 32) | request->nPositionLow;
+    NSData *payload = FCClipboardFileContents(url, expectedSize, request->dwFlags,
+                                              offset, request->cbRequested);
+    if (payload) {
+        response.common.msgFlags = CB_RESPONSE_OK;
+        response.cbRequested = (UINT32)payload.length;
+        response.requestedData = payload.bytes;
+    }
+    FCClipboardLog(@"file-response success=%d bytes=%lu", payload != nil, (unsigned long)payload.length);
+    return clip->ClientFileContentsResponse(clip, &response);
 }
 static UINT FCClipResponse(CliprdrClientContext *clip, const CLIPRDR_FORMAT_DATA_RESPONSE *response) {
     FCContext *ctx = clip->custom; UINT32 length = response->common.dataLen;
@@ -670,6 +915,7 @@ static void FCChannelConnected(void *context, const ChannelConnectedEventArgs *e
         clip->ServerCapabilities = FCClipCapabilities; clip->MonitorReady = FCClipReady;
         clip->ServerFormatList = FCClipList; clip->ServerFormatListResponse = FCClipListResponse;
         clip->ServerFormatDataRequest = FCClipRequest; clip->ServerFormatDataResponse = FCClipResponse;
+        clip->ServerFileContentsRequest = FCClipFileContentsRequest;
     } else if (strcmp(event->name, DISP_DVC_CHANNEL_NAME) == 0) {
         ctx->display = event->pInterface; ctx->display->custom = ctx; ctx->display->DisplayControlCaps = FCDisplayCaps;
     } else freerdp_client_OnChannelConnectedEventHandler(&ctx->common, event);

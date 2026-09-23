@@ -9,6 +9,7 @@ struct ProfileEditorView: View {
     @State private var host: String
     @State private var portText: String
     @State private var username: String
+    @State private var usesMacScreenSharingAuthentication: Bool
     @State private var password = ""
     @State private var changePassword = false
     @State private var group: String
@@ -38,6 +39,7 @@ struct ProfileEditorView: View {
         _host = State(initialValue: profile?.host ?? "")
         _portText = State(initialValue: profile.map { String($0.port) } ?? "")
         _username = State(initialValue: profile?.username ?? "")
+        _usesMacScreenSharingAuthentication = State(initialValue: profile?.usesMacScreenSharingAuthentication ?? false)
         _group = State(initialValue: profile?.group ?? "")
         _tags = State(initialValue: profile?.normalizedTags.joined(separator: ", ") ?? "")
         _logsSSHCommands = State(initialValue: profile?.logsSSHCommands ?? false)
@@ -65,7 +67,13 @@ struct ProfileEditorView: View {
                 }
                 Section {
                     TextField(LocalizedStringKey(transport == .vnc ? "field.vncUsername" : "field.username"), text: $username)
+                        .accessibilityIdentifier("profile.username")
                     if transport == .vnc {
+                        Picker("vnc.authenticationMode", selection: $usesMacScreenSharingAuthentication) {
+                            Text("vnc.authentication.standard").tag(false)
+                            Text("vnc.authentication.mac").tag(true)
+                        }
+                        .accessibilityIdentifier("profile.vncAuthenticationMode")
                         Text("auth.vnc.hint").font(.caption).foregroundStyle(.secondary)
                     }
                     if transport == .ssh || transport == .sftp {
@@ -105,7 +113,9 @@ struct ProfileEditorView: View {
         let cleanGroup = group.trimmingCharacters(in: .whitespacesAndNewlines)
         var result = ConnectionProfile(id: existing?.id ?? UUID(), name: cleanName.isEmpty ? cleanHost : cleanName,
                                        transport: transport, host: cleanHost, port: port,
-                                       username: cleanUser.isEmpty ? nil : cleanUser, group: cleanGroup.isEmpty ? nil : cleanGroup,
+                                       username: cleanUser.isEmpty ? nil : cleanUser,
+                                       usesMacScreenSharingAuthentication: transport == .vnc && usesMacScreenSharingAuthentication,
+                                       group: cleanGroup.isEmpty ? nil : cleanGroup,
                                        isFavorite: existing?.isFavorite ?? false,
                                        reconnectsAutomatically: automaticReconnect,
                                        logsSSHCommands: transport == .ssh && logsSSHCommands)

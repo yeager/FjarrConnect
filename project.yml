@@ -8,9 +8,9 @@ options:
 
 packages:
   RoyalVNCKit:
-    # Tested Unicode clipboard and active-session policy fork; protocol proposal: royalvnc#38.
+    # Adds separate advertised download/upload capabilities to the Tight file-transfer APIs in royalvnc#2.
     url: https://github.com/yeager/royalvnc
-    revision: "03bf56cdd99292c466258c7b06d815bd47b3a57a"
+    revision: "fcc9a436ae200c8c0e05011459c15810088e449e"
   SwiftTerm:
     url: https://github.com/migueldeicaza/SwiftTerm
     exactVersion: "1.10.1"

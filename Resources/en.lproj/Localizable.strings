@@ -26,7 +26,7 @@
 "field.protocol"             = "Protocol";
 "field.host"                 = "Host";
 "field.username"             = "Username";
-"field.vncUsername" = "Username (optional for VNC)";
+"field.vncUsername" = "Username";
 "field.password"             = "Password";
 "field.group"                = "Group";
 "field.port.format"          = "Port (default %d)";
@@ -60,7 +60,10 @@
 "auth.title" = "Sign in to connect";
 "auth.remember" = "Remember in Keychain";
 "auth.hint" = "For RDP, use an account allowed to connect to the remote computer.";
-"auth.vnc.hint" = "Standard VNC uses only a password; leave Username empty. Enter a username only if the server requires an account, such as Mac Screen Sharing. Leave the password empty if no authentication is needed.";
+"vnc.authenticationMode" = "Authentication";
+"vnc.authentication.standard" = "Standard VNC (password)";
+"vnc.authentication.mac" = "Mac Screen Sharing (username required)";
+"auth.vnc.hint" = "Mac Screen Sharing requires the short username and password of a macOS account allowed to share its screen. Standard VNC uses only a password.";
 "profile.delete.title" = "Delete this saved connection?";
 "quickconnect.invalid" = "Enter a host or vnc://, ssh://, rdp:// address with a port between 1 and 65535. Enter passwords in the sign-in dialog.";
 "session.retry" = "Check the address and credentials, then reconnect.";
@@ -81,7 +84,7 @@
 
 "vnc.usernameRequired" = "This server requires a username. Enter the remote Mac account’s short username and password, and check that the account is allowed under Screen Sharing.";
 "vnc.connectionFailed" = "The VNC connection failed. Check the address and port, then confirm that Screen Sharing or the VNC service is enabled on the remote computer and that the account is permitted.";
-"vnc.unsupportedSecurity" = "This server requires a VNC security method that FjärrConnect does not support yet, such as VeNCrypt/TLS or RSA-AES. Use standard VNC authentication, or choose a compatible server security setting.";
+"vnc.unsupportedSecurity" = "This server offered a VNC security method FjärrConnect cannot use. RSA-AES and unsupported VeNCrypt subtypes are not supported. Use certificate-authenticated VeNCrypt/TLS or standard VNC authentication, or choose a compatible server security setting.";
 
 "rdp.error.network" = "The server could not be reached. Check that Remote Desktop is enabled and that this address and port are reachable.";
 "rdp.error.authentication" = "The server rejected the sign-in. Check the username, password and permission to use Remote Desktop.";
@@ -213,7 +216,12 @@
 
 "options.choose" = "Choose…";
 
-"ssh.identity" = "Private key file";
+"ssh.identity" = "Private key for this profile";
+"ssh.identity.hint" = "Choose the private key used by this profile’s SSH and SFTP connections. OpenSSH asks for its passphrase in the terminal if encrypted. Leave empty to use your SSH configuration or ssh-agent.";
+"ssh.identity.section" = "Private key for this profile";
+"ssh.identity.chooseTitle" = "Choose private key";
+"ssh.identity.chooseMessage" = "Choose a private SSH key file for this profile.";
+"ssh.identity.clear" = "Clear profile key";
 
 "ssh.jump.host" = "Jump host";
 
@@ -313,6 +321,20 @@
 "settings.scanConcurrency.hint" = "More probes finish a scan sooner but create more network traffic.";
 "settings.appearance" = "Appearance";
 "settings.connections" = "Connections";
+"settings.keyboard" = "Keyboard";
+"settings.keyboardLayout" = "RDP keyboard layout";
+"settings.keyboardLayout.automatic" = "Automatic (macOS input source)";
+"settings.keyboardLayout.usEnglish" = "U.S. English";
+"settings.keyboardLayout.britishEnglish" = "British English";
+"settings.keyboardLayout.german" = "German";
+"settings.keyboardLayout.french" = "French";
+"settings.keyboardLayout.swedish" = "Swedish";
+"settings.keyboardLayout.danish" = "Danish";
+"settings.keyboardLayout.norwegian" = "Norwegian Bokmål";
+"settings.keyboardLayout.finnish" = "Finnish";
+"settings.keyboardLayout.spanish" = "Spanish";
+"settings.keyboardLayout.italian" = "Italian";
+"settings.keyboardLayout.hint" = "Automatic maps the current macOS input source to an RDP layout when possible. VNC follows the active macOS input source; it has no layout negotiation.";
 "settings.autoHideSidebarWhileConnected" = "Hide the left sidebar while connected";
 "settings.autoHideSessionTabsWhileConnected" = "Hide session tabs while connected";
 
@@ -409,3 +431,24 @@
 "wol.wake" = "Wake device";
 "wol.hint" = "Sends a local network magic packet before connecting.";
 "wol.error" = "Could not send the Wake-on-LAN packet.";
+
+/* Tight VNC file transfer */
+"vnc.files.title" = "VNC files (Tight)";
+"vnc.files.parent" = "Parent folder";
+"vnc.files.refresh" = "Refresh";
+"vnc.files.upload" = "Upload";
+"vnc.files.download" = "Download";
+"vnc.files.open" = "Open folder";
+"vnc.files.empty" = "This folder is empty.";
+"vnc.files.notSupported" = "This server does not advertise the legacy Tight file-transfer channel. Use SFTP instead.";
+"vnc.files.hint" = "Available only on servers that advertise Tight file transfer. Files are limited to 256 MiB.";
+"vnc.files.failed" = "The VNC file operation failed.";
+"vnc.files.uploadUnavailable" = "The server does not advertise the Tight upload channel. SFTP is recommended for file transfers.";
+"vnc.files.uploadHint" = "Uploads require the server to advertise Tight file upload. SFTP is recommended for file transfers. Files are limited to 256 MiB.";
+"vnc.files.uploading" = "Uploading…";
+"vnc.files.uploadSent" = "Upload data sent. Refresh the directory to check; VNC does not confirm that the file was saved.";
+"vnc.files.uploadFailed" = "Upload failed. The file may be incomplete; check the remote file before retrying.";
+"vnc.files.uploadExists" = "A file with this name already exists.";
+"vnc.files.downloadFailed" = "The file could not be downloaded or exceeded the 256 MiB limit.";
+"vnc.files.downloading" = "Downloading…";
+"vnc.files.downloadComplete" = "Download complete.";

@@ -18,12 +18,32 @@ final class VNCIntegrationTests: XCTestCase {
         try exerciseServer(requiresUsername: false, requiresPassword: true)
     }
 
+    func testTightFileBrowserAppearsWhenTheServerAdvertisesDownloadChannels() throws {
+        try exerciseServer(requiresUsername: false, tightFileTransfer: true)
+    }
+
+    func testTightReadOnlyServerStillOffersFileDownloads() throws {
+        try exerciseServer(requiresUsername: false, tightDownloadOnly: true)
+    }
+
+    func testTightUploadSendsFileWhenServerAdvertisesUploadChannel() throws {
+        let source = FileManager.default.temporaryDirectory.appendingPathComponent("fjarrconnect-upload-fixture.txt")
+        let payload = Data((0..<150_000).map { UInt8($0 % 251) })
+        try payload.write(to: source, options: .atomic)
+        defer { try? FileManager.default.removeItem(at: source) }
+        try exerciseServer(requiresUsername: false, uploadFile: source, expectedUpload: payload)
+    }
+
     func testBlackDesktopHintClearsWhenServerStartsSendingContent() throws {
         try exerciseServer(requiresUsername: false, blackInitially: true)
     }
 
     func testDesktopResizeReplacesTheDisplayedFramebuffer() throws {
         try exerciseServer(requiresUsername: false, resize: true)
+    }
+
+    func testInternationalKeyboardCharactersReachVNCServer() throws {
+        try exerciseServer(requiresUsername: false, keyboard: true)
     }
 
     func testVNCFailureMessageIsLocalizedAndDoesNotContainBackendDiagnostics() {
@@ -55,20 +75,33 @@ final class VNCIntegrationTests: XCTestCase {
         )
     }
 
-    func testVNCHandshakeExplainsVeNCryptRequirement() throws {
+    func testVNCRejectsAnUnknownSecurityType() throws {
         try exerciseServer(requiresUsername: false, unsupportedSecurity: true)
     }
 
     private func exerciseServer(requiresUsername: Bool, requiresPassword: Bool = false,
-                                blackInitially: Bool = false, resize: Bool = false,
-                                unsupportedSecurity: Bool = false) throws {
+                                blackInitially: Bool = false, resize: Bool = false, keyboard: Bool = false,
+                                unsupportedSecurity: Bool = false, tightFileTransfer: Bool = false,
+                                tightDownloadOnly: Bool = false, uploadFile: URL? = nil,
+                                expectedUpload: Data? = nil) throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let portFile = directory.appendingPathComponent("port")
         let server = Process()
         server.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
-        server.arguments = ["-c", Self.server, portFile.path, requiresUsername ? "username" : (unsupportedSecurity ? "unsupported" : (requiresPassword ? "password" : (blackInitially ? "black" : (resize ? "resize" : "none"))))]
+        let mode: String
+        if requiresUsername { mode = "username" }
+        else if unsupportedSecurity { mode = "unsupported" }
+        else if requiresPassword { mode = "password" }
+        else if uploadFile != nil { mode = "tight-upload" }
+        else if tightFileTransfer { mode = "tight-files" }
+        else if tightDownloadOnly { mode = "tight-download" }
+        else if blackInitially { mode = "black" }
+        else if resize { mode = "resize" }
+        else if keyboard { mode = "keyboard" }
+        else { mode = "none" }
+        server.arguments = ["-c", Self.server, portFile.path, mode, portFile.path + ".uploaded"]
         server.standardOutput = FileHandle.nullDevice
         // XCTest injects libraries into its host; these must not leak into Python.
         server.environment = ProcessInfo.processInfo.environment.filter {
@@ -108,8 +141,25 @@ final class VNCIntegrationTests: XCTestCase {
             XCTAssertTrue(session.status.error?.contains(NSLocalizedString("vnc.unsupportedSecurity", comment: "")) == true)
         } else {
             XCTAssertEqual(session.status, .connected)
+            XCTAssertEqual(session.fileTransferAvailable, tightFileTransfer || tightDownloadOnly || uploadFile != nil,
+                            "A server advertising file-list and download messages should expose the read-only file browser.")
+            XCTAssertEqual(session.fileUploadAvailable, tightFileTransfer || uploadFile != nil,
+                            "Upload must be available only when the server advertises upload messages.")
+            if let uploadFile {
+                session.uploadLocalFile(uploadFile)
+                let uploadSent = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                    session.fileTransferNotice == NSLocalizedString("vnc.files.uploadSent", comment: "")
+                }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [uploadSent], timeout: 5), .completed)
+                let uploadedFile = URL(fileURLWithPath: portFile.path + ".uploaded")
+                let received = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                    (try? Data(contentsOf: uploadedFile)) == expectedUpload
+                }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [received], timeout: 5), .completed)
+            }
             try assertRenderedDesktop(session, isBlack: blackInitially)
             if resize { try assertResize(session, trigger: URL(fileURLWithPath: portFile.path + ".resize")) }
+            if keyboard { try assertKeyboardCharacters(session, receivedKeys: URL(fileURLWithPath: portFile.path + ".keys")) }
             if blackInitially {
                 let warning = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                     session.notice == NSLocalizedString("vnc.blackScreen", comment: "")
@@ -125,6 +175,104 @@ final class VNCIntegrationTests: XCTestCase {
         session.stop()
         XCTAssertEqual(session.status, .disconnected(reason: nil))
         subscription.cancel()
+    }
+
+    private func assertKeyboardCharacters(_ session: VNCRemoteSession, receivedKeys: URL) throws {
+        let host = NSHostingView(rootView: session.makeScreenView())
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { window.close() }
+        func framebuffer(in view: NSView) -> VNCCAFramebufferView? {
+            if let frame = view as? VNCCAFramebufferView { return frame }
+            return view.subviews.lazy.compactMap { framebuffer(in: $0) }.first
+        }
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            framebuffer(in: host)?.framebufferSize == CGSize(width: 2, height: 2)
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed)
+        let view = try XCTUnwrap(framebuffer(in: host))
+        XCTAssertTrue(window.makeFirstResponder(view))
+
+        // Swedish macOS uses Option+2 for @. Also emulate resolved characters
+        // from QWERTZ/AZERTY and Unicode input sources, then inspect the RFB wire.
+        let option = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
+                                      modifierFlags: [.leftOption], timestamp: 0,
+                                      windowNumber: window.windowNumber, context: nil,
+                                      characters: "", charactersIgnoringModifiers: "",
+                                      isARepeat: false, keyCode: 58)!
+        view.flagsChanged(with: option)
+        let numberDown = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                          modifierFlags: [.leftOption], timestamp: 0,
+                                          windowNumber: window.windowNumber, context: nil,
+                                          characters: "@", charactersIgnoringModifiers: "2",
+                                          isARepeat: false, keyCode: 19)!
+        view.keyDown(with: numberDown)
+        let numberUp = NSEvent.keyEvent(with: .keyUp, location: .zero,
+                                        modifierFlags: [.leftOption], timestamp: 0,
+                                        windowNumber: window.windowNumber, context: nil,
+                                        characters: "@", charactersIgnoringModifiers: "2",
+                                        isARepeat: false, keyCode: 19)!
+        view.keyUp(with: numberUp)
+        let optionUp = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
+                                        modifierFlags: [], timestamp: 0,
+                                        windowNumber: window.windowNumber, context: nil,
+                                        characters: "", charactersIgnoringModifiers: "",
+                                        isARepeat: false, keyCode: 58)!
+        view.flagsChanged(with: optionUp)
+
+        func sendCharacter(_ character: String, keyCode: UInt16) {
+            let down = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                        modifierFlags: [], timestamp: 0,
+                                        windowNumber: window.windowNumber, context: nil,
+                                        characters: character, charactersIgnoringModifiers: character,
+                                        isARepeat: false, keyCode: keyCode)!
+            let up = NSEvent.keyEvent(with: .keyUp, location: .zero,
+                                      modifierFlags: [], timestamp: 0,
+                                      windowNumber: window.windowNumber, context: nil,
+                                      characters: character, charactersIgnoringModifiers: character,
+                                      isARepeat: false, keyCode: keyCode)!
+            view.keyDown(with: down)
+            view.keyUp(with: up)
+        }
+
+        // Key code 6 is the physical Z position on ANSI keyboards but resolves
+        // to Z on QWERTY and Y on QWERTZ. The client should send the resolved
+        // character supplied by the active macOS input source.
+        sendCharacter("y", keyCode: 6)
+        sendCharacter("é", keyCode: 0xFFFF)
+        sendCharacter("åäö", keyCode: 0xFFFE)
+        sendCharacter("€日🙂", keyCode: 0xFFFD)
+
+        let sent = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
+            return contents.split(separator: "\n").count >= 20
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [sent], timeout: 5), .completed)
+        let contents = try String(contentsOf: receivedKeys, encoding: .utf8)
+        let events = try contents.split(separator: "\n").map { line -> (Bool, UInt32) in
+            let fields = line.split(separator: ":")
+            guard fields.count == 2, let down = Int(fields[0]), let keysym = UInt32(fields[1], radix: 16) else {
+                throw NSError(domain: "VNC keyboard fixture", code: 1)
+            }
+            return (down == 1, keysym)
+        }
+        XCTAssertEqual(events.map { $0.1 }, [
+            0xFFE9, 0x32, 0x32, 0xFFE9,
+            0x79, 0x79,
+            0xE9, 0xE9,
+            0xE5, 0xE4, 0xF6, 0xE5, 0xE4, 0xF6,
+            0x010020AC, 0x010065E5, 0x0101F642,
+            0x010020AC, 0x010065E5, 0x0101F642
+        ])
+        XCTAssertEqual(events.map { $0.0 }, [
+            true, true, false, false,
+            true, false, true, false,
+            true, true, true, false, false, false,
+            true, true, true, false, false, false
+        ])
     }
 
     private func assertResize(_ session: VNCRemoteSession, trigger: URL) throws {
@@ -242,13 +390,16 @@ with socket.socket() as listener:
         client.sendall(b'RFB 003.008\n')
         read(client, 12)
         if sys.argv[2] == 'unsupported':
-            # VeNCrypt is deliberately unsupported by this SDK revision. The
-            # app must show its localized compatibility explanation, not the
-            # SDK's generic security-selection diagnostic.
-            client.sendall(b'\x01\x13')
+            # Type 0x7f is deliberately unknown. The app must show its
+            # localized compatibility explanation, not a backend diagnostic.
+            client.sendall(b'\x01\x7f')
             assert client.recv(1) == b''
             sys.exit(0)
-        if sys.argv[2] == 'password':
+        if sys.argv[2] in ('tight-files', 'tight-download', 'tight-upload'):
+            client.sendall(b'\x01\x10')
+            assert read(client, 1) == b'\x10'
+            client.sendall(struct.pack('!II', 0, 0))
+        elif sys.argv[2] == 'password':
             client.sendall(b'\x01\x02')
             assert read(client, 1) == b'\x02'
             client.sendall(bytes(range(16)))
@@ -261,9 +412,18 @@ with socket.socket() as listener:
         read(client, 1)
         name = b'FjarrConnect local test'
         client.sendall(struct.pack('!HHBBBBHHHBBBxxxI', 2, 2, 32, 24, 0, 1, 255, 255, 255, 16, 8, 0, len(name)) + name)
+        if sys.argv[2] in ('tight-files', 'tight-download', 'tight-upload'):
+            def capability(code, vendor, signature):
+                return struct.pack('!I', code) + vendor.encode('ascii') + signature.encode('ascii')
+            messages = [capability(130, 'TGHT', 'FTS_LSDT'), capability(131, 'TGHT', 'FTS_DNDT')]
+            clients = [capability(130, 'TGHT', 'FTC_LSRQ'), capability(131, 'TGHT', 'FTC_DNRQ')]
+            if sys.argv[2] in ('tight-files', 'tight-upload'):
+                clients += [capability(132, 'TGHT', 'FTC_UPRQ'), capability(133, 'TGHT', 'FTC_UPDT')]
+            client.sendall(struct.pack('!HHHH', len(messages), len(clients), 0, 0) + b''.join(messages + clients))
         first_frame = None
         resized = False
         sent_cursor = False
+        upload_data = b''
         try:
             while True:
                 kind = read(client, 1)[0]
@@ -287,11 +447,32 @@ with socket.socket() as listener:
                     pixel = b'\xff\x00\x00\x00' if resized else (b'\x00\x00\x00\x00' if black else b'\x00\x00\xff\x00')
                     width, height = (5, 3) if resized else (2, 2)
                     client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 0, 0, width, height, 0) + pixel * width * height)
-                elif kind == 4: read(client, 7)
+                elif kind == 4:
+                    down = read(client, 1)[0]
+                    read(client, 2)
+                    keysym = struct.unpack('!I', read(client, 4))[0]
+                    if sys.argv[2] == 'keyboard':
+                        with open(sys.argv[1] + '.keys', 'a') as out:
+                            out.write(f'{down}:{keysym:08x}\n')
                 elif kind == 5: read(client, 5)
                 elif kind == 6:
                     count = struct.unpack('!xxxI', read(client, 7))[0]
                     read(client, count)
+                elif kind == 132:
+                    header = read(client, 7)
+                    name_size = struct.unpack('!H', header[1:3])[0]
+                    upload_name = read(client, name_size).decode('utf-8')
+                    assert upload_name == '/fjarrconnect-upload-fixture.txt'
+                elif kind == 133:
+                    header = read(client, 5)
+                    real_size, encoded_size = struct.unpack('!HH', header[1:5])
+                    assert real_size == encoded_size
+                    if real_size == 0:
+                        read(client, 4)  # modification time at end of upload
+                        with open(sys.argv[3], 'wb') as uploaded:
+                            uploaded.write(upload_data)
+                    else:
+                        upload_data += read(client, encoded_size)
                 else: break
         except (EOFError, ConnectionError): pass
 """#

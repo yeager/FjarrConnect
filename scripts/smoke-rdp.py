@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise the packaged embedded RDP library and localized certificate rejection.
+"""Exercise packaged clipboard paths and localized certificate rejection.
 
 A disposable TLS server speaks the RDP negotiation, then presents a self-signed
 certificate. The test-only Cocoa probe checks the real certificate dialog and
@@ -39,10 +39,22 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
                     str(library), '-Wl,-rpath,' + str(library.parent), '-o', str(probe)], check=True)
     empty_translations = directory / 'empty-translations.json'
     empty_translations.write_text('{}')
+    keyboard_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
+                                    input='', text=True, capture_output=True, timeout=15,
+                                    env=dict(os.environ, FC_TEST_KEYBOARD_INPUT='1'))
+    assert keyboard_check.returncode == 0, (
+        f'RDP Unicode keyboard input encoding failed: {keyboard_check.stdout}\n{keyboard_check.stderr}')
+    print(f'RDP {architecture}: Unicode keyboard input passed (@, Swedish, Euro, CJK, supplementary scalar).')
     image_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
                                  input='', text=True, capture_output=True, timeout=15,
                                  env=dict(os.environ, FC_TEST_CLIPBOARD_IMAGE='1'))
     assert image_check.returncode == 0, f'RDP image clipboard round-trip failed: {image_check.stdout}\n{image_check.stderr}'
+    files_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
+                                 input='', text=True, capture_output=True, timeout=15,
+                                 env=dict(os.environ, FC_TEST_CLIPBOARD_FILES='1'))
+    assert files_check.returncode == 0, (
+        f'RDP file clipboard manifest validation failed: {files_check.stdout}\n{files_check.stderr}')
+    print(f'RDP {architecture}: local file clipboard manifest passed (Unicode name, regular files only).')
     certificate, key = directory / 'certificate.pem', directory / 'key.pem'
     subprocess.run(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
                     '-keyout', str(key), '-out', str(certificate), '-subj', '/CN=FjarrConnect local test'],
@@ -86,7 +98,8 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
             environment = dict(os.environ, FC_TEST_CERT_FINGERPRINT=fingerprint,
                                FC_TEST_CERT_TITLE=strings['rdp.cert.title'], FC_TEST_CERT_REJECT='1')
             arguments = '\n'.join([f'/v:127.0.0.1:{port}', '/u:fixture', '/p:local-test-only',
-                                   '/size:1280x800', '/dynamic-resolution', '+clipboard', '/sec:tls', ''])
+                                   '/size:1280x800', '/dynamic-resolution', '/kbd:layout:0x0000041D',
+                                   '+clipboard', '/sec:tls', ''])
             result = subprocess.run([str(probe), str(locale_file), str(directory / 'desktop.png')],
                                     input=arguments, text=True, capture_output=True, timeout=30, env=environment)
             worker.join(timeout=16)

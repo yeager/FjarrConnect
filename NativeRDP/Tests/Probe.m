@@ -2,13 +2,26 @@
 #import <AppKit/AppKit.h>
 #import <objc/runtime.h>
 #import "FCRDPView.h"
+#include <fcntl.h>
 #include <string.h>
+#include <unistd.h>
+
+enum {
+    FCProbeFileContentsSize = 0x00000001,
+    FCProbeFileContentsRange = 0x00000002
+};
 
 // These selectors are deliberately private to the native view. Declaring them
 // in this test-only category preserves compile-time checking without exposing
 // them through the shipping C API.
 @interface NSView (FCRDPClipboardProbe)
 - (void)clipboardTick;
+- (void)captureClipboardFromPasteboard:(NSPasteboard *)pasteboard;
+- (NSArray<NSURL *> *)clipboardFileURLsFromPasteboard:(NSPasteboard *)pasteboard;
+- (NSData *)fileDescriptorDataForURLs:(NSArray<NSURL *> *)urls;
+- (NSData *)clipboardFileContentsForURL:(NSURL *)url expectedSize:(uint64_t)expectedSize
+                                  flags:(uint32_t)flags offset:(uint64_t)offset requestedLength:(uint32_t)requestedLength;
+- (NSData *)unicodeInputDataForText:(NSString *)text;
 - (NSData *)DIBFromPasteboard:(NSPasteboard *)pasteboard;
 - (void)receiveClipboardDIB:(NSData *)dib;
 - (void)writeClipboardDIB:(NSData *)dib;
@@ -43,6 +56,16 @@ int main(int argc, const char **argv) {
         NSString *json = [[NSString alloc] initWithData:translations encoding:NSUTF8StringEncoding];
         NSView *view = (__bridge_transfer NSView *)fc_rdp_create(arguments.UTF8String, json.UTF8String);
         if (!view || fc_rdp_abi() != 2) return 3;
+        if ([NSProcessInfo.processInfo.environment[@"FC_TEST_KEYBOARD_INPUT"] isEqualToString:@"1"]) {
+            const uint16_t atAndSwedish[] = { CFSwapInt16HostToLittle(0x0040), CFSwapInt16HostToLittle(0x00E5), CFSwapInt16HostToLittle(0x00C5) };
+            const uint16_t multilingual[] = { CFSwapInt16HostToLittle(0x20AC), CFSwapInt16HostToLittle(0x65E5) };
+            const uint16_t supplementary[] = { CFSwapInt16HostToLittle(0xD83D), CFSwapInt16HostToLittle(0xDE42) };
+            BOOL valid = [[(id)view unicodeInputDataForText:@"@åÅ"] isEqualToData:[NSData dataWithBytes:atAndSwedish length:sizeof(atAndSwedish)]] &&
+                [[(id)view unicodeInputDataForText:@"€日"] isEqualToData:[NSData dataWithBytes:multilingual length:sizeof(multilingual)]] &&
+                [[(id)view unicodeInputDataForText:@"🙂"] isEqualToData:[NSData dataWithBytes:supplementary length:sizeof(supplementary)]] &&
+                [[(id)view unicodeInputDataForText:@""] length] == 0;
+            return valid ? 0 : 10;
+        }
         NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(80, 80, 1100, 750) styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskResizable backing:NSBackingStoreBuffered defer:NO];
         window.title = @"FjärrConnect — embedded RDP integration test";
         window.contentView = view; [window makeKeyAndOrderFront:nil]; [NSApp activateIgnoringOtherApps:YES];
@@ -63,6 +86,95 @@ int main(int argc, const char **argv) {
             [(id)view writeClipboardDIB:dib];
             NSImage *roundTrip = [[NSImage alloc] initWithData:[pasteboard dataForType:NSPasteboardTypeTIFF]];
             return dib.length > 40 && roundTrip.size.width == 2 && roundTrip.size.height == 2 ? 0 : 8;
+        }
+        if ([NSProcessInfo.processInfo.environment[@"FC_TEST_CLIPBOARD_FILES"] isEqualToString:@"1"]) {
+            // Use a private pasteboard so a clipboard test never reads or replaces
+            // the user's real clipboard. Only regular local files are exposed.
+            NSFileManager *files = NSFileManager.defaultManager;
+            NSURL *directory = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString]
+                                          isDirectory:YES];
+            if (![files createDirectoryAtURL:directory withIntermediateDirectories:YES attributes:nil error:nil]) return 9;
+            NSURL *file = [directory URLByAppendingPathComponent:@"fixture-å.txt"];
+            NSURL *emptyFile = [directory URLByAppendingPathComponent:@"empty.txt"];
+            NSURL *folder = [directory URLByAppendingPathComponent:@"folder" isDirectory:YES];
+            NSURL *link = [directory URLByAppendingPathComponent:@"link.txt"];
+            NSError *error = nil;
+            BOOL created = [[NSData dataWithBytes:"clipboard fixture" length:17] writeToURL:file options:0 error:&error] &&
+                [[NSData data] writeToURL:emptyFile options:0 error:&error] &&
+                [files createDirectoryAtURL:folder withIntermediateDirectories:NO attributes:nil error:&error] &&
+                [files createSymbolicLinkAtURL:link withDestinationURL:file error:&error];
+            if (!created) { [files removeItemAtURL:directory error:nil]; return 9; }
+
+            NSPasteboard *pasteboard = [NSPasteboard pasteboardWithUniqueName];
+            BOOL wrote = [pasteboard writeObjects:@[file, emptyFile, folder, link]];
+            NSArray<NSURL *> *urls = wrote ? [(id)view clipboardFileURLsFromPasteboard:pasteboard] : @[];
+            NSData *descriptors = [(id)view fileDescriptorDataForURLs:urls];
+            NSData *unicodeName = [@"fixture-å.txt" dataUsingEncoding:NSUTF16LittleEndianStringEncoding];
+            BOOL valid = urls.count == 2 && [urls.firstObject isEqual:file] && [urls.lastObject isEqual:emptyFile] &&
+                descriptors.length >= 4 + unicodeName.length &&
+                memcmp(descriptors.bytes, "\x02\x00\x00\x00", 4) == 0 &&
+                [descriptors rangeOfData:unicodeName options:0 range:NSMakeRange(0, descriptors.length)].location != NSNotFound;
+            fprintf(stderr, "file-manifest count=%lu order=%d descriptors=%lu unicode=%d\n",
+                    (unsigned long)urls.count,
+                    urls.count == 2 && [urls.firstObject isEqual:file] && [urls.lastObject isEqual:emptyFile],
+                    (unsigned long)descriptors.length,
+                    [descriptors rangeOfData:unicodeName options:0 range:NSMakeRange(0, descriptors.length)].location != NSNotFound);
+
+            const uint64_t fileSize = 17;
+            NSData *size = [(id)view clipboardFileContentsForURL:file expectedSize:fileSize
+                                                           flags:FCProbeFileContentsSize offset:0 requestedLength:0];
+            uint64_t decodedSize = 0;
+            if (size.length == sizeof(decodedSize)) memcpy(&decodedSize, size.bytes, sizeof(decodedSize));
+            NSData *range = [(id)view clipboardFileContentsForURL:file expectedSize:fileSize
+                                                            flags:FCProbeFileContentsRange offset:4 requestedLength:6];
+            NSData *endRange = [(id)view clipboardFileContentsForURL:file expectedSize:fileSize
+                                                               flags:FCProbeFileContentsRange offset:fileSize requestedLength:8];
+            NSData *emptySize = [(id)view clipboardFileContentsForURL:emptyFile expectedSize:0
+                                                                flags:FCProbeFileContentsSize offset:0 requestedLength:0];
+            NSData *emptyRange = [(id)view clipboardFileContentsForURL:emptyFile expectedSize:0
+                                                                 flags:FCProbeFileContentsRange offset:0 requestedLength:0];
+            const BOOL invalidFlagsRejected = ![(id)view clipboardFileContentsForURL:file expectedSize:fileSize
+                flags:FCProbeFileContentsSize | FCProbeFileContentsRange offset:0 requestedLength:8];
+            const BOOL invalidOffsetRejected = ![(id)view clipboardFileContentsForURL:file expectedSize:fileSize
+                flags:FCProbeFileContentsRange offset:fileSize + 1 requestedLength:1];
+            const BOOL zeroLengthRejected = ![(id)view clipboardFileContentsForURL:file expectedSize:fileSize
+                flags:FCProbeFileContentsRange offset:0 requestedLength:0];
+            const BOOL oversizedReadRejected = ![(id)view clipboardFileContentsForURL:file expectedSize:fileSize
+                flags:FCProbeFileContentsRange offset:0 requestedLength:4 * 1024 * 1024 + 1];
+            const BOOL wrongSizeRejected = ![(id)view clipboardFileContentsForURL:file expectedSize:fileSize + 1
+                flags:FCProbeFileContentsRange offset:0 requestedLength:1];
+            const BOOL folderRejected = ![(id)view clipboardFileContentsForURL:folder expectedSize:0
+                flags:FCProbeFileContentsSize offset:0 requestedLength:0];
+            const BOOL symlinkRejected = ![(id)view clipboardFileContentsForURL:link expectedSize:fileSize
+                flags:FCProbeFileContentsSize offset:0 requestedLength:0];
+            valid = valid && decodedSize == fileSize && range &&
+                [range isEqualToData:[@"board " dataUsingEncoding:NSUTF8StringEncoding]] && endRange.length == 0 &&
+                emptySize.length == sizeof(uint64_t) && emptyRange && emptyRange.length == 0 &&
+                invalidFlagsRejected && invalidOffsetRejected && zeroLengthRejected && oversizedReadRejected &&
+                wrongSizeRejected && folderRejected && symlinkRejected;
+            fprintf(stderr, "file-ranges size=%d range=%d end=%d empty-size=%d empty-range=%d invalid=%d/%d/%d/%d/%d/%d/%d\n",
+                    decodedSize == fileSize, range != nil && [range isEqualToData:[@"board " dataUsingEncoding:NSUTF8StringEncoding]],
+                    endRange.length == 0, emptySize.length == sizeof(uint64_t), emptyRange != nil && emptyRange.length == 0,
+                    invalidFlagsRejected, invalidOffsetRejected, zeroLengthRejected, oversizedReadRejected,
+                    wrongSizeRejected, folderRejected, symlinkRejected);
+
+            // Replacing a file with a different length invalidates the captured manifest.
+            int fileDescriptor = open(file.fileSystemRepresentation, O_WRONLY | O_APPEND | O_NOFOLLOW | O_CLOEXEC);
+            const char changed = '!';
+            const BOOL changedFile = fileDescriptor >= 0 && write(fileDescriptor, &changed, sizeof(changed)) == sizeof(changed);
+            if (fileDescriptor >= 0) close(fileDescriptor);
+            const BOOL staleManifestRejected = ![(id)view clipboardFileContentsForURL:file expectedSize:fileSize
+                flags:FCProbeFileContentsSize offset:0 requestedLength:0];
+            fprintf(stderr, "file-mutation changed=%d stale-manifest-rejected=%d\n", changedFile, staleManifestRejected);
+            valid = valid && changedFile && staleManifestRejected;
+            [(id)view captureClipboardFromPasteboard:pasteboard];
+            NSData *text = [view valueForKey:@"clipboardText"];
+            fprintf(stderr, "file-manifest-after-mutation files=%lu text-present=%d\n",
+                    (unsigned long)[[view valueForKey:@"clipboardFiles"] count], text != nil);
+            valid = valid && text == nil && [[view valueForKey:@"clipboardFiles"] count] == 2;
+            [pasteboard releaseGlobally];
+            [files removeItemAtURL:directory error:nil];
+            return valid ? 0 : 9;
         }
         [window makeFirstResponder:view]; fc_rdp_set_active((__bridge void *)view, 1); fc_rdp_start((__bridge void *)view);
         NSTimeInterval stableSeconds = MAX(6, MIN(120, [NSProcessInfo.processInfo.environment[@"FC_TEST_STABLE_SECONDS"] doubleValue]));

@@ -41,7 +41,7 @@ The downloads are ad-hoc signed and not notarized. macOS may ask for approval in
   their tabs; closing a connected tab asks for confirmation.
 - **App settings:** choose whether the left sidebar is shown, whether the sidebar and
   session-tab bar hide automatically while connected, use larger controls, startup
-  discovery, close confirmation, and network-scan limits.
+  discovery, close confirmation, network-scan limits, and the RDP keyboard layout.
 - **Search:** find saved connections by name, host, group or protocol, and filter
   discovered Macs by name.
 - **Quick connect:** press **⌘K**, enter an address, then press Return.
@@ -86,11 +86,11 @@ The downloads are ad-hoc signed and not notarized. macOS may ask for approval in
 | RDP | Embedded [FreeRDP](https://github.com/FreeRDP/FreeRDP) desktop or RemoteApp, keyboard/mouse, resizing, text and image clipboard, shared folders, local-device options and gateway settings | Username/password; localized certificate verification and separate gateway credentials |
 | SFTP | Built-in file panel using the authenticated OpenSSH connection | Keys/agent or interactive password and host-key prompts |
 
-**Standard VNC uses only a password:** leave Username empty and enter the server's
-VNC password. A username is used only when the server requires account authentication,
-such as Apple Remote Desktop or UltraVNC MS Logon II. For a Mac using account
-authentication, enter that Mac account's short username and password. If the server
-requires no authentication, leave both fields empty.
+For a saved VNC profile, choose **Standard VNC** for password-only VNC, or **Mac
+Screen Sharing** for a Mac account. The latter requires the account's short username
+and password, and the profile cannot be saved without a username. Standard VNC can
+still use a password without a username. If the server requires no authentication,
+leave both credentials empty.
 
 **RDP is bundled:** no Homebrew installation is needed for the downloaded app.
 Each app includes the matching FreeRDP runtime and loads it in the app process. No
@@ -101,6 +101,14 @@ Certificate verification remains enabled. The Windows desktop-start disconnectio
 caused by disabled network-latency measurements is fixed in 0.2.7. Desktop display,
 resizing and a sustained connection were checked against a Windows server using NLA.
 Other connection failures show a localized error.
+
+Choose an RDP keyboard layout in **Settings → Simple → Keyboard**. Automatic mode
+maps the active macOS input source to U.S. or British English, Swedish, German,
+French, Danish, Norwegian Bokmål, Finnish, Spanish, or Italian when recognized;
+the selection is sent to Windows when a new RDP session starts. You can select one
+of those layouts manually. VNC does not negotiate a
+keyboard layout and uses the active macOS input source. Combinations such as
+Option+2 still depend on the layout configured on the remote Mac.
 
 SSH passwords are entered directly in the terminal and are **not** saved by
 FjärrConnect. SSH private keys remain managed by OpenSSH and your ssh-agent.
@@ -161,9 +169,17 @@ Advanced options. The destination must run an SSH server with SFTP enabled.
 Authentication stays in an embedded terminal; the file panel opens after it succeeds.
 Drop files on an RDP or VNC desktop to open the SFTP upload flow for that host; the
 dropped files are carried into the SFTP upload queue. The destination must have an
-SSH server with SFTP enabled. File clipboard transfer through RDP and VNC is not
-available. Uploads can also be started by dropping files onto the panel. Existing files require
-confirmation before replacement. Folders are transferred recursively without merging
+SSH server with SFTP enabled. When a VNC
+server advertises the legacy Tight file-transfer channel, the session also offers a
+separate file browser with download and capability-gated upload; files are limited to
+256 MiB. Upload data is sent without a server acknowledgement, so refresh the listing
+to check whether it arrived. Upload and download are covered by local protocol fixtures,
+but upload has not been verified against a real VNC server; SFTP remains the recommended
+file flow. Most VNC servers do not advertise these channels. This is a VNC file-transfer
+protocol, not clipboard file copying. RDP file clipboard transfer remains disabled
+pending a real Windows integration test. Uploads can also be started by dropping
+files onto the SFTP panel. Existing files require confirmation before replacement.
+Folders are transferred recursively without merging
 into existing folders; symbolic links and special files are rejected. Transfers use
 private staging files, and originals are preserved on failure. Cancelling a transfer
 keeps the authenticated SSH connection and refreshes the file panel.
@@ -222,9 +238,10 @@ use FreeRDP's tested network presets and apply only to that desktop profile.
 
 RDP currently presents one desktop surface per tab. Multi-monitor layouts and USB
 redirection are not exposed: MacFreeRDP cannot currently render multiple remote
-screens as an in-app feature. RoyalVNCKit’s
-VNC authentication currently covers None, VNC password, Apple Remote Desktop and
-UltraVNC MS-Logon II; VeNCrypt/TLS and RSA-AES authentication remain unsupported.
+screens as an in-app feature. RoyalVNCKit’s VNC authentication covers None, VNC
+password, certificate-authenticated VeNCrypt/TLS, Apple Remote Desktop and UltraVNC
+MS-Logon II. VeNCrypt uses macOS certificate-chain and hostname validation; unsupported
+VeNCrypt subtypes and RSA-AES are not supported.
 Use SFTP or a configured SMB share for files instead of a VNC-specific file protocol.
 
 ## Private SSH command logs

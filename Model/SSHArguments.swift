@@ -10,8 +10,8 @@ enum SSHArguments {
         return environment.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }
     }
 
-    static func make(_ profile: ConnectionProfile) -> [String] {
-        var arguments = ["-tt"] + connection(profile, includeForwards: true) + ["--", profile.host]
+    static func make(_ profile: ConnectionProfile, additionalConnectionArguments: [String] = []) -> [String] {
+        var arguments = ["-tt"] + connection(profile, includeForwards: true) + additionalConnectionArguments + ["--", profile.host]
         if let command = profile.ssh?.startCommand?.trimmingCharacters(in: .whitespacesAndNewlines), !command.isEmpty {
             arguments.append(command)
         }

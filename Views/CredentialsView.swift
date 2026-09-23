@@ -40,6 +40,8 @@ struct CredentialsView: View {
                     password = ""; gatewayPassword = ""
                     dismiss()
                 }.keyboardShortcut(.defaultAction)
+                    .disabled(profile.transport == .vnc && profile.usesMacScreenSharingAuthentication &&
+                              username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }.textFieldStyle(.roundedBorder).padding(24).frame(width: 420)
     }

@@ -26,7 +26,7 @@
 "field.protocol"             = "Protokoll";
 "field.host"                 = "Vert";
 "field.username"             = "Brukernavn";
-"field.vncUsername" = "Brukernavn (valgfritt for VNC)";
+"field.vncUsername" = "Brukernavn";
 "field.password"             = "Passord";
 "field.group"                = "Gruppe";
 "field.port.format"          = "Port (standard %d)";
@@ -60,7 +60,10 @@
 "auth.title" = "Logg inn for å koble til";
 "auth.remember" = "Husk i nøkkelring";
 "auth.hint" = "For RDP bruker du en konto som har tillatelse til å koble til den eksterne datamaskinen.";
-"auth.vnc.hint" = "Vanlig VNC bruker bare passord; la brukernavnet stå tomt. Oppgi brukernavn bare hvis serveren krever en konto, for eksempel ved Mac-skjermdeling. La passordet stå tomt hvis innlogging ikke er nødvendig.";
+"vnc.authenticationMode" = "Godkjenning";
+"vnc.authentication.standard" = "Standard VNC (passord)";
+"vnc.authentication.mac" = "Mac-skjermdeling (brukernavn kreves)";
+"auth.vnc.hint" = "Mac-skjermdeling krever det korte brukernavnet og passordet til en macOS-konto som har tillatelse til skjermdeling. Standard VNC bruker bare passord.";
 "profile.delete.title" = "Slette den lagrede tilkoblingen?";
 "quickconnect.invalid" = "Skriv et vertsnavn eller en vnc://-, ssh://- eller rdp://-adresse med port 1–65535. Skriv passord i innloggingsvinduet.";
 "session.retry" = "Kontroller adresse og innloggingsopplysninger, og koble til igjen.";
@@ -81,7 +84,7 @@
 
 "vnc.usernameRequired" = "Serveren krever et brukernavn. Oppgi det korte brukernavnet og passordet til kontoen på den eksterne Macen, og kontroller at kontoen har tilgang under Skjermdeling.";
 "vnc.connectionFailed" = "VNC-tilkoblingen mislyktes. Kontroller adressen og porten, og bekreft deretter at Skjermdeling eller VNC-tjenesten er aktivert på den eksterne datamaskinen og at kontoen har tilgang.";
-"vnc.unsupportedSecurity" = "Serveren krever en VNC-sikkerhetsmetode som FjärrConnect ennå ikke støtter, for eksempel VeNCrypt/TLS eller RSA-AES. Bruk vanlig VNC-godkjenning, eller velg en kompatibel sikkerhetsinnstilling på serveren.";
+"vnc.unsupportedSecurity" = "Serveren tilbyr en VNC-sikkerhetsmetode som FjärrConnect ikke kan bruke. RSA-AES og VeNCrypt-undertyper uten støtte støttes ikke. Bruk sertifikatverifisert VeNCrypt/TLS eller vanlig VNC-autentisering, eller velg en kompatibel sikkerhetsinnstilling på serveren.";
 
 "rdp.error.network" = "Serveren kunne ikke nås. Kontroller at Eksternt skrivebord er aktivert og at adressen og porten er tilgjengelige.";
 "rdp.error.authentication" = "Serveren avviste innloggingen. Kontroller brukernavn, passord og tilgang til Eksternt skrivebord.";
@@ -213,7 +216,12 @@
 
 "options.choose" = "Velg…";
 
-"ssh.identity" = "Privat nøkkelfil";
+"ssh.identity" = "Privat nøkkel for denne profilen";
+"ssh.identity.hint" = "Velg den private nøkkelen som skal brukes av profilens SSH- og SFTP-tilkoblinger. OpenSSH ber om nøkkelens passordfrase i terminalen hvis den er kryptert. La feltet stå tomt for å bruke SSH-konfigurasjonen eller ssh-agent.";
+"ssh.identity.section" = "Privat nøkkel for denne profilen";
+"ssh.identity.chooseTitle" = "Velg privat nøkkel";
+"ssh.identity.chooseMessage" = "Velg en privat SSH-nøkkelfil for denne profilen.";
+"ssh.identity.clear" = "Tøm profilens nøkkel";
 
 "ssh.jump.host" = "Mellomvert";
 
@@ -313,6 +321,20 @@
 "settings.scanConcurrency.hint" = "Flere kontroller gjør søket raskere, men gir mer nettverkstrafikk.";
 "settings.appearance" = "Utseende";
 "settings.connections" = "Tilkoblinger";
+"settings.keyboard" = "Tastatur";
+"settings.keyboardLayout" = "RDP-tastaturoppsett";
+"settings.keyboardLayout.automatic" = "Automatisk (macOS-inndatakilde)";
+"settings.keyboardLayout.usEnglish" = "Amerikansk engelsk";
+"settings.keyboardLayout.britishEnglish" = "Britisk engelsk";
+"settings.keyboardLayout.german" = "Tysk";
+"settings.keyboardLayout.french" = "Fransk";
+"settings.keyboardLayout.swedish" = "Svensk";
+"settings.keyboardLayout.danish" = "Dansk";
+"settings.keyboardLayout.norwegian" = "Norsk bokmål";
+"settings.keyboardLayout.finnish" = "Finsk";
+"settings.keyboardLayout.spanish" = "Spansk";
+"settings.keyboardLayout.italian" = "Italiensk";
+"settings.keyboardLayout.hint" = "Automatisk modus kobler den aktive macOS-inndatakilden til et RDP-oppsett når det er mulig. VNC følger den aktive macOS-inndatakilden og forhandler ikke oppsett.";
 "settings.autoHideSidebarWhileConnected" = "Skjul venstre sidefelt ved aktiv tilkobling";
 "settings.autoHideSessionTabsWhileConnected" = "Skjul øktfaner ved aktiv tilkobling";
 
@@ -409,3 +431,24 @@
 "wol.wake" = "Vekk enhet";
 "wol.hint" = "Sender en magic packet på lokalt nettverk før tilkobling.";
 "wol.error" = "Kunne ikke sende Wake-on-LAN-pakken.";
+
+/* Tight VNC file transfer */
+"vnc.files.title" = "VNC-filer (Tight)";
+"vnc.files.parent" = "Overordnet mappe";
+"vnc.files.refresh" = "Oppdater";
+"vnc.files.upload" = "Last opp";
+"vnc.files.download" = "Last ned";
+"vnc.files.open" = "Åpne mappe";
+"vnc.files.empty" = "Mappen er tom.";
+"vnc.files.notSupported" = "Serveren annonserer ikke den eldre Tight-kanalen for filoverføring. Bruk SFTP i stedet.";
+"vnc.files.hint" = "Krever en server som annonserer Tight-filoverføring. Filer er begrenset til 256 MiB.";
+"vnc.files.failed" = "VNC-filoperasjonen mislyktes.";
+"vnc.files.uploadUnavailable" = "Serveren annonserer ikke Tight-opplastingskanalen. SFTP anbefales for filoverføring.";
+"vnc.files.uploadHint" = "Opplasting krever at serveren annonserer Tight-filopplasting. SFTP anbefales for filoverføring. Filer kan være opptil 256 MiB.";
+"vnc.files.uploading" = "Laster opp…";
+"vnc.files.uploadSent" = "Opplastingsdata er sendt. Oppdater mappen for å kontrollere; VNC bekrefter ikke at filen er lagret.";
+"vnc.files.uploadFailed" = "Opplasting mislyktes. Filen kan være ufullstendig; kontroller den eksterne filen før du prøver igjen.";
+"vnc.files.uploadExists" = "Det finnes allerede en fil med dette navnet.";
+"vnc.files.downloadFailed" = "Filen kunne ikke lastes ned eller overskred grensen på 256 MiB.";
+"vnc.files.downloading" = "Laster ned…";
+"vnc.files.downloadComplete" = "Nedlastingen er fullført.";

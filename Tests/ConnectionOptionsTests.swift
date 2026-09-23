@@ -2,6 +2,42 @@ import XCTest
 @testable import FjarrConnect
 
 final class ConnectionOptionsTests: XCTestCase {
+    func testMacScreenSharingRequiresAUsernameWhileStandardVNCDoesNot() throws {
+        var macProfile = ConnectionProfile(name: "Mac", host: "mac.local",
+                                           usesMacScreenSharingAuthentication: true)
+        XCTAssertFalse(macProfile.isValid)
+        macProfile.username = "daniel"
+        XCTAssertTrue(macProfile.isValid)
+        let restored = try JSONDecoder().decode(ConnectionProfile.self,
+            from: JSONEncoder().encode(macProfile))
+        XCTAssertTrue(restored.usesMacScreenSharingAuthentication)
+
+        let standardProfile = ConnectionProfile(name: "VNC", host: "vnc.local")
+        XCTAssertTrue(standardProfile.isValid)
+        XCTAssertFalse(standardProfile.usesMacScreenSharingAuthentication)
+    }
+
+    func testGraphicalSessionDropsPreserveLocalFilesForSFTPQueue() throws {
+        let first = URL(fileURLWithPath: "/tmp/first.txt")
+        let second = URL(fileURLWithPath: "/tmp/second.txt")
+
+        for transport in [RemoteTransport.vnc, .rdp, .remoteApp] {
+            XCTAssertEqual(SessionFileDropPolicy.acceptedURLs([first, second], for: transport), [first, second])
+        }
+    }
+
+    func testNonGraphicalOrNonLocalDropPayloadsAreRejectedAsAWhole() throws {
+        let local = URL(fileURLWithPath: "/tmp/upload.txt")
+        let remote = try XCTUnwrap(URL(string: "https://example.invalid/upload.txt"))
+
+        for transport in [RemoteTransport.ssh, .sftp] {
+            XCTAssertNil(SessionFileDropPolicy.acceptedURLs([local], for: transport))
+        }
+        XCTAssertNil(SessionFileDropPolicy.acceptedURLs([], for: .vnc))
+        XCTAssertNil(SessionFileDropPolicy.acceptedURLs([remote], for: .rdp))
+        XCTAssertNil(SessionFileDropPolicy.acceptedURLs([local, remote], for: .vnc))
+    }
+
     func testLegacyProfilesRetainDefaultsAndAdvancedSettingsRoundTrip() throws {
         let old = Data(#"{"id":"11111111-1111-1111-1111-111111111111","name":"Old","transport":"rdp","host":"desktop.local","port":3389,"rdp":{"gatewayHost":"gateway.local"}}"#.utf8)
         var profile = try JSONDecoder().decode(ConnectionProfile.self, from: old)
@@ -21,6 +57,24 @@ final class ConnectionOptionsTests: XCTestCase {
         XCTAssertEqual(profile.fileProfile.port, 2222)
         XCTAssertEqual(profile.fileProfile.username, "files")
         XCTAssertEqual(profile.fileProfile.transport, .sftp)
+    }
+
+    func testSSHIdentityFileIsStoredAndAppliedPerProfile() throws {
+        var first = ConnectionProfile(name: "Build host", transport: .ssh, host: "build.local", username: "builder")
+        first.ssh = SSHOptions(identityFile: "/Users/test/.ssh/build_ed25519")
+        var second = ConnectionProfile(name: "Git host", transport: .ssh, host: "git.local", username: "git")
+        second.ssh = SSHOptions(identityFile: "/Users/test/.ssh/git_ed25519")
+
+        let firstArguments = SSHArguments.connection(first)
+        let secondArguments = SSHArguments.connection(second)
+        XCTAssertEqual(firstArguments.suffix(2).first, "-i")
+        XCTAssertEqual(firstArguments.suffix(1).first, "/Users/test/.ssh/build_ed25519")
+        XCTAssertEqual(secondArguments.suffix(2).first, "-i")
+        XCTAssertEqual(secondArguments.suffix(1).first, "/Users/test/.ssh/git_ed25519")
+
+        let data = try JSONEncoder().encode([first, second])
+        let restored = try JSONDecoder().decode([ConnectionProfile].self, from: data)
+        XCTAssertEqual(restored.map { $0.ssh?.identityFile }, [first.ssh?.identityFile, second.ssh?.identityFile])
     }
 
     func testJumpHostsAndForwardingCannotInjectShellSyntax() {
@@ -82,6 +136,46 @@ final class ConnectionOptionsTests: XCTestCase {
         profile.rdp?.dynamicResolution = false
         XCTAssertFalse(profile.rdp?.resizesRemoteDesktop ?? true)
         XCTAssertFalse(String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self).contains("/dynamic-resolution\n"))
+    }
+
+    func testRDPKeyboardLayoutCanBeSelectedOrDetectedFromMacInputSource() throws {
+        let automaticMappings: [(String, UInt32)] = [
+            ("com.apple.keylayout.Swedish-Pro", 0x0000041D),
+            ("com.apple.keylayout.USInternational-PC", 0x00000409),
+            ("com.apple.keylayout.German", 0x00000407),
+            ("com.apple.keylayout.French", 0x0000040C),
+            ("com.apple.keylayout.Danish", 0x00000406),
+            ("com.apple.keylayout.Norwegian", 0x00000414),
+            ("com.apple.keylayout.Finnish", 0x0000040B),
+            ("com.apple.keylayout.Spanish-ISO", 0x0000040A),
+            ("com.apple.keylayout.Italian", 0x00000410)
+        ]
+        for (source, windowsID) in automaticMappings {
+            XCTAssertEqual(RDPKeyboardLayout.resolvedWindowsLayoutID(
+                selection: RDPKeyboardLayout.automatic.rawValue,
+                inputSourceID: source), windowsID, source)
+        }
+        XCTAssertNil(RDPKeyboardLayout.resolvedWindowsLayoutID(
+            selection: RDPKeyboardLayout.automatic.rawValue,
+            inputSourceID: "com.apple.keylayout.Unsupported"))
+        for layout in RDPKeyboardLayout.allCases where layout != .automatic {
+            XCTAssertEqual(RDPKeyboardLayout.resolvedWindowsLayoutID(
+                selection: layout.rawValue, inputSourceID: "com.apple.keylayout.Unsupported"), layout.windowsLayoutID)
+        }
+
+        var profile = ConnectionProfile(name: "Desktop", transport: .rdp, host: "desktop.local")
+        let swedish = String(decoding: try XCTUnwrap(RDPArguments.input(
+            profile: profile, password: nil, keyboardLayoutIdentifier: 0x0000041D)), as: UTF8.self)
+        XCTAssertTrue(swedish.contains("/kbd:layout:0x0000041D\n"))
+        let automaticFallback = String(decoding: try XCTUnwrap(RDPArguments.input(
+            profile: profile, password: nil, keyboardLayoutIdentifier: nil)), as: UTF8.self)
+        XCTAssertFalse(automaticFallback.contains("/kbd:layout:"))
+
+        profile.transport = .remoteApp
+        profile.rdp = RDPOptions(remoteApp: "||notepad")
+        let remoteApp = String(decoding: try XCTUnwrap(RDPArguments.input(
+            profile: profile, password: nil, keyboardLayoutIdentifier: 0x00000409)), as: UTF8.self)
+        XCTAssertTrue(remoteApp.contains("/kbd:layout:0x00000409\n"))
     }
 
     func testRDPDeviceRedirectionAndRemoteAppAreExplicitPerProfile() throws {

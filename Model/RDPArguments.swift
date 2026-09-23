@@ -1,12 +1,17 @@
 import Foundation
 
 enum RDPArguments {
-    static func input(profile: ConnectionProfile, password: String?, gatewayPassword: String? = nil) -> Data? {
+    static func input(profile: ConnectionProfile, password: String?, gatewayPassword: String? = nil,
+                      keyboardLayoutIdentifier: UInt32? = RDPKeyboardLayout.selectedWindowsLayoutID) -> Data? {
         guard profile.isValid else { return nil }
         let host = profile.host.contains(":") ? "[\(profile.host)]" : profile.host
         let title = profile.name.components(separatedBy: .controlCharacters).joined(separator: " ")
         var args = ["/v:\(host):\(profile.port)", "/size:1280x800",
                     "/title:FjärrConnect — \(title)", "/log-level:OFF"]
+        if (profile.transport == .rdp || profile.transport == .remoteApp),
+           let keyboardLayoutIdentifier {
+            args.append("/kbd:layout:0x\(String(format: "%08X", keyboardLayoutIdentifier))")
+        }
         // RemoteApp owns its window layout on the server; desktop resizing is
         // only valid for a full desktop session.
         if profile.rdp?.resizesRemoteDesktop ?? true, profile.transport == .rdp { args.append("/dynamic-resolution") }

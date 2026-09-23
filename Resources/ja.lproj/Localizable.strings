@@ -21,7 +21,7 @@
 "field.protocol" = "プロトコル";
 "field.host" = "ホスト";
 "field.username" = "ユーザ名";
-"field.vncUsername" = "ユーザ名（VNCでは任意）";
+"field.vncUsername" = "ユーザ名";
 "field.password" = "パスワード";
 "field.group" = "グループ";
 "field.port.format" = "ポート（デフォルト：%d）";
@@ -52,7 +52,10 @@
 "auth.title" = "サインインして接続";
 "auth.remember" = "キーチェーンに保存";
 "auth.hint" = "RDPでは、接続先のコンピュータへのアクセスが許可されたアカウントを使用してください。";
-"auth.vnc.hint" = "通常のVNCではパスワードのみを使用するため、ユーザ名は空欄にしてください。Macの画面共有など、サーバでアカウントが必要な場合のみユーザ名を入力してください。認証が不要な場合は、パスワードも空欄にしてください。";
+"vnc.authenticationMode" = "認証方式";
+"vnc.authentication.standard" = "標準VNC（パスワード）";
+"vnc.authentication.mac" = "Mac画面共有（ユーザ名必須）";
+"auth.vnc.hint" = "Macの画面共有では、画面共有を許可されたmacOSアカウントの短いユーザ名とパスワードが必要です。標準VNCではパスワードのみを使用します。";
 "profile.delete.title" = "この保存済みの接続を削除しますか？";
 "quickconnect.invalid" = "ホスト名、またはvnc://、ssh://、rdp://のアドレスを入力してください。ポート番号は1〜65535です。パスワードはサインイン画面で入力してください。";
 "session.retry" = "アドレスと認証情報を確認してから、再接続してください。";
@@ -69,7 +72,7 @@
 "vnc.ardAuthenticationTimeout" = "認証後にMacの画面共有サービスから応答がありませんでした。アカウントが画面共有で許可されていることを確認し、接続先のMacでサービスをオフにしてからオンにしてください。";
 "vnc.usernameRequired" = "このサーバにはユーザ名が必要です。接続先のMacのアカウントの短いユーザ名とパスワードを入力し、そのアカウントで画面共有が許可されていることを確認してください。";
 "vnc.connectionFailed" = "VNC接続に失敗しました。アドレスとポートを確認し、接続先のコンピュータで画面共有またはVNCサービスが有効であり、アカウントにアクセス権があることを確認してください。";
-"vnc.unsupportedSecurity" = "このサーバーには、VeNCrypt/TLS や RSA-AES など、FjärrConnect がまだ対応していない VNC セキュリティ方式が必要です。標準 VNC 認証を使用するか、サーバーで互換性のあるセキュリティ設定を選択してください。";
+"vnc.unsupportedSecurity" = "サーバーが FjärrConnect で使用できない VNC セキュリティ方式を提示しました。RSA-AES と未対応の VeNCrypt サブタイプは利用できません。証明書認証付き VeNCrypt/TLS または標準 VNC 認証を使用するか、サーバーで互換性のある設定を選択してください。";
 "rdp.error.network" = "サーバに接続できませんでした。リモートデスクトップが有効で、このアドレスとポートに接続できることを確認してください。";
 "rdp.error.authentication" = "サーバがサインインを拒否しました。ユーザ名、パスワード、リモートデスクトップのアクセス権を確認してください。";
 "rdp.error.certificate" = "安全な接続を確立できませんでした。サーバ証明書とTLS設定を確認してください。";
@@ -198,7 +201,12 @@
 
 "options.choose" = "選択…";
 
-"ssh.identity" = "秘密鍵ファイル";
+"ssh.identity" = "このプロファイルの秘密鍵";
+"ssh.identity.hint" = "このプロファイルの SSH 接続と SFTP 接続で使う秘密鍵を選択します。暗号化された鍵の場合、OpenSSH はターミナルでパスフレーズを求めます。SSH 設定または ssh-agent を使う場合は空欄にします。";
+"ssh.identity.section" = "このプロファイルの秘密鍵";
+"ssh.identity.chooseTitle" = "秘密鍵を選択";
+"ssh.identity.chooseMessage" = "このプロファイルで使う SSH 秘密鍵ファイルを選択してください。";
+"ssh.identity.clear" = "プロファイルの鍵を解除";
 
 "ssh.jump.host" = "踏み台ホスト";
 
@@ -298,6 +306,20 @@
 "settings.scanConcurrency.hint" = "プローブを増やすと検索は速くなりますが、ネットワーク通信も増えます。";
 "settings.appearance" = "外観";
 "settings.connections" = "接続";
+"settings.keyboard" = "キーボード";
+"settings.keyboardLayout" = "RDP キーボードレイアウト";
+"settings.keyboardLayout.automatic" = "自動（macOS の入力ソース）";
+"settings.keyboardLayout.usEnglish" = "米国英語";
+"settings.keyboardLayout.britishEnglish" = "英国英語";
+"settings.keyboardLayout.german" = "ドイツ語";
+"settings.keyboardLayout.french" = "フランス語";
+"settings.keyboardLayout.swedish" = "スウェーデン語";
+"settings.keyboardLayout.danish" = "デンマーク語";
+"settings.keyboardLayout.norwegian" = "ノルウェー語（ブークモール）";
+"settings.keyboardLayout.finnish" = "フィンランド語";
+"settings.keyboardLayout.spanish" = "スペイン語";
+"settings.keyboardLayout.italian" = "イタリア語";
+"settings.keyboardLayout.hint" = "自動では現在の macOS 入力ソースを可能な範囲で RDP レイアウトに対応付けます。VNC は macOS の現在の入力ソースを使い、レイアウトをネゴシエートしません。";
 "settings.autoHideSidebarWhileConnected" = "接続中は左のサイドバーを隠す";
 "settings.autoHideSessionTabsWhileConnected" = "接続中はセッションタブを隠す";
 
@@ -394,3 +416,24 @@
 "wol.wake" = "デバイスを起動";
 "wol.hint" = "接続前にローカルネットワークへマジックパケットを送信します。";
 "wol.error" = "Wake-on-LAN パケットを送信できませんでした。";
+
+/* Tight VNC file transfer */
+"vnc.files.title" = "VNC ファイル（Tight）";
+"vnc.files.parent" = "親フォルダ";
+"vnc.files.refresh" = "更新";
+"vnc.files.upload" = "アップロード";
+"vnc.files.download" = "ダウンロード";
+"vnc.files.open" = "フォルダを開く";
+"vnc.files.empty" = "このフォルダは空です。";
+"vnc.files.notSupported" = "サーバーは旧式の Tight ファイル転送チャネルを通知していません。代わりに SFTP を使用してください。";
+"vnc.files.hint" = "Tight ファイル転送を通知するサーバーでのみ利用できます。ファイル上限は 256 MiB です。";
+"vnc.files.failed" = "VNC ファイル操作に失敗しました。";
+"vnc.files.uploadUnavailable" = "サーバーが Tight アップロードチャネルを通知していません。ファイル転送には SFTP を推奨します。";
+"vnc.files.uploadHint" = "アップロードにはサーバーが Tight ファイルアップロード機能を通知している必要があります。ファイル転送には SFTP を推奨します。ファイルは 256 MiB 以下です。";
+"vnc.files.uploading" = "アップロード中…";
+"vnc.files.uploadSent" = "アップロードデータを送信しました。結果を確認するにはフォルダを更新してください。VNC は保存完了を通知しません。";
+"vnc.files.uploadFailed" = "アップロードに失敗しました。ファイルが不完全な可能性があります。再試行前にリモートファイルを確認してください。";
+"vnc.files.uploadExists" = "同じ名前のファイルが既にあります。";
+"vnc.files.downloadFailed" = "ファイルをダウンロードできないか、256 MiB の上限を超えています。";
+"vnc.files.downloading" = "ダウンロード中…";
+"vnc.files.downloadComplete" = "ダウンロードが完了しました。";

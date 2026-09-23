@@ -10,10 +10,15 @@ xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
 APP="$DERIVED_DATA/Build/Products/Debug/FjarrConnect.app"
 ARTIFACT="build/rdp-artifacts/rdp-$ARCH/libFjarrRDP.dylib"
 OUTPUT="build/rdp-output/$ARCH/libFjarrRDP.dylib"
-# A locally rebuilt runtime must win over an older cached artifact. Clean CI
-# checkouts have only the artifact and retain their reproducible input.
-RUNTIME="$ARTIFACT"
-if [ -f "$OUTPUT" ] && { [ ! -f "$ARTIFACT" ] || [ "$OUTPUT" -nt "$ARTIFACT" ]; }; then RUNTIME="$OUTPUT"; fi
+# Prefer the newest available runtime, including a direct local CMake build.
+# Clean CI checkouts have only the checked-in artifact and retain that input.
+RUNTIME=""
+for candidate in "$ARTIFACT" "$OUTPUT" "build/rdp-$ARCH/FreeRDP-build/libFjarrRDP.dylib"; do
+  if [ -f "$candidate" ] && { [ -z "$RUNTIME" ] || [ "$candidate" -nt "$RUNTIME" ]; }; then
+    RUNTIME="$candidate"
+  fi
+done
+test -n "$RUNTIME"
 test -f "$RUNTIME"
 mkdir -p "$APP/Contents/Frameworks"
 cp "$RUNTIME" "$APP/Contents/Frameworks/libFjarrRDP.dylib"

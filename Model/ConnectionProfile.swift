@@ -38,6 +38,16 @@ enum RemoteTransport: String, Codable, CaseIterable, Identifiable {
     var isGraphical: Bool { self == .vnc || self == .rdp || self == .remoteApp }
 }
 
+/// File drops on a remote desktop are routed through the profile's SFTP target.
+/// Reject the entire payload when it contains a non-local URL so no item is
+/// silently omitted from the transfer queue.
+enum SessionFileDropPolicy {
+    static func acceptedURLs(_ urls: [URL], for transport: RemoteTransport) -> [URL]? {
+        guard transport.isGraphical, !urls.isEmpty, urls.allSatisfy(\.isFileURL) else { return nil }
+        return urls
+    }
+}
+
 /// A saved machine — the app's analogue of a Remmina `.remmina` profile file.
 ///
 /// Deliberately does NOT contain the password: like Remmina (libsecret) and
@@ -49,6 +59,13 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
     var host: String
     var port: UInt16
     var username: String?
+    /// Distinguishes Apple Screen Sharing account authentication from standard
+    /// password-only VNC. Optional for profiles saved by older app versions.
+    private var macScreenSharing: Bool?
+    var usesMacScreenSharingAuthentication: Bool {
+        get { macScreenSharing ?? false }
+        set { macScreenSharing = newValue ? true : nil }
+    }
 
     /// Optional Remmina-style organisation.
     var group: String?
@@ -102,6 +119,7 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
          host: String,
          port: UInt16? = nil,
          username: String? = nil,
+         usesMacScreenSharingAuthentication: Bool = false,
          group: String? = nil,
          isFavorite: Bool = false,
          reconnectsAutomatically: Bool = false,
@@ -112,6 +130,7 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
         self.host = host
         self.port = port ?? transport.defaultPort
         self.username = username
+        self.macScreenSharing = usesMacScreenSharingAuthentication ? true : nil
         self.group = group
         self.favorite = isFavorite ? true : nil
         self.automaticReconnect = reconnectsAutomatically ? true : nil
@@ -132,6 +151,8 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         ConnectionURI.validHost(host) && port > 0 &&
         username?.contains(where: { $0.isNewline || $0.asciiValue == 0 }) != true &&
+        (transport != .vnc || !usesMacScreenSharingAuthentication ||
+         !(username?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)) &&
         (transport != .remoteApp || rdp?.remoteAppProgram != nil) &&
         (wakeOnLANMac.map(WakeOnLAN.isValidMAC) ?? true) &&
         (ssh?.isValid ?? true) && (rdp?.isValid ?? true) && (links?.isValid ?? true) &&

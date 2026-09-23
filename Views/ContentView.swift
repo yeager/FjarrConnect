@@ -226,9 +226,9 @@ struct ContentView: View {
             Button("links.smb") { if let url = profile.serviceURL("smb") { NSWorkspace.shared.open(url) } }
             Button("links.web") { if let url = profile.serviceURL("https") { NSWorkspace.shared.open(url) } }
             if let mac = profile.wakeOnLANMac {
-                Button("wol.wake") { WakeOnLAN.send(mac: mac) { [weak profiles] sent in
+                Button("wol.wake") { WakeOnLAN.send(mac: mac) { [weak profileStore = profiles] sent in
                     guard !sent else { return }
-                    DispatchQueue.main.async { profiles?.errorMessage = NSLocalizedString("wol.error", comment: "") }
+                    DispatchQueue.main.async { profileStore?.errorMessage = NSLocalizedString("wol.error", comment: "") }
                 } }
             }
             Button(profile.isFavorite ? "favorite.remove" : "favorite.add") { toggleFavorite(profile) }
@@ -335,6 +335,7 @@ private struct SessionDetailView: View {
     let openFiles: ([URL]) -> Void
     @State private var showingCommandLog = false
     @State private var showingFileTransferSuggestion = false
+    @State private var showingVNCFileTransfer = false
     @State private var pendingFileURLs: [URL] = []
     var body: some View {
         VStack(spacing: 0) {
@@ -378,6 +379,11 @@ private struct SessionDetailView: View {
                         .help("files.title")
                         .accessibilityIdentifier("session.files")
                 }
+                if let vnc = tab.backend as? VNCRemoteSession, vnc.fileTransferAvailable {
+                    Button { showingVNCFileTransfer = true } label: { Image(systemName: "externaldrive") }
+                        .help("vnc.files.title")
+                        .accessibilityIdentifier("session.vncFiles")
+                }
                 if tab.backend.status.isFinished && tab.reconnectAttempt == nil { Button("action.reconnect", action: reconnect) }
                 Button("action.disconnect", action: close)
             }.padding(12).background(.bar)
@@ -404,15 +410,21 @@ private struct SessionDetailView: View {
             } else {
                 tab.backend.makeScreenView()
                     .dropDestination(for: URL.self) { urls, _ in
-                        guard tab.backend.profile.transport.isGraphical,
-                              urls.allSatisfy(\.isFileURL) else { return false }
-                        pendingFileURLs = urls
+                        guard let acceptedURLs = SessionFileDropPolicy.acceptedURLs(
+                            urls, for: tab.backend.profile.transport
+                        ) else { return false }
+                        pendingFileURLs = acceptedURLs
                         showingFileTransferSuggestion = true
                         return true
                     }
             }
         }
         .sheet(isPresented: $showingCommandLog) { SSHCommandLogView(profile: tab.backend.profile) }
+        .sheet(isPresented: $showingVNCFileTransfer) {
+            if let vnc = tab.backend as? VNCRemoteSession {
+                VNCFileTransferView(session: vnc)
+            }
+        }
         .confirmationDialog("files.drop.title", isPresented: $showingFileTransferSuggestion, titleVisibility: .visible) {
             Button("files.upload") {
                 let urls = pendingFileURLs
