@@ -305,3 +305,6 @@
 "field.tags" = "タグ（コンマ区切り）";
 
 "sidebar.recent" = "最近の接続";
+
+"menu.favorites" = "お気に入り";
+"menu.favorites.empty" = "保存されたお気に入りはありません";

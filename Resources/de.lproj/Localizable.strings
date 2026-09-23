@@ -305,3 +305,6 @@
 "field.tags" = "Tags (durch Komma getrennt)";
 
 "sidebar.recent" = "Letzte Verbindungen";
+
+"menu.favorites" = "Favoriten";
+"menu.favorites.empty" = "Keine Favoriten gespeichert";

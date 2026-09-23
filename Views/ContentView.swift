@@ -69,6 +69,11 @@ struct ContentView: View {
             }
         }
         .onDisappear { scanner.stop() }
+        .onReceive(NotificationCenter.default.publisher(for: .connectSavedProfile)) { notification in
+            guard let id = notification.object as? UUID,
+                  let profile = profiles.profiles.first(where: { $0.id == id }) else { return }
+            requestConnect(profile)
+        }
         .sheet(isPresented: $showingNew) { ProfileEditorView(profile: nil) }
         .sheet(item: $editing) { ProfileEditorView(profile: $0) }
         .sheet(item: $commandLog) { SSHCommandLogView(profile: $0) }

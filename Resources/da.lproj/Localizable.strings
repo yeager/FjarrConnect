@@ -320,3 +320,6 @@
 "field.tags" = "Mærker (kommasepareret)";
 
 "sidebar.recent" = "Seneste forbindelser";
+
+"menu.favorites" = "Favoritter";
+"menu.favorites.empty" = "Ingen gemte favoritter";

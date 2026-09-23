@@ -320,3 +320,6 @@
 "field.tags" = "Etiketter (kommaseparert)";
 
 "sidebar.recent" = "Nylige tilkoblinger";
+
+"menu.favorites" = "Favoritter";
+"menu.favorites.empty" = "Ingen lagrede favoritter";

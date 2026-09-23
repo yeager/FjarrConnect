@@ -320,3 +320,6 @@
 "field.tags" = "Tags (comma-separated)";
 
 "sidebar.recent" = "Recent connections";
+
+"menu.favorites" = "Favorites";
+"menu.favorites.empty" = "No favorites saved";

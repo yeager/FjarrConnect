@@ -305,3 +305,6 @@
 "field.tags" = "Tunnisteet (pilkuin eroteltuna)";
 
 "sidebar.recent" = "Viimeisimmät yhteydet";
+
+"menu.favorites" = "Suosikit";
+"menu.favorites.empty" = "Ei tallennettuja suosikkeja";

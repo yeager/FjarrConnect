@@ -320,3 +320,6 @@
 "field.tags" = "Taggar (kommaseparerade)";
 
 "sidebar.recent" = "Senaste anslutningar";
+
+"menu.favorites" = "Favoriter";
+"menu.favorites.empty" = "Inga sparade favoriter";

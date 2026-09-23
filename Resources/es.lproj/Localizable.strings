@@ -305,3 +305,6 @@
 "field.tags" = "Etiquetas (separadas por comas)";
 
 "sidebar.recent" = "Conexiones recientes";
+
+"menu.favorites" = "Favoritos";
+"menu.favorites.empty" = "No hay favoritos guardados";

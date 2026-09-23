@@ -67,6 +67,21 @@ struct FjarrConnectApp: App {
             CommandGroup(after: .appInfo) {
                 Button("about.repository", action: AboutPanel.openRepository)
             }
+            CommandMenu("menu.favorites") {
+                if profiles.favorites.isEmpty {
+                    Text("menu.favorites.empty")
+                } else {
+                    ForEach(profiles.favorites) { profile in
+                        Button(profile.name) {
+                            NotificationCenter.default.post(name: .connectSavedProfile, object: profile.id)
+                        }
+                    }
+                }
+            }
         }
     }
+}
+
+extension Notification.Name {
+    static let connectSavedProfile = Notification.Name("se.fjarrconnect.connectSavedProfile")
 }
