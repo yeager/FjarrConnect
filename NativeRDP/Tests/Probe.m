@@ -2,6 +2,7 @@
 #import <AppKit/AppKit.h>
 #import <objc/runtime.h>
 #import "FCRDPView.h"
+#include <freerdp/error.h>
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
@@ -56,6 +57,27 @@ int main(int argc, const char **argv) {
         NSString *json = [[NSString alloc] initWithData:translations encoding:NSUTF8StringEncoding];
         NSView *view = (__bridge_transfer NSView *)fc_rdp_create(arguments.UTF8String, json.UTF8String);
         if (!view || fc_rdp_abi() != 2) return 3;
+        if ([NSProcessInfo.processInfo.environment[@"FC_TEST_FAILURE_CATEGORIES"] isEqualToString:@"1"]) {
+            const struct { const char *name; UINT32 error; int category; } cases[] = {
+                {"network", FREERDP_ERROR_CONNECT_FAILED, 1},
+                {"certificate", FREERDP_ERROR_TLS_CONNECT_FAILED, 2},
+                {"authentication", FREERDP_ERROR_CONNECT_WRONG_PASSWORD, 3},
+                {"account", FREERDP_ERROR_CONNECT_ACCOUNT_LOCKED_OUT, 4},
+                {"activation", FREERDP_ERROR_CONNECT_ACTIVATION_TIMEOUT, 5},
+                {"nla", FREERDP_ERROR_CONNECT_HYBRID_REQUIRED_BY_SERVER, 6},
+                {"licensing", MAKE_FREERDP_ERROR(ERRINFO, ERRINFO_LICENSE_NO_LICENSE_SERVER), 7},
+                {"unknown", UINT32_MAX, 0}
+            };
+            for (size_t index = 0; index < sizeof(cases) / sizeof(cases[0]); index++) {
+                [view setValue:@(cases[index].error) forKey:@"errorCode"];
+                if (fc_rdp_failure((__bridge void *)view) != cases[index].category) {
+                    fprintf(stderr, "RDP error category mismatch: %s\n", cases[index].name);
+                    return 11;
+                }
+            }
+            puts("RDP failure categories passed: network, certificate, authentication, account, activation, NLA, licensing, unknown.");
+            return 0;
+        }
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_KEYBOARD_INPUT"] isEqualToString:@"1"]) {
             const uint16_t atAndSwedish[] = { CFSwapInt16HostToLittle(0x0040), CFSwapInt16HostToLittle(0x00E5), CFSwapInt16HostToLittle(0x00C5) };
             const uint16_t multilingual[] = { CFSwapInt16HostToLittle(0x20AC), CFSwapInt16HostToLittle(0x65E5) };

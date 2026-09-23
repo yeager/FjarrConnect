@@ -22,6 +22,11 @@ assert library.is_file(), library
 architectures = subprocess.check_output(['lipo', '-archs', str(library)], text=True).split()
 assert len(architectures) == 1, f'Expected one runtime architecture, found {architectures}'
 architecture = architectures[0]
+freerdp = ROOT / f'build/rdp-{architecture}/FreeRDP'
+freerdp_build = ROOT / f'build/rdp-{architecture}/FreeRDP-build'
+assert (freerdp / 'include/freerdp/error.h').is_file(), f'Pinned FreeRDP headers not found: {freerdp}'
+assert (freerdp_build / 'freerdp/winpr/include/winpr/config.h').is_file(), (
+    f'Generated FreeRDP headers not found: {freerdp_build}')
 
 
 def translations(language):
@@ -35,7 +40,9 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
     directory = Path(temporary)
     probe = directory / 'FjarrRDPProbe'
     subprocess.run(['xcrun', 'clang', '-arch', architecture, '-fobjc-arc', '-framework', 'AppKit',
-                    '-I', str(ROOT / 'NativeRDP'), str(ROOT / 'NativeRDP/Tests/Probe.m'),
+                    '-I', str(ROOT / 'NativeRDP'), '-I', str(freerdp / 'include'),
+                    '-I', str(freerdp / 'winpr/include'), '-I', str(freerdp_build / 'freerdp/include'),
+                    '-I', str(freerdp_build / 'freerdp/winpr/include'), str(ROOT / 'NativeRDP/Tests/Probe.m'),
                     str(library), '-Wl,-rpath,' + str(library.parent), '-o', str(probe)], check=True)
     empty_translations = directory / 'empty-translations.json'
     empty_translations.write_text('{}')
@@ -55,6 +62,13 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
     assert files_check.returncode == 0, (
         f'RDP file clipboard manifest validation failed: {files_check.stdout}\n{files_check.stderr}')
     print(f'RDP {architecture}: local file-descriptor validation passed; network file clipboard remains disabled.')
+    failure_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
+                                   input='', text=True, capture_output=True, timeout=15,
+                                   env=dict(os.environ, FC_TEST_FAILURE_CATEGORIES='1'))
+    assert failure_check.returncode == 0, (
+        f'RDP failure-category mapping failed (exit {failure_check.returncode}): '
+        f'{failure_check.stdout}\n{failure_check.stderr}')
+    print(f'RDP {architecture}: {failure_check.stdout.strip()}')
     certificate, key = directory / 'certificate.pem', directory / 'key.pem'
     subprocess.run(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
                     '-keyout', str(key), '-out', str(certificate), '-subj', '/CN=FjarrConnect local test'],
