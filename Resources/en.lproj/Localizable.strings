@@ -371,3 +371,11 @@
 "ssh.startCommand" = "Start command";
 
 "ssh.startCommand.hint" = "Runs as one remote command argument; it is never interpreted by a local shell.";
+
+"session.reconnect" = "Automatic reconnection";
+
+"session.reconnect.enable" = "Reconnect automatically";
+
+"session.reconnect.hint" = "Tries at most three times after a connection ends unexpectedly.";
+
+"session.reconnect.status" = "Reconnecting (%d of %d)…";

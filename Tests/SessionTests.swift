@@ -91,6 +91,54 @@ final class SessionTests: XCTestCase {
         XCTAssertFalse(manager.hasActiveSessions)
     }
 
+    func testOptedInReconnectRestartsTheSameTabWithBoundedRetry() throws {
+        var sessions: [TestSession] = []
+        let manager = ConnectionManager { profile, _ in
+            let session = TestSession(profile: profile)
+            sessions.append(session)
+            return session
+        }
+        var profile = ConnectionProfile(name: "Office", host: "office.local")
+        profile.reconnectsAutomatically = true
+        manager.connect(profile)
+        let tab = try XCTUnwrap(manager.selected)
+
+        sessions[0].status = .disconnected(reason: "network")
+        let reconnected = expectation(description: "session restarted")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+            XCTAssertEqual(sessions.count, 2)
+            XCTAssertEqual(manager.tabs.count, 1)
+            XCTAssertTrue(manager.selected === tab)
+            XCTAssertEqual(sessions[1].startCount, 1)
+            reconnected.fulfill()
+        }
+        wait(for: [reconnected], timeout: 2)
+        manager.disconnectAll()
+    }
+
+    func testManualCloseCancelsAnOptedInReconnect() throws {
+        var sessions: [TestSession] = []
+        let manager = ConnectionManager { profile, _ in
+            let session = TestSession(profile: profile)
+            sessions.append(session)
+            return session
+        }
+        var profile = ConnectionProfile(name: "Office", host: "office.local")
+        profile.reconnectsAutomatically = true
+        manager.connect(profile)
+        let id = try XCTUnwrap(manager.selectedID)
+        sessions[0].status = .disconnected(reason: "network")
+        manager.close(id)
+
+        let settled = expectation(description: "retry cancelled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+            XCTAssertEqual(sessions.count, 1)
+            XCTAssertTrue(manager.tabs.isEmpty)
+            settled.fulfill()
+        }
+        wait(for: [settled], timeout: 2)
+    }
+
 }
 
 private final class TestSession: RemoteSession {

@@ -7,9 +7,14 @@ struct AdvancedConnectionOptions: View {
     @Binding var links: HostLinks
     @Binding var clipboard: Bool
     @Binding var forwards: [SSHForward]
+    @Binding var automaticReconnect: Bool
 
     var body: some View {
         DisclosureGroup("options.title") {
+            Section("session.reconnect") {
+                Toggle("session.reconnect.enable", isOn: $automaticReconnect)
+                Text("session.reconnect.hint").font(.caption).foregroundStyle(.secondary)
+            }
             if transport.isGraphical { Toggle((transport == .rdp || transport == .remoteApp) ? "options.rdpClipboard" : "options.clipboard", isOn: $clipboard) }
             Section(transport.isGraphical ? "files.connection" : "options.ssh") {
                 if transport.isGraphical {

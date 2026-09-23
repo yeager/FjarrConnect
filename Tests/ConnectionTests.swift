@@ -8,6 +8,17 @@ final class ConnectionTests: XCTestCase {
         """
         let profile = try JSONDecoder().decode(ConnectionProfile.self, from: Data(json.utf8))
         XCTAssertFalse(profile.isFavorite)
+        XCTAssertFalse(profile.reconnectsAutomatically)
+    }
+
+    func testAutomaticReconnectPreferencePersistsWithoutCredentials() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ProfileStore(fileURL: directory.appendingPathComponent("profiles.json"))
+        var profile = ConnectionProfile(name: "Studio", host: "studio.local")
+        profile.reconnectsAutomatically = true
+        try store.save(profile, password: nil)
+        XCTAssertTrue(try XCTUnwrap(ProfileStore(fileURL: directory.appendingPathComponent("profiles.json")).profiles.first).reconnectsAutomatically)
     }
 
     func testFavoritesPersistAndDoNotDuplicateGroupedProfiles() throws {

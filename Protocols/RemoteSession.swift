@@ -22,6 +22,12 @@ enum SessionStatus: Equatable {
         case .idle, .disconnected: return false
         }
     }
+    var isEstablished: Bool {
+        switch self {
+        case .connected, .running: return true
+        case .idle, .connecting, .disconnecting, .disconnected: return false
+        }
+    }
     var error: String? { if case .disconnected(let reason) = self { return reason }; return nil }
 }
 

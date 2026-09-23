@@ -55,7 +55,8 @@ The downloads are ad-hoc signed and not notarized. macOS may ask for approval in
   download files or folders, rename items, create folders and delete files or empty
   folders. Transfers show progress and can be cancelled.
 - **Advanced options:** select an SSH identity, jump host and local/remote/SOCKS
-  forwards; configure an RDP gateway and explicitly shared folders.
+  forwards; configure an RDP gateway and explicitly shared folders; and opt in to
+  at most three reconnection attempts for a dropped session in the same tab.
 - **Host links:** open a configured SMB share in Finder or an HTTPS administration
   page in your browser. These use the system apps’ authentication.
 - **SSH command log:** enable separately for each saved SSH connection. Stores command

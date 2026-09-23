@@ -336,6 +336,11 @@ private struct SessionDetailView: View {
                 }
                 Spacer()
                 Text(tab.backend.status.label).font(.callout).foregroundStyle(.secondary)
+                if let attempt = tab.reconnectAttempt {
+                    Text(String(format: NSLocalizedString("session.reconnect.status", comment: ""), attempt, 3))
+                        .font(.caption).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("session.reconnecting")
+                }
                 if tab.canRecord {
                     if tab.recorder.isRecording {
                         Label("record.recording", systemImage: "record.circle.fill")
@@ -363,7 +368,7 @@ private struct SessionDetailView: View {
                         .help("files.title")
                         .accessibilityIdentifier("session.files")
                 }
-                if tab.backend.status.isFinished { Button("action.reconnect", action: reconnect) }
+                if tab.backend.status.isFinished && tab.reconnectAttempt == nil { Button("action.reconnect", action: reconnect) }
                 Button("action.disconnect", action: close)
             }.padding(12).background(.bar)
             Divider()

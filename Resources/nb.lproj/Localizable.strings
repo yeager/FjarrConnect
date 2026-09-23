@@ -371,3 +371,11 @@
 "ssh.startCommand" = "Startkommando";
 
 "ssh.startCommand.hint" = "Kjøres som ett eksternt kommandoargument og tolkes aldri av et lokalt skall.";
+
+"session.reconnect" = "Automatisk gjenoppretting";
+
+"session.reconnect.enable" = "Koble til igjen automatisk";
+
+"session.reconnect.hint" = "Prøver høyst tre ganger etter et uventet brudd.";
+
+"session.reconnect.status" = "Kobler til igjen (%d av %d)…";

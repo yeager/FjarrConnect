@@ -371,3 +371,11 @@
 "ssh.startCommand" = "Startkommando";
 
 "ssh.startCommand.hint" = "Körs som ett fjärrkommandoargument och tolkas aldrig av ett lokalt skal.";
+
+"session.reconnect" = "Automatisk återanslutning";
+
+"session.reconnect.enable" = "Återanslut automatiskt";
+
+"session.reconnect.hint" = "Försöker högst tre gånger efter en oväntad frånkoppling.";
+
+"session.reconnect.status" = "Återansluter (%d av %d)…";

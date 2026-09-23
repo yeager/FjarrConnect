@@ -356,3 +356,11 @@
 "ssh.startCommand" = "Startbefehl";
 
 "ssh.startCommand.hint" = "Wird als ein Remote-Befehlsargument ausgeführt und nie durch eine lokale Shell interpretiert.";
+
+"session.reconnect" = "Automatische Wiederverbindung";
+
+"session.reconnect.enable" = "Automatisch wiederverbinden";
+
+"session.reconnect.hint" = "Nach einer unterbrochenen Verbindung werden höchstens drei Versuche unternommen.";
+
+"session.reconnect.status" = "Wiederverbindung (%d von %d)…";

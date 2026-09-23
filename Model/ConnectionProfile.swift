@@ -64,6 +64,8 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
     // Optional on disk so profiles created before favorites decode unchanged.
     private var favorite: Bool?
     private var sshCommandLogging: Bool?
+    /// Optional for backwards-compatible decoding; reconnect remains opt-in.
+    private var automaticReconnect: Bool?
     /// Kept optional for backwards-compatible decoding of existing profiles.
     private var biometricLock: Bool?
     var logsSSHCommands: Bool {
@@ -73,6 +75,10 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
     var isFavorite: Bool {
         get { favorite ?? false }
         set { favorite = newValue }
+    }
+    var reconnectsAutomatically: Bool {
+        get { automaticReconnect ?? false }
+        set { automaticReconnect = newValue ? true : nil }
     }
 
     /// Requires a local biometric check before this profile can read saved
@@ -95,6 +101,7 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
          username: String? = nil,
          group: String? = nil,
          isFavorite: Bool = false,
+         reconnectsAutomatically: Bool = false,
          logsSSHCommands: Bool = false) {
         self.id = id
         self.name = name
@@ -104,6 +111,7 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
         self.username = username
         self.group = group
         self.favorite = isFavorite ? true : nil
+        self.automaticReconnect = reconnectsAutomatically ? true : nil
         self.sshCommandLogging = logsSSHCommands ? true : nil
     }
 

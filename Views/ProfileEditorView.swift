@@ -20,6 +20,7 @@ struct ProfileEditorView: View {
     @State private var links: HostLinks
     @State private var clipboard: Bool
     @State private var forwards: [SSHForward]
+    @State private var automaticReconnect: Bool
     @State private var errorMessage: String?
 
     init(profile: ConnectionProfile?) {
@@ -29,6 +30,7 @@ struct ProfileEditorView: View {
         _links = State(initialValue: profile?.links ?? HostLinks())
         _clipboard = State(initialValue: profile?.sharesClipboard ?? true)
         _forwards = State(initialValue: profile?.ssh?.forwards ?? [])
+        _automaticReconnect = State(initialValue: profile?.reconnectsAutomatically ?? false)
         _name = State(initialValue: profile?.name ?? "")
         _transport = State(initialValue: profile?.transport ?? .vnc)
         _host = State(initialValue: profile?.host ?? "")
@@ -81,7 +83,7 @@ struct ProfileEditorView: View {
                         }
                     }
                 }
-                AdvancedConnectionOptions(transport: transport, ssh: $ssh, rdp: $rdp, links: $links, clipboard: $clipboard, forwards: $forwards)
+                AdvancedConnectionOptions(transport: transport, ssh: $ssh, rdp: $rdp, links: $links, clipboard: $clipboard, forwards: $forwards, automaticReconnect: $automaticReconnect)
             }.formStyle(.grouped)
             if let errorMessage { Text(errorMessage).foregroundStyle(.red).textSelection(.enabled) }
             HStack {
@@ -103,6 +105,7 @@ struct ProfileEditorView: View {
                                        transport: transport, host: cleanHost, port: port,
                                        username: cleanUser.isEmpty ? nil : cleanUser, group: cleanGroup.isEmpty ? nil : cleanGroup,
                                        isFavorite: existing?.isFavorite ?? false,
+                                       reconnectsAutomatically: automaticReconnect,
                                        logsSSHCommands: transport == .ssh && logsSSHCommands)
         result.ssh = ssh
         result.ssh?.forwards = forwards.isEmpty ? nil : forwards

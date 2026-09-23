@@ -356,3 +356,11 @@
 "ssh.startCommand" = "Commande de démarrage";
 
 "ssh.startCommand.hint" = "Exécutée comme un argument de commande distante et jamais interprétée par un shell local.";
+
+"session.reconnect" = "Reconnexion automatique";
+
+"session.reconnect.enable" = "Reconnecter automatiquement";
+
+"session.reconnect.hint" = "Effectue au plus trois tentatives après une déconnexion inattendue.";
+
+"session.reconnect.status" = "Reconnexion (%d sur %d)…";

@@ -356,3 +356,11 @@
 "ssh.startCommand" = "Aloituskomento";
 
 "ssh.startCommand.hint" = "Suoritetaan yhtenä etäkomentoargumenttina eikä sitä koskaan tulkita paikallisessa komentotulkissa.";
+
+"session.reconnect" = "Automaattinen uudelleenyhdistäminen";
+
+"session.reconnect.enable" = "Yhdistä uudelleen automaattisesti";
+
+"session.reconnect.hint" = "Yrittää enintään kolme kertaa odottamattoman katkaisun jälkeen.";
+
+"session.reconnect.status" = "Yhdistetään uudelleen (%d / %d)…";

@@ -371,3 +371,11 @@
 "ssh.startCommand" = "Startkommando";
 
 "ssh.startCommand.hint" = "Køres som ét fjernkommandoargument; det fortolkes aldrig af en lokal shell.";
+
+"session.reconnect" = "Automatisk genforbindelse";
+
+"session.reconnect.enable" = "Genforbind automatisk";
+
+"session.reconnect.hint" = "Prøver højst tre gange efter en afbrudt forbindelse.";
+
+"session.reconnect.status" = "Genforbinder (%d af %d)…";

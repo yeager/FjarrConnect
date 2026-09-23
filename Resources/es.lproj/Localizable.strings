@@ -356,3 +356,11 @@
 "ssh.startCommand" = "Comando inicial";
 
 "ssh.startCommand.hint" = "Se ejecuta como un argumento de comando remoto y nunca se interpreta mediante un shell local.";
+
+"session.reconnect" = "Reconexión automática";
+
+"session.reconnect.enable" = "Reconectar automáticamente";
+
+"session.reconnect.hint" = "Intenta reconectar un máximo de tres veces tras una desconexión inesperada.";
+
+"session.reconnect.status" = "Reconectando (%d de %d)…";
