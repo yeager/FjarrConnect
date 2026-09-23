@@ -263,6 +263,8 @@
 "transport.sftp" = "SFTP";
 
 "rdp.error.activationTimeout" = "Serveren svarte, men startet ikke det eksterne skrivebordet i tide. Kontroller påloggingsskjermen i Windows og tjenesten Eksternt skrivebord, og koble deretter til igjen.";
+"rdp.error.nla" = "Serveren krever godkjenning på nettverksnivå (NLA). Kontroller at kontoen kan bruke NLA og at Windows-serveren støtter den valgte påloggingsmetoden.";
+"rdp.error.license" = "Serveren avviste lisensforhandlingen for Eksternt skrivebord. Kontroller lisenstjenesten for Eksternt skrivebord og tilgjengelige klienttilgangslisenser.";
 
 // Network service discovery
 "discovery.scan.title" = "Finn servere";

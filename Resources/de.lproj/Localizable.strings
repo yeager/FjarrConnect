@@ -248,6 +248,8 @@
 "transport.sftp" = "SFTP";
 
 "rdp.error.activationTimeout" = "Der Server hat geantwortet, den Remotedesktop aber nicht rechtzeitig gestartet. Prüfen Sie den Windows-Anmeldebildschirm und den Remotedesktopdienst und verbinden Sie sich erneut.";
+"rdp.error.nla" = "Der Server erfordert Netzwerkauthentifizierung (NLA). Prüfe, ob das Konto NLA verwenden darf und der Windows-Server die gewählte Anmeldemethode unterstützt.";
+"rdp.error.license" = "Der Server hat die Remotedesktop-Lizenzverhandlung abgelehnt. Prüfe den Remotedesktop-Lizenzdienst und verfügbare Clientzugriffslizenzen.";
 
 // Network service discovery
 "discovery.scan.title" = "Server suchen";

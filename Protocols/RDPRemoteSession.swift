@@ -58,6 +58,8 @@ final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource {
             case 3: key = "rdp.error.authentication"
             case 4: key = "rdp.error.account"
             case 5: key = "rdp.error.activationTimeout"
+            case 6: key = "rdp.error.nla"
+            case 7: key = "rdp.error.license"
             default: key = "rdp.ended"
             }
             status = .disconnected(reason: "RDP \(profile.host):\(profile.port)\n" +

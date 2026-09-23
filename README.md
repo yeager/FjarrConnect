@@ -298,7 +298,8 @@ computer’s access permissions.
 
 RDP requires a listening Remote Desktop service on the destination port (normally
 3389). The app reports the destination, a recognized error category and the client
-exit code when a connection fails. Backend logs and passwords are not displayed
+exit code when a connection fails. NLA requirements and Remote Desktop licence
+negotiation have separate guidance. Backend logs and passwords are not displayed
 or saved as diagnostics.
 
 Quick-connect examples:

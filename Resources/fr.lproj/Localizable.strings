@@ -248,6 +248,8 @@
 "transport.sftp" = "SFTP";
 
 "rdp.error.activationTimeout" = "Le serveur a répondu, mais le bureau à distance ne s’est pas ouvert à temps. Vérifiez l’écran de connexion Windows et le service Bureau à distance, puis reconnectez-vous.";
+"rdp.error.nla" = "Le serveur exige l’authentification au niveau du réseau (NLA). Vérifiez que le compte peut utiliser NLA et que le serveur Windows prend en charge la méthode d’identification choisie.";
+"rdp.error.license" = "Le serveur a refusé la négociation de licence Bureau à distance. Vérifiez le service de licences Bureau à distance et les licences d’accès client disponibles.";
 
 // Network service discovery
 "discovery.scan.title" = "Rechercher des serveurs";

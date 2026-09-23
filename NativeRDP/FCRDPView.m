@@ -715,7 +715,14 @@ int fc_rdp_status(void *view) { return ((__bridge FCRDPView *)view).connectionSt
 uint32_t fc_rdp_error(void *view) { return ((__bridge FCRDPView *)view).errorCode; }
 
 int fc_rdp_failure(void *view) {
-    switch (fc_rdp_error(view)) {
+    const UINT32 error = fc_rdp_error(view);
+    // Licensing failures arrive as Error Info PDUs rather than individual
+    // connection error constants. Keep the range tied to the FreeRDP header,
+    // which is shared by the arm64 and x86_64 bundled runtimes.
+    if (GET_FREERDP_ERROR_CLASS(error) == FREERDP_ERROR_ERRINFO_CLASS &&
+        GET_FREERDP_ERROR_TYPE(error) >= ERRINFO_LICENSE_INTERNAL &&
+        GET_FREERDP_ERROR_TYPE(error) <= ERRINFO_LICENSE_NO_REMOTE_CONNECTIONS) return 7;
+    switch (error) {
         case FREERDP_ERROR_DNS_ERROR: case FREERDP_ERROR_DNS_NAME_NOT_FOUND:
         case FREERDP_ERROR_CONNECT_FAILED: case FREERDP_ERROR_CONNECT_TRANSPORT_FAILED: return 1;
         case FREERDP_ERROR_TLS_CONNECT_FAILED: return 2;
@@ -727,6 +734,7 @@ int fc_rdp_failure(void *view) {
         case FREERDP_ERROR_CONNECT_ACCOUNT_RESTRICTION: case FREERDP_ERROR_CONNECT_ACCOUNT_LOCKED_OUT:
         case FREERDP_ERROR_CONNECT_ACCOUNT_EXPIRED: case FREERDP_ERROR_CONNECT_LOGON_TYPE_NOT_GRANTED: return 4;
         case FREERDP_ERROR_CONNECT_ACTIVATION_TIMEOUT: return 5;
+        case FREERDP_ERROR_CONNECT_HYBRID_REQUIRED_BY_SERVER: return 6;
         default: return 0;
     }
 }

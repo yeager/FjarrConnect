@@ -263,6 +263,8 @@
 "transport.sftp" = "SFTP";
 
 "rdp.error.activationTimeout" = "Servern svarade men startade inte fjärrskrivbordet i tid. Kontrollera Windows inloggningsskärm och tjänsten Fjärrskrivbord och anslut sedan igen.";
+"rdp.error.nla" = "Servern kräver nätverksautentisering (NLA). Kontrollera att kontot får använda NLA och att Windows-servern stöder den valda inloggningsmetoden.";
+"rdp.error.license" = "Servern avvisade licensförhandlingen för Fjärrskrivbord. Kontrollera licenstjänsten för Fjärrskrivbord och tillgängliga klientåtkomstlicenser.";
 
 // Network service discovery
 "discovery.scan.title" = "Sök servrar";

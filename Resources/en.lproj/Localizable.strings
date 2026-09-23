@@ -263,6 +263,8 @@
 "transport.sftp" = "SFTP";
 
 "rdp.error.activationTimeout" = "The server answered but did not start the remote desktop in time. Check the Windows sign-in screen and Remote Desktop service, then reconnect.";
+"rdp.error.nla" = "The server requires Network Level Authentication (NLA). Check that the account can use NLA and that the Windows server supports the selected sign-in method.";
+"rdp.error.license" = "The server rejected the Remote Desktop licence negotiation. Check the Remote Desktop licensing service and available client access licences.";
 
 // Network service discovery
 "discovery.scan.title" = "Find servers";
