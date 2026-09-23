@@ -285,6 +285,7 @@
 "settings.simple" = "Einfach";
 "settings.advanced" = "Erweitert";
 "settings.showSidebar" = "Linke Seitenleiste anzeigen";
+"settings.useLargeControls" = "Größere Bedienelemente verwenden";
 "settings.autoStartDiscovery" = "Nahe Server beim Öffnen von FjärrConnect suchen";
 "settings.confirmClosingSessions" = "Vor dem Schließen aktiver Sitzungen fragen";
 "settings.networkScan" = "Netzwerksuche";

@@ -18,6 +18,7 @@ struct ContentView: View {
     @State private var errorMessage: String?
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @AppStorage(AppSettings.showSidebar) private var showSidebar = true
+    @AppStorage(AppSettings.useLargeControls) private var useLargeControls = false
     @AppStorage(AppSettings.autoHideSidebarWhileConnected) private var autoHideSidebarWhileConnected = false
     @AppStorage(AppSettings.autoHideSessionTabsWhileConnected) private var autoHideSessionTabsWhileConnected = false
     @FocusState private var quickFocused: Bool
@@ -49,6 +50,7 @@ struct ContentView: View {
             }
         }
         .navigationTitle("FjärrConnect")
+        .controlSize(useLargeControls ? .large : .regular)
         .onAppear(perform: syncSidebarVisibility)
         .onChange(of: showSidebar) { _, _ in syncSidebarVisibility() }
         .onChange(of: autoHideSidebarWhileConnected) { _, _ in syncSidebarVisibility() }

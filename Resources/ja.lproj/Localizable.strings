@@ -285,6 +285,7 @@
 "settings.simple" = "基本";
 "settings.advanced" = "詳細";
 "settings.showSidebar" = "左のサイドバーを表示";
+"settings.useLargeControls" = "大きなコントロールを使用";
 "settings.autoStartDiscovery" = "FjärrConnect を開いたときに近くのサーバを検索";
 "settings.confirmClosingSessions" = "アクティブなセッションを閉じる前に確認する";
 "settings.networkScan" = "ネットワーク検索";

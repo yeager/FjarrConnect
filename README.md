@@ -40,8 +40,8 @@ The downloads are ad-hoc signed and not notarized. macOS may ask for approval in
 - **Session tabs:** open several connections at once. RDP and VNC desktops render inside
   their tabs; closing a connected tab asks for confirmation.
 - **App settings:** choose whether the left sidebar is shown, whether the sidebar and
-  session-tab bar hide automatically while connected, startup discovery, close
-  confirmation, and network-scan limits.
+  session-tab bar hide automatically while connected, use larger controls, startup
+  discovery, close confirmation, and network-scan limits.
 - **Search:** find saved connections by name, host, group or protocol, and filter
   discovered Macs by name.
 - **Quick connect:** press **⌘K**, enter an address, then press Return.

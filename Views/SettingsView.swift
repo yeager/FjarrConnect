@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @AppStorage(AppSettings.showSidebar) private var showSidebar = true
+    @AppStorage(AppSettings.useLargeControls) private var useLargeControls = false
     @AppStorage(AppSettings.autoStartDiscovery) private var autoStartDiscovery = true
     @AppStorage(AppSettings.confirmClosingSessions) private var confirmClosingSessions = true
     @AppStorage(AppSettings.autoHideSidebarWhileConnected) private var autoHideSidebarWhileConnected = false
@@ -14,6 +15,7 @@ struct SettingsView: View {
             Form {
                 Section("settings.appearance") {
                     Toggle("settings.showSidebar", isOn: $showSidebar)
+                    Toggle("settings.useLargeControls", isOn: $useLargeControls)
                     Toggle("settings.autoHideSidebarWhileConnected", isOn: $autoHideSidebarWhileConnected)
                     Toggle("settings.autoHideSessionTabsWhileConnected", isOn: $autoHideSessionTabsWhileConnected)
                 }

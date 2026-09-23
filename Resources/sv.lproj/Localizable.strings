@@ -300,6 +300,7 @@
 "settings.simple" = "Enkla";
 "settings.advanced" = "Avancerade";
 "settings.showSidebar" = "Visa vänstersidofältet";
+"settings.useLargeControls" = "Använd större reglage";
 "settings.autoStartDiscovery" = "Sök närliggande servrar när FjärrConnect öppnas";
 "settings.confirmClosingSessions" = "Fråga innan aktiva sessioner stängs";
 "settings.networkScan" = "Nätverkssökning";

@@ -285,6 +285,7 @@
 "settings.simple" = "Yksinkertaiset";
 "settings.advanced" = "Lisäasetukset";
 "settings.showSidebar" = "Näytä vasen sivupalkki";
+"settings.useLargeControls" = "Käytä suurempia säätimiä";
 "settings.autoStartDiscovery" = "Etsi lähiverkon palvelimet, kun FjärrConnect avataan";
 "settings.confirmClosingSessions" = "Kysy ennen aktiivisten istuntojen sulkemista";
 "settings.networkScan" = "Verkkohaku";

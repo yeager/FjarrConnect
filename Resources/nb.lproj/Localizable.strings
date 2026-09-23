@@ -300,6 +300,7 @@
 "settings.simple" = "Enkle";
 "settings.advanced" = "Avanserte";
 "settings.showSidebar" = "Vis venstre sidefelt";
+"settings.useLargeControls" = "Bruk større kontroller";
 "settings.autoStartDiscovery" = "Finn servere i nærheten når FjärrConnect åpnes";
 "settings.confirmClosingSessions" = "Spør før aktive økter lukkes";
 "settings.networkScan" = "Nettverkssøk";

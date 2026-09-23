@@ -285,6 +285,7 @@
 "settings.simple" = "Sencillas";
 "settings.advanced" = "Avanzadas";
 "settings.showSidebar" = "Mostrar barra lateral izquierda";
+"settings.useLargeControls" = "Usar controles más grandes";
 "settings.autoStartDiscovery" = "Buscar servidores cercanos al abrir FjärrConnect";
 "settings.confirmClosingSessions" = "Preguntar antes de cerrar sesiones activas";
 "settings.networkScan" = "Búsqueda de red";
