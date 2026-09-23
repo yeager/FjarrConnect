@@ -13,13 +13,13 @@ fetch() {
   if [ ! -d "$STAGE/$name/.git" ]; then
     git init -q "$STAGE/$name"
     git -C "$STAGE/$name" remote add origin "$repo"
-    git -C "$STAGE/$name" fetch --depth 1 origin "$revision"
-    git -C "$STAGE/$name" checkout --detach FETCH_HEAD
   fi
+  git -C "$STAGE/$name" fetch --depth 1 origin "$revision"
+  git -C "$STAGE/$name" checkout -q --detach FETCH_HEAD
   test "$(git -C "$STAGE/$name" rev-parse HEAD)" = "$revision"
 }
 fetch openssl https://github.com/openssl/openssl.git f4dc4d58b48d346a8270183f89acf826d459b0ca
-fetch FreeRDP https://github.com/FreeRDP/FreeRDP.git 63b948ca5cb94307fd5444ee6e73927a41ccdab4
+fetch FreeRDP https://github.com/FreeRDP/FreeRDP.git d27a4f7c1c63b62a5e60e5d939ad116cfb58ffc1
 COMMON=(-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_PREFIX_PATH="$PREFIX"
   -DCMAKE_OSX_ARCHITECTURES="$RDP_ARCH" -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0
   -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DBUILD_SHARED_LIBS=OFF)
