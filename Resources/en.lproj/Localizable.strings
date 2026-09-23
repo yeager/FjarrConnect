@@ -64,6 +64,8 @@
 "vnc.authenticationMode" = "Authentication";
 "vnc.authentication.standard" = "Standard VNC (password)";
 "vnc.authentication.mac" = "Mac Screen Sharing (username required)";
+"vnc.authentication.macHint" = "Use the short username of an account allowed in the Mac's Screen Sharing settings.";
+"vnc.authentication.standardHint" = "Use this for VNC servers that authenticate with a password only.";
 "auth.vnc.hint" = "Mac Screen Sharing requires the short username and password of a macOS account allowed to share its screen. Standard VNC uses only a password.";
 "profile.delete.title" = "Delete this saved connection?";
 "quickconnect.invalid" = "Enter a host or vnc://, ssh://, rdp:// address with a port between 1 and 65535. Enter passwords in the sign-in dialog.";
@@ -84,6 +86,7 @@
 
 
 "vnc.usernameRequired" = "This server requires a username. Enter the remote Mac account’s short username and password, and check that the account is allowed under Screen Sharing.";
+"vnc.usernameRequired.signIn" = "Sign in with a Mac username…";
 "vnc.connectionFailed" = "The VNC connection failed. Check the address and port, then confirm that Screen Sharing or the VNC service is enabled on the remote computer and that the account is permitted.";
 "vnc.unsupportedSecurity" = "This server offered a VNC security method FjärrConnect cannot use. RSA-AES and unsupported VeNCrypt subtypes are not supported. Use certificate-authenticated VeNCrypt/TLS or standard VNC authentication, or choose a compatible server security setting.";
 

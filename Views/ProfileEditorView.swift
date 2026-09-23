@@ -39,7 +39,9 @@ struct ProfileEditorView: View {
         _host = State(initialValue: profile?.host ?? "")
         _portText = State(initialValue: profile.map { String($0.port) } ?? "")
         _username = State(initialValue: profile?.username ?? "")
-        _usesMacScreenSharingAuthentication = State(initialValue: profile?.usesMacScreenSharingAuthentication ?? false)
+        // Most VNC endpoints need only a password, but macOS Screen Sharing is
+        // the common default target for this app and always requires an account.
+        _usesMacScreenSharingAuthentication = State(initialValue: profile?.usesMacScreenSharingAuthentication ?? true)
         _group = State(initialValue: profile?.group ?? "")
         _tags = State(initialValue: profile?.normalizedTags.joined(separator: ", ") ?? "")
         _logsSSHCommands = State(initialValue: profile?.logsSSHCommands ?? false)
@@ -76,6 +78,10 @@ struct ProfileEditorView: View {
                             Text("vnc.authentication.mac").tag(true)
                         }
                         .accessibilityIdentifier("profile.vncAuthenticationMode")
+                        Text(LocalizedStringKey(usesMacScreenSharingAuthentication
+                            ? "vnc.authentication.macHint"
+                            : "vnc.authentication.standardHint"))
+                            .font(.caption).foregroundStyle(.secondary)
                         Text("auth.vnc.hint").font(.caption).foregroundStyle(.secondary)
                     }
                     if transport == .ssh || transport == .sftp {

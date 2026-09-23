@@ -64,6 +64,8 @@
 "vnc.authenticationMode" = "Godkjenning";
 "vnc.authentication.standard" = "Standard VNC (passord)";
 "vnc.authentication.mac" = "Mac-skjermdeling (brukernavn kreves)";
+"vnc.authentication.macHint" = "Bruk det korte navnet til en konto som er tillatt i Macens innstillinger for skjermdeling.";
+"vnc.authentication.standardHint" = "Bruk dette for VNC-servere som bare godkjenner med passord.";
 "auth.vnc.hint" = "Mac-skjermdeling krever det korte brukernavnet og passordet til en macOS-konto som har tillatelse til skjermdeling. Standard VNC bruker bare passord.";
 "profile.delete.title" = "Slette den lagrede tilkoblingen?";
 "quickconnect.invalid" = "Skriv et vertsnavn eller en vnc://-, ssh://- eller rdp://-adresse med port 1–65535. Skriv passord i innloggingsvinduet.";
@@ -84,6 +86,7 @@
 
 
 "vnc.usernameRequired" = "Serveren krever et brukernavn. Oppgi det korte brukernavnet og passordet til kontoen på den eksterne Macen, og kontroller at kontoen har tilgang under Skjermdeling.";
+"vnc.usernameRequired.signIn" = "Logg på med Mac-brukernavn …";
 "vnc.connectionFailed" = "VNC-tilkoblingen mislyktes. Kontroller adressen og porten, og bekreft deretter at Skjermdeling eller VNC-tjenesten er aktivert på den eksterne datamaskinen og at kontoen har tilgang.";
 "vnc.unsupportedSecurity" = "Serveren tilbyr en VNC-sikkerhetsmetode som FjärrConnect ikke kan bruke. RSA-AES og VeNCrypt-undertyper uten støtte støttes ikke. Bruk sertifikatverifisert VeNCrypt/TLS eller vanlig VNC-autentisering, eller velg en kompatibel sikkerhetsinnstilling på serveren.";
 

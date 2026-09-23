@@ -17,6 +17,19 @@ final class ConnectionOptionsTests: XCTestCase {
         XCTAssertFalse(standardProfile.usesMacScreenSharingAuthentication)
     }
 
+    func testVNCAuthenticationModesRequireUsernameOnlyForMacScreenSharing() {
+        var profile = ConnectionProfile(name: "Mac", host: "mac.local")
+        profile.usesMacScreenSharingAuthentication = true
+        XCTAssertFalse(profile.isValid)
+        profile.username = "   "
+        XCTAssertFalse(profile.isValid)
+        profile.username = "account"
+        XCTAssertTrue(profile.isValid)
+        profile.usesMacScreenSharingAuthentication = false
+        profile.username = nil
+        XCTAssertTrue(profile.isValid)
+    }
+
     func testGraphicalSessionDropsPreserveLocalFilesForSFTPQueue() throws {
         let first = URL(fileURLWithPath: "/tmp/first.txt")
         let second = URL(fileURLWithPath: "/tmp/second.txt")

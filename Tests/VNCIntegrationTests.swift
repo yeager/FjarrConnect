@@ -142,6 +142,8 @@ final class VNCIntegrationTests: XCTestCase {
         wait(for: [connected], timeout: 10)
         if requiresUsername {
             XCTAssertEqual(session.status.error, NSLocalizedString("vnc.usernameRequired", comment: ""))
+            XCTAssertTrue(session.serverRequiresUsername)
+            XCTAssertTrue(session.serverRequiresMacAccount)
         } else if unsupportedSecurity {
             XCTAssertTrue(session.status.error?.contains(NSLocalizedString("vnc.unsupportedSecurity", comment: "")) == true)
         } else {

@@ -56,6 +56,8 @@
 "vnc.authenticationMode" = "Authentifizierung";
 "vnc.authentication.standard" = "Standard-VNC (Passwort)";
 "vnc.authentication.mac" = "Mac-Bildschirmfreigabe (Benutzername erforderlich)";
+"vnc.authentication.macHint" = "Gib den Kurznamen eines Accounts ein, der in den Bildschirmfreigabe-Einstellungen des Macs zugelassen ist.";
+"vnc.authentication.standardHint" = "Für VNC-Server, die nur ein Passwort abfragen.";
 "auth.vnc.hint" = "Für die Mac-Bildschirmfreigabe sind der Kurzname und das Passwort eines dafür zugelassenen macOS-Accounts erforderlich. Standard-VNC verwendet nur ein Passwort.";
 "profile.delete.title" = "Diese gespeicherte Verbindung löschen?";
 "quickconnect.invalid" = "Gib einen Host oder eine vnc://-, ssh://- oder rdp://-Adresse mit einem Port zwischen 1 und 65535 ein. Passwörter gehören in den Anmeldedialog.";
@@ -72,6 +74,7 @@
 "session.timeout" = "Zeitüberschreitung beim Verbindungsaufbau. Prüfe Adresse, Bildschirmfreigabe und Firewall und versuche es erneut.";
 "vnc.ardAuthenticationTimeout" = "Die Bildschirmfreigabe des Mac hat nach der Anmeldung nicht geantwortet. Prüfe, ob der Account für Bildschirmfreigabe berechtigt ist, und schalte den Dienst auf dem entfernten Mac aus und wieder ein.";
 "vnc.usernameRequired" = "Dieser Server benötigt einen Benutzernamen. Gib den kurzen Benutzernamen und das Passwort des Accounts auf dem entfernten Mac ein. Prüfe, ob der Account zur Bildschirmfreigabe berechtigt ist.";
+"vnc.usernameRequired.signIn" = "Mit Mac-Benutzernamen anmelden …";
 "vnc.connectionFailed" = "Die VNC-Verbindung ist fehlgeschlagen. Prüfe Adresse und Port und bestätige dann, dass Bildschirmfreigabe oder der VNC-Dienst auf dem entfernten Computer aktiviert ist und der Account berechtigt ist.";
 "vnc.unsupportedSecurity" = "Der Server bietet eine VNC-Sicherheitsmethode an, die FjärrConnect nicht verwenden kann. RSA-AES und nicht unterstützte VeNCrypt-Untertypen werden nicht unterstützt. Verwende zertifikatsgeprüftes VeNCrypt/TLS oder die Standard-VNC-Authentifizierung oder wähle eine kompatible Sicherheitseinstellung auf dem Server.";
 "rdp.error.network" = "Der Server ist nicht erreichbar. Prüfe, ob Remotedesktop aktiviert ist und Adresse sowie Port erreichbar sind.";

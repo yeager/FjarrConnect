@@ -56,6 +56,8 @@
 "vnc.authenticationMode" = "Todennus";
 "vnc.authentication.standard" = "Tavallinen VNC (salasana)";
 "vnc.authentication.mac" = "Macin näytönjako (käyttäjätunnus pakollinen)";
+"vnc.authentication.macHint" = "Käytä Macin näytönjaon asetuksissa sallittua lyhyttä käyttäjätunnusta.";
+"vnc.authentication.standardHint" = "Valitse tämä VNC-palvelimille, jotka käyttävät vain salasanatunnistusta.";
 "auth.vnc.hint" = "Macin näytönjako vaatii lyhyen käyttäjätunnuksen ja salasanan macOS-tililtä, jolla on jakamisoikeus. Tavallinen VNC käyttää vain salasanaa.";
 "profile.delete.title" = "Poistetaanko tämä tallennettu yhteys?";
 "quickconnect.invalid" = "Anna palvelin tai vnc://-, ssh://- tai rdp://-osoite ja portti väliltä 1–65535. Kirjoita salasanat kirjautumisikkunaan.";
@@ -72,6 +74,7 @@
 "session.timeout" = "Yhteys aikakatkaistiin. Tarkista osoite, Näytönjako ja palomuuri ja yritä uudelleen.";
 "vnc.ardAuthenticationTimeout" = "Macin näytönjako ei vastannut todennuksen jälkeen. Tarkista, että tilillä on Näytönjaon käyttöoikeus, ja poista palvelu käytöstä ja ota se uudelleen käyttöön etä-Macissa.";
 "vnc.usernameRequired" = "Palvelin vaatii käyttäjätunnuksen. Anna etä-Macin tilin lyhyt käyttäjätunnus ja salasana ja tarkista, että tilillä on Näytönjaon käyttöoikeus.";
+"vnc.usernameRequired.signIn" = "Kirjaudu Macin käyttäjätunnuksella …";
 "vnc.connectionFailed" = "VNC-yhteys epäonnistui. Tarkista osoite ja portti ja vahvista sitten, että Näytönjako tai VNC-palvelu on käytössä etätietokoneessa ja että tilillä on käyttöoikeus.";
 "vnc.unsupportedSecurity" = "Palvelin tarjoaa VNC-suojausmenetelmän, jota FjärrConnect ei voi käyttää. RSA-AES- ja tukemattomia VeNCrypt-alatyyppejä ei tueta. Käytä varmenteella todennettua VeNCrypt/TLS:ää tai tavallista VNC-todennusta tai valitse palvelimesta yhteensopiva suojausasetus.";
 "rdp.error.network" = "Palvelimeen ei saatu yhteyttä. Tarkista, että etätyöpöytä on käytössä ja osoite ja portti ovat saavutettavissa.";

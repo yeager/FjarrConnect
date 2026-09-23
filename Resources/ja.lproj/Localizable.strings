@@ -56,6 +56,8 @@
 "vnc.authenticationMode" = "認証方式";
 "vnc.authentication.standard" = "標準VNC（パスワード）";
 "vnc.authentication.mac" = "Mac画面共有（ユーザ名必須）";
+"vnc.authentication.macHint" = "Macの画面共有設定で許可されたアカウントの短いユーザ名を入力してください。";
+"vnc.authentication.standardHint" = "パスワードのみで認証するVNCサーバに使用します。";
 "auth.vnc.hint" = "Macの画面共有では、画面共有を許可されたmacOSアカウントの短いユーザ名とパスワードが必要です。標準VNCではパスワードのみを使用します。";
 "profile.delete.title" = "この保存済みの接続を削除しますか？";
 "quickconnect.invalid" = "ホスト名、またはvnc://、ssh://、rdp://のアドレスを入力してください。ポート番号は1〜65535です。パスワードはサインイン画面で入力してください。";
@@ -72,6 +74,7 @@
 "session.timeout" = "接続がタイムアウトしました。アドレス、画面共有、ファイアウォールを確認してから、もう一度お試しください。";
 "vnc.ardAuthenticationTimeout" = "認証後にMacの画面共有サービスから応答がありませんでした。アカウントが画面共有で許可されていることを確認し、接続先のMacでサービスをオフにしてからオンにしてください。";
 "vnc.usernameRequired" = "このサーバにはユーザ名が必要です。接続先のMacのアカウントの短いユーザ名とパスワードを入力し、そのアカウントで画面共有が許可されていることを確認してください。";
+"vnc.usernameRequired.signIn" = "Macのユーザ名でサインイン…";
 "vnc.connectionFailed" = "VNC接続に失敗しました。アドレスとポートを確認し、接続先のコンピュータで画面共有またはVNCサービスが有効であり、アカウントにアクセス権があることを確認してください。";
 "vnc.unsupportedSecurity" = "サーバーが FjärrConnect で使用できない VNC セキュリティ方式を提示しました。RSA-AES と未対応の VeNCrypt サブタイプは利用できません。証明書認証付き VeNCrypt/TLS または標準 VNC 認証を使用するか、サーバーで互換性のある設定を選択してください。";
 "rdp.error.network" = "サーバに接続できませんでした。リモートデスクトップが有効で、このアドレスとポートに接続できることを確認してください。";

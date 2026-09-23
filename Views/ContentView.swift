@@ -39,7 +39,10 @@ struct ContentView: View {
                     if let tab = connection.selected {
                         SessionDetailView(tab: tab, reconnect: {
                             let saved = profiles.profiles.first { $0.id == tab.backend.profile.id } ?? tab.backend.profile
-                            let current = tab.backend.profile.transport == .sftp ? saved.fileProfile : saved
+                            var current = tab.backend.profile.transport == .sftp ? saved.fileProfile : saved
+                            if (tab.backend as? VNCRemoteSession)?.serverRequiresMacAccount == true {
+                                current.usesMacScreenSharingAuthentication = true
+                            }
                             requestConnect(current, forcePrompt: true)
                         },
                                           close: { connection.requestClose(tab.id) },
@@ -384,7 +387,10 @@ private struct SessionDetailView: View {
                         .help("vnc.files.title")
                         .accessibilityIdentifier("session.vncFiles")
                 }
-                if tab.backend.status.isFinished && tab.reconnectAttempt == nil { Button("action.reconnect", action: reconnect) }
+                if tab.backend.status.isFinished && tab.reconnectAttempt == nil {
+                    Button((tab.backend as? VNCRemoteSession)?.serverRequiresMacAccount == true
+                           ? "vnc.usernameRequired.signIn" : "action.reconnect", action: reconnect)
+                }
                 Button("action.disconnect", action: close)
             }.padding(12).background(.bar)
             Divider()

@@ -56,6 +56,8 @@
 "vnc.authenticationMode" = "Autenticación";
 "vnc.authentication.standard" = "VNC estándar (contraseña)";
 "vnc.authentication.mac" = "Compartir pantalla de Mac (nombre de usuario obligatorio)";
+"vnc.authentication.macHint" = "Introduce el nombre corto de una cuenta autorizada en los ajustes de Compartir pantalla del Mac.";
+"vnc.authentication.standardHint" = "Úsalo con servidores VNC que solo autentican mediante contraseña.";
 "auth.vnc.hint" = "Compartir pantalla de Mac requiere el nombre corto y la contraseña de una cuenta de macOS autorizada. VNC estándar solo usa una contraseña.";
 "profile.delete.title" = "¿Eliminar esta conexión guardada?";
 "quickconnect.invalid" = "Introduce un servidor o una dirección vnc://, ssh:// o rdp:// con un puerto entre 1 y 65535. Escribe las contraseñas en el diálogo de identificación.";
@@ -72,6 +74,7 @@
 "session.timeout" = "Se agotó el tiempo de conexión. Comprueba la dirección, Compartir pantalla y el cortafuegos e inténtalo de nuevo.";
 "vnc.ardAuthenticationTimeout" = "Compartir pantalla del Mac no respondió después de la autenticación. Comprueba que la cuenta tenga permiso en Compartir pantalla y desactiva y activa el servicio en el Mac remoto.";
 "vnc.usernameRequired" = "Este servidor requiere un nombre de usuario. Introduce el nombre corto y la contraseña de la cuenta del Mac remoto y comprueba que la cuenta tiene permiso para compartir la pantalla.";
+"vnc.usernameRequired.signIn" = "Iniciar sesión con un usuario del Mac…";
 "vnc.connectionFailed" = "La conexión VNC falló. Comprueba la dirección y el puerto y confirma que Compartir pantalla o el servicio VNC está activado en el equipo remoto y que la cuenta tiene permiso.";
 "vnc.unsupportedSecurity" = "El servidor ofrece un método de seguridad VNC que FjärrConnect no puede usar. RSA-AES y los subtipos VeNCrypt no compatibles no están admitidos. Usa VeNCrypt/TLS con certificado o la autenticación VNC estándar, o selecciona una configuración compatible en el servidor.";
 "rdp.error.network" = "No se pudo acceder al servidor. Comprueba que el escritorio remoto está activado y que la dirección y el puerto son accesibles.";

@@ -26,6 +26,8 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
     @Published private(set) var remoteFiles: [VNCRemoteFile] = []
     @Published private(set) var fileListRevision = 0
     @Published private(set) var isLoadingRemoteFiles = false
+    @Published private(set) var serverRequiresUsername = false
+    @Published private(set) var serverRequiresMacAccount = false
     @Published private(set) var remoteDirectory = "/"
     @Published private(set) var fileTransferNotice: String?
 
@@ -111,6 +113,8 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         downloadTemporaryURL = nil
         connectionDeadline?.cancel()
         connectionDeadline = nil
+        serverRequiresUsername = false
+        serverRequiresMacAccount = false
         password = nil
         let old = connection
         connection = nil
@@ -393,6 +397,12 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         DispatchQueue.main.async { [weak self] in
             guard let self, self.connection === connection else { completion(nil); return }
             self.requestedAuthentication = authenticationType
+            if authenticationType.requiresUsername {
+                self.serverRequiresUsername = true
+            }
+            if authenticationType == .appleRemoteDesktop {
+                self.serverRequiresMacAccount = true
+            }
             if authenticationType.requiresUsername,
                self.profile.username?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false {
                 self.credentialFailure = NSLocalizedString("vnc.usernameRequired", comment: "")

@@ -56,6 +56,8 @@
 "vnc.authenticationMode" = "Authentification";
 "vnc.authentication.standard" = "VNC standard (mot de passe)";
 "vnc.authentication.mac" = "Partage d’écran Mac (nom d’utilisateur requis)";
+"vnc.authentication.macHint" = "Saisissez le nom court d’un compte autorisé dans les réglages du partage d’écran du Mac.";
+"vnc.authentication.standardHint" = "À utiliser avec les serveurs VNC qui vérifient uniquement un mot de passe.";
 "auth.vnc.hint" = "Le partage d’écran Mac exige le nom court et le mot de passe d’un compte macOS autorisé. Le VNC standard utilise uniquement un mot de passe.";
 "profile.delete.title" = "Supprimer cette connexion enregistrée ?";
 "quickconnect.invalid" = "Saisissez un hôte ou une adresse vnc://, ssh:// ou rdp:// avec un port entre 1 et 65535. Saisissez les mots de passe dans la fenêtre d’identification.";
@@ -72,6 +74,7 @@
 "session.timeout" = "Le délai de connexion a expiré. Vérifiez l’adresse, le partage d’écran et le pare-feu, puis réessayez.";
 "vnc.ardAuthenticationTimeout" = "Le partage d’écran du Mac n’a pas répondu après l’authentification. Vérifiez que le compte est autorisé dans Partage d’écran, puis désactivez et réactivez le service sur le Mac distant.";
 "vnc.usernameRequired" = "Ce serveur exige un nom d’utilisateur. Saisissez le nom court et le mot de passe du compte du Mac distant et vérifiez que le partage d’écran est autorisé pour ce compte.";
+"vnc.usernameRequired.signIn" = "Se connecter avec un nom d’utilisateur Mac…";
 "vnc.connectionFailed" = "La connexion VNC a échoué. Vérifiez l’adresse et le port, puis confirmez que Partage d’écran ou le service VNC est activé sur l’ordinateur distant et que le compte est autorisé.";
 "vnc.unsupportedSecurity" = "Le serveur propose une méthode de sécurité VNC que FjärrConnect ne peut pas utiliser. RSA-AES et les sous-types VeNCrypt non pris en charge ne sont pas disponibles. Utilisez VeNCrypt/TLS avec certificat ou l’authentification VNC standard, ou choisissez un réglage compatible sur le serveur.";
 "rdp.error.network" = "Impossible de joindre le serveur. Vérifiez que le bureau à distance est activé et que cette adresse et ce port sont accessibles.";
