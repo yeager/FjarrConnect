@@ -101,4 +101,31 @@ final class ConnectionTests: XCTestCase {
         XCTAssertEqual(ProfileStore(fileURL: file).profiles, [profile])
         XCTAssertFalse(String(decoding: try Data(contentsOf: file), as: UTF8.self).contains("password"))
     }
+
+    func testTagsAreNormalizedPersistedAndAvailableForSearch() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let store = ProfileStore(fileURL: file)
+        var profile = ConnectionProfile(name: "Studio", host: "studio.local")
+        profile.tags = ["  Production ", "VPN", "Production", ""]
+        try store.save(profile, password: nil)
+
+        XCTAssertEqual(profile.normalizedTags, ["Production", "VPN"])
+        XCTAssertEqual(try XCTUnwrap(ProfileStore(fileURL: file).profiles.first).normalizedTags, ["Production", "VPN"])
+    }
+
+    func testRecentProfilesAreOrderedByMostRecentConnection() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ProfileStore(fileURL: directory.appendingPathComponent("profiles.json"))
+        let older = ConnectionProfile(name: "Older", host: "older.local")
+        let newer = ConnectionProfile(name: "Newer", host: "newer.local")
+        try store.save(older, password: nil)
+        try store.save(newer, password: nil)
+
+        store.markUsed(older.id, now: Date(timeIntervalSince1970: 1))
+        store.markUsed(newer.id, now: Date(timeIntervalSince1970: 2))
+        XCTAssertEqual(store.recent.map(\.id), [newer.id, older.id])
+    }
 }
