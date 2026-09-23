@@ -176,10 +176,12 @@ final class ConnectionUITests: XCTestCase {
         app.buttons["newConnection"].firstMatch.click()
         let name = app.textFields["profile.name"].firstMatch
         XCTAssertTrue(name.waitForExistence(timeout: 5))
-        name.click()
+        name.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         name.typeText("Studio Mac")
-        app.textFields["profile.host"].firstMatch.click()
-        app.textFields["profile.host"].firstMatch.typeText("studio.local")
+        // Tab follows the editor's keyboard order and avoids AppKit's flaky
+        // hit point calculation for SwiftUI scroll views after interruptions.
+        app.typeKey(.tab, modifierFlags: [])
+        app.typeText("studio.local")
         XCTAssertTrue(app.buttons["profile.save"].firstMatch.isEnabled)
         app.buttons["profile.save"].firstMatch.click()
         let favorite = app.buttons["favorite.Studio Mac"].firstMatch
