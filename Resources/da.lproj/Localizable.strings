@@ -159,6 +159,8 @@
 "close.confirm" = "Luk sessioner";
 
 "files.title" = "Filer (SFTP)";
+"files.moreActions" = "Flere filhandlinger";
+"files.refresh" = "Opdater mappe";
 
 "files.connection" = "Filforbindelse (SSH)";
 

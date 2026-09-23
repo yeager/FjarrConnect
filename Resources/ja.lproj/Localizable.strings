@@ -144,6 +144,8 @@
 "close.confirm" = "セッションを閉じる";
 
 "files.title" = "ファイル（SFTP）";
+"files.moreActions" = "その他のファイル操作";
+"files.refresh" = "フォルダを更新";
 
 "files.connection" = "ファイル接続（SSH）";
 

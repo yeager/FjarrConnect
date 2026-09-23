@@ -144,6 +144,8 @@
 "close.confirm" = "Cerrar sesiones";
 
 "files.title" = "Archivos (SFTP)";
+"files.moreActions" = "Más acciones de archivo";
+"files.refresh" = "Actualizar carpeta";
 
 "files.connection" = "Conexión de archivos (SSH)";
 

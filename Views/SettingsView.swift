@@ -181,6 +181,7 @@ private struct RecordingLibraryView: View {
                     Text(ByteCountFormatter.string(fromByteCount: recording.size, countStyle: .file)).font(.caption).foregroundStyle(.secondary)
                     Button("record.export") { export(recording) }
                     Button(role: .destructive) { delete(recording) } label: { Image(systemName: "trash") }
+                        .accessibilityLabel(Text("action.delete"))
                 }
             }
             HStack {

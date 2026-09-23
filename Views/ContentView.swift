@@ -65,8 +65,10 @@ struct ContentView: View {
             ToolbarItemGroup {
                 Button { quickFocused = true } label: { Image(systemName: "bolt") }
                     .help("action.quickConnect").keyboardShortcut("k")
+                    .accessibilityLabel(Text("action.quickConnect"))
                 Button { showingNew = true } label: { Image(systemName: "plus") }
-                    .help("profile.new").keyboardShortcut("n").accessibilityIdentifier("newConnection")
+                    .help("profile.new").keyboardShortcut("n")
+                    .accessibilityLabel(Text("profile.new")).accessibilityIdentifier("newConnection")
             }
         }
         .sheet(isPresented: $showingNetworkSearch, onDismiss: applyDiscoveredAction) {
@@ -376,15 +378,18 @@ private struct SessionDetailView: View {
                 if tab.backend.profile.transport == .ssh {
                     Button { showingCommandLog = true } label: { Image(systemName: "lock.doc") }
                         .help("ssh.log.title")
+                        .accessibilityLabel(Text("ssh.log.title"))
                 }
                 if tab.backend.profile.transport.isGraphical {
                     Button { openFiles([]) } label: { Image(systemName: "folder.badge.plus") }
                         .help("files.title")
+                        .accessibilityLabel(Text("files.title"))
                         .accessibilityIdentifier("session.files")
                 }
                 if let vnc = tab.backend as? VNCRemoteSession, vnc.fileTransferAvailable {
                     Button { showingVNCFileTransfer = true } label: { Image(systemName: "externaldrive") }
                         .help("vnc.files.title")
+                        .accessibilityLabel(Text("vnc.files.title"))
                         .accessibilityIdentifier("session.vncFiles")
                 }
                 if tab.backend.status.isFinished && tab.reconnectAttempt == nil {

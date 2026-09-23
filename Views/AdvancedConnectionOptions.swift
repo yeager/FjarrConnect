@@ -87,6 +87,7 @@ struct AdvancedConnectionOptions: View {
                                 }.labelsHidden()
                                 TextField("ssh.forward.listen", value: $forward.listenPort, format: .number).frame(width: 90)
                                 Button { forwards.removeAll { $0.id == forward.id } } label: { Image(systemName: "minus.circle") }
+                                    .accessibilityLabel(Text("action.delete"))
                             }
                             if forward.direction != .dynamic {
                                 HStack {
@@ -142,6 +143,7 @@ struct AdvancedConnectionOptions: View {
                             Text(path).font(.caption).textSelection(.enabled)
                             Spacer()
                             Button { rdp.sharedFolders?.removeAll { $0 == path } } label: { Image(systemName: "minus.circle") }
+                                .accessibilityLabel(Text("action.delete"))
                         }
                     }
                     Button("rdp.folders.add") {

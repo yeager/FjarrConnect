@@ -159,6 +159,8 @@
 "close.confirm" = "Close sessions";
 
 "files.title" = "Files (SFTP)";
+"files.moreActions" = "More file actions";
+"files.refresh" = "Refresh folder";
 
 "files.connection" = "File connection (SSH)";
 

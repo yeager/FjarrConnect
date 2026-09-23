@@ -159,6 +159,8 @@
 "close.confirm" = "Lukk økter";
 
 "files.title" = "Filer (SFTP)";
+"files.moreActions" = "Flere filhandlinger";
+"files.refresh" = "Oppdater mappe";
 
 "files.connection" = "Filtilkobling (SSH)";
 

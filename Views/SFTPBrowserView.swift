@@ -18,9 +18,9 @@ struct SFTPBrowserView: View {
             } else {
                 VStack(spacing: 0) {
                     HStack {
-                        Button { session.browse((session.directory as NSString).deletingLastPathComponent.isEmpty ? "/" : (session.directory as NSString).deletingLastPathComponent) } label: { Image(systemName: "arrow.up") }.help("files.parent").accessibilityIdentifier("files.parent")
+                        Button { session.browse((session.directory as NSString).deletingLastPathComponent.isEmpty ? "/" : (session.directory as NSString).deletingLastPathComponent) } label: { Image(systemName: "arrow.up") }.help("files.parent").accessibilityLabel(Text("files.parent")).accessibilityIdentifier("files.parent")
                         TextField("files.path", text: $path).textFieldStyle(.roundedBorder).onSubmit { session.browse(path) }.accessibilityIdentifier("files.path")
-                        Button { session.browse(session.directory) } label: { Image(systemName: "arrow.clockwise") }.help("action.refresh").accessibilityIdentifier("files.refresh")
+                        Button { session.browse(session.directory) } label: { Image(systemName: "arrow.clockwise") }.help("files.refresh").accessibilityLabel(Text("files.refresh")).accessibilityIdentifier("files.refresh")
                         Button("files.upload", action: upload).accessibilityIdentifier("files.upload")
                         Button("files.download") { if let selected { download(selected) } }.disabled(selected == nil || selected?.isSymbolicLink == true).accessibilityIdentifier("files.download")
                         Menu {
@@ -30,7 +30,7 @@ struct SFTPBrowserView: View {
                                 Button("action.delete", role: .destructive) { delete(selected) }
                             }
                         } label: { Image(systemName: "ellipsis.circle") }
-                            .fixedSize().accessibilityIdentifier("files.actions")
+                            .fixedSize().accessibilityLabel(Text("files.moreActions")).accessibilityIdentifier("files.actions")
                     }.padding(10).disabled(session.busy || session.status != .connected)
                     Divider()
                     Table(session.entries, selection: $selection) {

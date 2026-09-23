@@ -159,6 +159,8 @@
 "close.confirm" = "Stäng sessioner";
 
 "files.title" = "Filer (SFTP)";
+"files.moreActions" = "Fler filåtgärder";
+"files.refresh" = "Uppdatera mapp";
 
 "files.connection" = "Filanslutning (SSH)";
 

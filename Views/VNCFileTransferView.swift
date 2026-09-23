@@ -17,11 +17,13 @@ struct VNCFileTransferView: View {
             HStack {
                 Button(action: goToParent) { Image(systemName: "arrow.up") }
                     .help("vnc.files.parent")
+                    .accessibilityLabel(Text("vnc.files.parent"))
                     .disabled(session.remoteDirectory == "/")
                 Text(session.remoteDirectory).lineLimit(1).truncationMode(.middle)
                     .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
                 Button { session.browseRemoteFiles(session.remoteDirectory) } label: { Image(systemName: "arrow.clockwise") }
                     .help("vnc.files.refresh")
+                    .accessibilityLabel(Text("vnc.files.refresh"))
                 Button {
                     if session.isUploadingFile { return }
                     upload()

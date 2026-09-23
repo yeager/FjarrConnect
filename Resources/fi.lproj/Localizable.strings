@@ -144,6 +144,8 @@
 "close.confirm" = "Sulje istunnot";
 
 "files.title" = "Tiedostot (SFTP)";
+"files.moreActions" = "Lisää tiedostotoimintoja";
+"files.refresh" = "Päivitä kansio";
 
 "files.connection" = "Tiedostoyhteys (SSH)";
 
