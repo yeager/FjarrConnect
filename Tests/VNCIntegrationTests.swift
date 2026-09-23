@@ -44,6 +44,17 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertFalse(message.contains("could not decide"))
     }
 
+    func testARDTimeoutExplainsThatTheMacDidNotFinishAuthentication() {
+        XCTAssertEqual(
+            VNCRemoteSession.connectionTimeoutMessage(authentication: .appleRemoteDesktop),
+            NSLocalizedString("vnc.ardAuthenticationTimeout", comment: "")
+        )
+        XCTAssertEqual(
+            VNCRemoteSession.connectionTimeoutMessage(authentication: .vnc),
+            NSLocalizedString("session.timeout", comment: "")
+        )
+    }
+
     func testVNCHandshakeExplainsVeNCryptRequirement() throws {
         try exerciseServer(requiresUsername: false, unsupportedSecurity: true)
     }

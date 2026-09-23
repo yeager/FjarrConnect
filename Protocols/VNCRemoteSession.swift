@@ -12,6 +12,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
     private var password: String?
     private var connectionDeadline: DispatchWorkItem?
     private var credentialFailure: String?
+    private var requestedAuthentication: VNCAuthenticationType?
     private var frameCheck: DispatchWorkItem?
     private var active = false
     private var clipboardForeground = false
@@ -39,6 +40,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
     func start() {
         guard connection == nil else { return }
         credentialFailure = nil
+        requestedAuthentication = nil
         notice = nil
         let settings = VNCConnection.Settings(
             isDebugLoggingEnabled: false,
@@ -65,7 +67,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
             guard let self, let connection, self.connection === connection,
                   self.status == .connecting else { return }
             self.stop()
-            self.status = .disconnected(reason: NSLocalizedString("session.timeout", comment: ""))
+            self.status = .disconnected(reason: Self.connectionTimeoutMessage(authentication: self.requestedAuthentication))
         }
         connectionDeadline = deadline
         DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: deadline)
@@ -168,6 +170,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         // Credential checks run on the main queue with the session state.
         DispatchQueue.main.async { [weak self] in
             guard let self, self.connection === connection else { completion(nil); return }
+            self.requestedAuthentication = authenticationType
             if authenticationType.requiresUsername,
                self.profile.username?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false {
                 self.credentialFailure = NSLocalizedString("vnc.usernameRequired", comment: "")
@@ -273,6 +276,12 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         }
 
         return "VNC \(host):\(port)\n" + explanation
+    }
+
+    static func connectionTimeoutMessage(authentication: VNCAuthenticationType?) -> String {
+        authentication == .appleRemoteDesktop
+            ? NSLocalizedString("vnc.ardAuthenticationTimeout", comment: "")
+            : NSLocalizedString("session.timeout", comment: "")
     }
 }
 

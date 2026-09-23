@@ -76,6 +76,7 @@
 "favorite.remove" = "Ta bort från favoriter";
 
 "session.timeout" = "Anslutningen tog för lång tid. Kontrollera adress, skärmdelning och brandvägg och försök igen.";
+"vnc.ardAuthenticationTimeout" = "Macens Skärmdelning svarade inte efter autentiseringen. Kontrollera att kontot är tillåtet under Skärmdelning och slå sedan av och på tjänsten på fjärr-Macen.";
 
 
 "vnc.usernameRequired" = "Servern kräver ett användarnamn. Ange det korta användarnamnet och lösenordet för kontot på fjärr-Macen, och kontrollera att kontot är tillåtet under Skärmdelning.";

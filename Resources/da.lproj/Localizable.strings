@@ -76,6 +76,7 @@
 "favorite.remove" = "Fjern fra favoritter";
 
 "session.timeout" = "Forbindelsen fik timeout. Kontrollér adresse, skærmdeling og firewall, og prøv igen.";
+"vnc.ardAuthenticationTimeout" = "Macens Skærmdeling svarede ikke efter godkendelse. Kontrollér, at kontoen er tilladt under Skærmdeling, og slå tjenesten fra og til på den eksterne Mac.";
 
 
 "vnc.usernameRequired" = "Serveren kræver et brugernavn. Angiv det korte brugernavn og adgangskoden til kontoen på den eksterne Mac, og kontrollér, at kontoen har adgang under Skærmdeling.";

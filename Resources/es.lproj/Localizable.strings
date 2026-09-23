@@ -66,6 +66,7 @@
 "favorite.add" = "Añadir a favoritos";
 "favorite.remove" = "Quitar de favoritos";
 "session.timeout" = "Se agotó el tiempo de conexión. Comprueba la dirección, Compartir pantalla y el cortafuegos e inténtalo de nuevo.";
+"vnc.ardAuthenticationTimeout" = "Compartir pantalla del Mac no respondió después de la autenticación. Comprueba que la cuenta tenga permiso en Compartir pantalla y desactiva y activa el servicio en el Mac remoto.";
 "vnc.usernameRequired" = "Este servidor requiere un nombre de usuario. Introduce el nombre corto y la contraseña de la cuenta del Mac remoto y comprueba que la cuenta tiene permiso para compartir la pantalla.";
 "vnc.connectionFailed" = "La conexión VNC falló. Comprueba la dirección y el puerto y confirma que Compartir pantalla o el servicio VNC está activado en el equipo remoto y que la cuenta tiene permiso.";
 "vnc.unsupportedSecurity" = "Este servidor requiere un método de seguridad VNC que FjärrConnect aún no admite, como VeNCrypt/TLS o RSA-AES. Usa la autenticación VNC estándar o selecciona una configuración de seguridad compatible en el servidor.";

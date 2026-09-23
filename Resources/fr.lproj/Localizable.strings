@@ -66,6 +66,7 @@
 "favorite.add" = "Ajouter aux favoris";
 "favorite.remove" = "Retirer des favoris";
 "session.timeout" = "Le délai de connexion a expiré. Vérifiez l’adresse, le partage d’écran et le pare-feu, puis réessayez.";
+"vnc.ardAuthenticationTimeout" = "Le partage d’écran du Mac n’a pas répondu après l’authentification. Vérifiez que le compte est autorisé dans Partage d’écran, puis désactivez et réactivez le service sur le Mac distant.";
 "vnc.usernameRequired" = "Ce serveur exige un nom d’utilisateur. Saisissez le nom court et le mot de passe du compte du Mac distant et vérifiez que le partage d’écran est autorisé pour ce compte.";
 "vnc.connectionFailed" = "La connexion VNC a échoué. Vérifiez l’adresse et le port, puis confirmez que Partage d’écran ou le service VNC est activé sur l’ordinateur distant et que le compte est autorisé.";
 "vnc.unsupportedSecurity" = "Ce serveur exige une méthode de sécurité VNC que FjärrConnect ne prend pas encore en charge, comme VeNCrypt/TLS ou RSA-AES. Utilisez l’authentification VNC standard ou sélectionnez un réglage de sécurité compatible sur le serveur.";

@@ -76,6 +76,7 @@
 "favorite.remove" = "Remove from favorites";
 
 "session.timeout" = "The connection timed out. Check the address, Screen Sharing and firewall, then try again.";
+"vnc.ardAuthenticationTimeout" = "The Mac’s Screen Sharing service did not respond after authentication. Check that the account is allowed under Screen Sharing, then turn the service off and on again on the remote Mac.";
 
 
 "vnc.usernameRequired" = "This server requires a username. Enter the remote Mac account’s short username and password, and check that the account is allowed under Screen Sharing.";
