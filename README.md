@@ -211,6 +211,10 @@ The project also has no RDS environment configured to allow practical audio and
 microphone-redirection testing. The per-profile controls remain opt-in and are only
 documented as runtime/server-dependent until they are exercised against such a server.
 
+An RDP profile can also select **Automatic**, **Slow**, **Balanced**, or **LAN** network
+behavior. Automatic leaves FreeRDP's network detection unchanged; the other choices
+use FreeRDP's tested network presets and apply only to that desktop profile.
+
 RDP currently presents one desktop surface per tab. Multi-monitor layouts and USB
 redirection are not exposed: MacFreeRDP cannot currently render multiple remote
 screens as an in-app feature. RoyalVNCKit’s

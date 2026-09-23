@@ -378,3 +378,12 @@
 "health.reconnect.value" = "Yritys %d / %d";
 "health.reconnect.none" = "Uudelleenyhdistämistä ei ole käynnissä";
 "health.unavailable" = "Ei saatavilla";
+
+/* RDP network profile */
+"rdp.network" = "Verkkoprofiili";
+"rdp.network.profile" = "Yhteyden laatu";
+"rdp.network.automatic" = "Automaattinen";
+"rdp.network.slow" = "Hidas yhteys";
+"rdp.network.balanced" = "Tasapainoinen";
+"rdp.network.lan" = "Lähiverkko";
+"rdp.network.hint" = "Käyttää tämän profiilin FreeRDP-verkon esiasetuksia.";

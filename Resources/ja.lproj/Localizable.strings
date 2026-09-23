@@ -378,3 +378,12 @@
 "health.reconnect.value" = "%d / %d 回目";
 "health.reconnect.none" = "再接続は実行されていません";
 "health.unavailable" = "利用できません";
+
+/* RDP network profile */
+"rdp.network" = "ネットワークプロファイル";
+"rdp.network.profile" = "接続品質";
+"rdp.network.automatic" = "自動";
+"rdp.network.slow" = "低速接続";
+"rdp.network.balanced" = "バランス";
+"rdp.network.lan" = "ローカルネットワーク";
+"rdp.network.hint" = "このプロファイルに FreeRDP のネットワークプリセットを使用します。";

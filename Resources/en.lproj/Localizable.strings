@@ -393,3 +393,12 @@
 "health.reconnect.value" = "Attempt %d of %d";
 "health.reconnect.none" = "No reconnecting attempt";
 "health.unavailable" = "Unavailable";
+
+/* RDP network profile */
+"rdp.network" = "Network profile";
+"rdp.network.profile" = "Connection quality";
+"rdp.network.automatic" = "Automatic";
+"rdp.network.slow" = "Slow connection";
+"rdp.network.balanced" = "Balanced";
+"rdp.network.lan" = "LAN";
+"rdp.network.hint" = "Uses FreeRDP network presets for this profile.";

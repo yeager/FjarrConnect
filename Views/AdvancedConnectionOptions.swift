@@ -84,6 +84,19 @@ struct AdvancedConnectionOptions: View {
                     Toggle("rdp.microphone", isOn: Binding(get: { rdp.redirectsMicrophone }, set: { rdp.microphoneRedirection = $0 }))
                     Text("rdp.devices.hint").font(.caption).foregroundStyle(.secondary)
                 }
+                if transport == .rdp {
+                    Section("rdp.network") {
+                        Picker("rdp.network.profile", selection: Binding(
+                            get: { rdp.selectedNetworkProfile },
+                            set: { rdp.networkProfile = $0 == .automatic ? nil : $0 }
+                        )) {
+                            ForEach(RDPOptions.NetworkProfile.allCases, id: \.self) { profile in
+                                Text(LocalizedStringKey("rdp.network." + profile.rawValue)).tag(profile)
+                            }
+                        }
+                        Text("rdp.network.hint").font(.caption).foregroundStyle(.secondary)
+                    }
+                }
                 if transport == .remoteApp { Section("rdp.remoteApp") {
                     TextField("rdp.remoteApp.program", text: optional($rdp.remoteApp), prompt: Text("rdp.remoteApp.example"))
                     Text("rdp.remoteApp.hint").font(.caption).foregroundStyle(.secondary)

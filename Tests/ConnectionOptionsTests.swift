@@ -107,6 +107,19 @@ final class ConnectionOptionsTests: XCTestCase {
         XCTAssertFalse(profile.isValid)
     }
 
+    func testRDPNetworkProfileIsOptInAndEscapesNoUserValues() throws {
+        var profile = ConnectionProfile(name: "Office", transport: .rdp, host: "desktop.local")
+        profile.rdp = RDPOptions()
+        var arguments = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
+        XCTAssertFalse(arguments.contains("/network:"))
+        profile.rdp?.networkProfile = .slow
+        arguments = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
+        XCTAssertTrue(arguments.contains("/network:modem\n"))
+        profile.rdp?.networkProfile = .balanced
+        arguments = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
+        XCTAssertTrue(arguments.contains("/network:broadband-high\n"))
+    }
+
     func testLoginAndGatewayCredentialsRemainSeparateAndAreRemovedTogether() throws {
         let id = UUID()
         defer {

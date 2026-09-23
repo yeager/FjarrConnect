@@ -378,3 +378,12 @@
 "health.reconnect.value" = "Tentative %d sur %d";
 "health.reconnect.none" = "Aucune reconnexion en cours";
 "health.unavailable" = "Indisponible";
+
+/* RDP network profile */
+"rdp.network" = "Profil réseau";
+"rdp.network.profile" = "Qualité de connexion";
+"rdp.network.automatic" = "Automatique";
+"rdp.network.slow" = "Connexion lente";
+"rdp.network.balanced" = "Équilibré";
+"rdp.network.lan" = "Réseau local";
+"rdp.network.hint" = "Utilise les préréglages réseau FreeRDP pour ce profil.";

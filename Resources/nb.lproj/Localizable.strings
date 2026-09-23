@@ -393,3 +393,12 @@
 "health.reconnect.value" = "Forsøk %d av %d";
 "health.reconnect.none" = "Ingen ny tilkobling pågår";
 "health.unavailable" = "Ikke tilgjengelig";
+
+/* RDP network profile */
+"rdp.network" = "Nettverksprofil";
+"rdp.network.profile" = "Tilkoblingskvalitet";
+"rdp.network.automatic" = "Automatisk";
+"rdp.network.slow" = "Langsom tilkobling";
+"rdp.network.balanced" = "Balansert";
+"rdp.network.lan" = "Lokalt nettverk";
+"rdp.network.hint" = "Bruker FreeRDPs nettverksforvalg for denne profilen.";

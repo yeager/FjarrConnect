@@ -393,3 +393,12 @@
 "health.reconnect.value" = "Forsøg %d af %d";
 "health.reconnect.none" = "Ingen genforbindelse i gang";
 "health.unavailable" = "Ikke tilgængelig";
+
+/* RDP network profile */
+"rdp.network" = "Netværksprofil";
+"rdp.network.profile" = "Forbindelseskvalitet";
+"rdp.network.automatic" = "Automatisk";
+"rdp.network.slow" = "Langsom forbindelse";
+"rdp.network.balanced" = "Balanceret";
+"rdp.network.lan" = "Lokalt netværk";
+"rdp.network.hint" = "Bruger FreeRDP-netværksforvalg for denne profil.";

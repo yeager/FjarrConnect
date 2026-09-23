@@ -13,6 +13,7 @@ enum RDPArguments {
         args.append(profile.sharesClipboard ? "+clipboard" : "-clipboard")
         if profile.rdp?.redirectsAudio == true { args.append("/sound:sys:mac") }
         if profile.rdp?.redirectsMicrophone == true { args.append("/microphone:sys:mac") }
+        if let network = profile.rdp?.selectedNetworkProfile.freeRDPValue { args.append("/network:\(network)") }
         if profile.transport == .remoteApp, let remoteApp = profile.rdp?.remoteAppProgram { args.append("/app:\(remoteApp)") }
         for (index, path) in (profile.rdp?.sharedFolders ?? []).enumerated() {
             args.append("/drive:Shared\(index + 1),\(path)")
