@@ -301,3 +301,5 @@
 "files.drop.hint" = "Dateiablage über die Zwischenablage ist für diese Sitzung nicht verfügbar. Öffnen Sie stattdessen Dateien (SFTP) für denselben Host.";
 
 "diagnostics.save" = "Diagnosebericht sichern";
+
+"field.tags" = "Tags (durch Komma getrennt)";

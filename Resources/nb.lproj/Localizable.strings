@@ -316,3 +316,5 @@
 "files.drop.hint" = "Filutklipp er ikke tilgjengelig for denne økten. Åpne Filer (SFTP) for samme vert i stedet.";
 
 "diagnostics.save" = "Lagre diagnostikkrapport";
+
+"field.tags" = "Etiketter (kommaseparert)";

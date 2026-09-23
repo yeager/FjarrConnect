@@ -301,3 +301,5 @@
 "files.drop.hint" = "Le transfert de fichiers par le presse-papiers n’est pas disponible pour cette session. Ouvrez plutôt Fichiers (SFTP) pour le même hôte.";
 
 "diagnostics.save" = "Enregistrer le rapport de diagnostic";
+
+"field.tags" = "Étiquettes (séparées par des virgules)";

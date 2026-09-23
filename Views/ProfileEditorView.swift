@@ -12,6 +12,7 @@ struct ProfileEditorView: View {
     @State private var password = ""
     @State private var changePassword = false
     @State private var group: String
+    @State private var tags: String
     @State private var logsSSHCommands: Bool
     @State private var ssh: SSHOptions
     @State private var rdp: RDPOptions
@@ -33,6 +34,7 @@ struct ProfileEditorView: View {
         _portText = State(initialValue: profile.map { String($0.port) } ?? "")
         _username = State(initialValue: profile?.username ?? "")
         _group = State(initialValue: profile?.group ?? "")
+        _tags = State(initialValue: profile?.normalizedTags.joined(separator: ", ") ?? "")
         _logsSSHCommands = State(initialValue: profile?.logsSSHCommands ?? false)
     }
 
@@ -53,6 +55,7 @@ struct ProfileEditorView: View {
                     TextField("field.host", text: $host).accessibilityIdentifier("profile.host")
                     TextField(String(format: NSLocalizedString("field.port.format", comment: ""), Int(transport.defaultPort)), text: $portText)
                     TextField("field.group", text: $group)
+                    TextField("field.tags", text: $tags)
                 }
                 Section {
                     TextField(LocalizedStringKey(transport == .vnc ? "field.vncUsername" : "field.username"), text: $username)
@@ -101,6 +104,8 @@ struct ProfileEditorView: View {
         result.rdp = rdp
         result.links = links
         result.clipboardEnabled = clipboard
+        result.tags = Array(Set(tags.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty })).sorted { $0.localizedStandardCompare($1) == .orderedAscending }
         return result.isValid ? result : nil
     }
 

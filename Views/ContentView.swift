@@ -268,7 +268,7 @@ struct ContentView: View {
     }
 
     private func matches(_ profile: ConnectionProfile) -> Bool {
-        search.isEmpty || [profile.name, profile.host, profile.group ?? "", profile.transport.rawValue]
+        search.isEmpty || ([profile.name, profile.host, profile.group ?? "", profile.transport.rawValue] + profile.normalizedTags)
             .contains { $0.localizedCaseInsensitiveContains(search) }
     }
     private func runQuickConnect() {

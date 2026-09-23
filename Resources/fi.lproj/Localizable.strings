@@ -301,3 +301,5 @@
 "files.drop.hint" = "Tiedostoleikepöytä ei ole käytettävissä tässä istunnossa. Avaa sen sijaan saman palvelimen Tiedostot (SFTP).";
 
 "diagnostics.save" = "Tallenna diagnostiikkaraportti";
+
+"field.tags" = "Tunnisteet (pilkuin eroteltuna)";

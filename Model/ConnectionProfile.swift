@@ -52,6 +52,8 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
 
     /// Optional Remmina-style organisation.
     var group: String?
+    /// User-defined labels used for filtering and quick access.
+    var tags: [String]?
     var ssh: SSHOptions?
     var rdp: RDPOptions?
     var links: HostLinks?
@@ -68,6 +70,11 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
     var isFavorite: Bool {
         get { favorite ?? false }
         set { favorite = newValue }
+    }
+
+    var normalizedTags: [String] {
+        Array(Set((tags ?? []).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty })).sorted { $0.localizedStandardCompare($1) == .orderedAscending }
     }
 
     init(id: UUID = UUID(),
