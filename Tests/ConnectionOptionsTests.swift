@@ -30,6 +30,19 @@ final class ConnectionOptionsTests: XCTestCase {
         XCTAssertTrue(profile.isValid)
     }
 
+    func testMacVNCAuthenticationCannotBeChangedToUsernameOptionalAtSignIn() {
+        let macProfile = ConnectionProfile(name: "Mac", host: "mac.local", username: "account",
+                                           usesMacScreenSharingAuthentication: true)
+        let macCredentials = CredentialsView(profile: macProfile, saved: false) { _, _, _, _ in }
+        XCTAssertFalse(macCredentials.allowsVNCAuthenticationModeSelection)
+        XCTAssertTrue(macCredentials.requiresVNCUsername)
+
+        let standardProfile = ConnectionProfile(name: "VNC", host: "vnc.local")
+        let standardCredentials = CredentialsView(profile: standardProfile, saved: false) { _, _, _, _ in }
+        XCTAssertTrue(standardCredentials.allowsVNCAuthenticationModeSelection)
+        XCTAssertFalse(standardCredentials.requiresVNCUsername)
+    }
+
     func testGraphicalSessionDropsPreserveLocalFilesForSFTPQueue() throws {
         let first = URL(fileURLWithPath: "/tmp/first.txt")
         let second = URL(fileURLWithPath: "/tmp/second.txt")

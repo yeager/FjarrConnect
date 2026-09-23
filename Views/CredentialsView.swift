@@ -18,11 +18,24 @@ struct CredentialsView: View {
         _username = State(initialValue: profile.username ?? "")
         _usesMacScreenSharingAuthentication = State(initialValue: profile.usesMacScreenSharingAuthentication)
     }
+
+    var allowsVNCAuthenticationModeSelection: Bool {
+        profile.transport == .vnc && !profile.usesMacScreenSharingAuthentication
+    }
+
+    var requiresVNCUsername: Bool {
+        profile.transport == .vnc &&
+            (profile.usesMacScreenSharingAuthentication || usesMacScreenSharingAuthentication)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Label("auth.title", systemImage: "lock.shield").font(.title2.bold())
             Text(profile.uri).foregroundStyle(.secondary).textSelection(.enabled)
-            if profile.transport == .vnc {
+            // A profile marked for Apple Screen Sharing must keep using its
+            // account-based authentication here. Let users choose a mode only
+            // for profiles that have not been identified/configured as Mac.
+            if allowsVNCAuthenticationModeSelection {
                 Picker("vnc.authenticationMode", selection: $usesMacScreenSharingAuthentication) {
                     Text("vnc.authentication.standard").tag(false)
                     Text("vnc.authentication.mac").tag(true)
@@ -30,7 +43,7 @@ struct CredentialsView: View {
                 .accessibilityIdentifier("auth.vncAuthenticationMode")
             }
             TextField(LocalizedStringKey(profile.transport == .vnc
-                ? (usesMacScreenSharingAuthentication ? "field.vncUsernameRequired" : "field.vncUsername")
+                ? (requiresVNCUsername ? "field.vncUsernameRequired" : "field.vncUsername")
                 : "field.username"), text: $username)
                 .accessibilityIdentifier("auth.username")
             SecureField("field.password", text: $password).accessibilityIdentifier("auth.password")
@@ -48,12 +61,12 @@ struct CredentialsView: View {
                     var candidate = profile
                     let user = username.trimmingCharacters(in: .whitespacesAndNewlines)
                     candidate.username = user.isEmpty ? nil : user
-                    candidate.usesMacScreenSharingAuthentication = profile.transport == .vnc && usesMacScreenSharingAuthentication
+                    candidate.usesMacScreenSharingAuthentication = requiresVNCUsername
                     connect(candidate, password, profile.rdp?.gatewayUsername == nil ? nil : gatewayPassword, remember)
                     password = ""; gatewayPassword = ""
                     dismiss()
                 }.keyboardShortcut(.defaultAction)
-                    .disabled(profile.transport == .vnc && usesMacScreenSharingAuthentication &&
+                    .disabled(requiresVNCUsername &&
                               username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .accessibilityIdentifier("auth.connect")
             }
