@@ -122,7 +122,8 @@ struct SettingsView: View {
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
-            try profiles.importExternalProfile(data: Data(contentsOf: url), fileExtension: url.pathExtension)
+            let data = try ProfileStore.readBoundedFile(at: url, maximumBytes: ProfileStore.maximumExternalProfileBytes)
+            try profiles.importExternalProfile(data: data, fileExtension: url.pathExtension)
             transferMessage = NSLocalizedString("profiles.importExternal.done", comment: "")
         } catch {
             transferMessage = NSLocalizedString("profiles.transfer.error", comment: "")
@@ -139,7 +140,8 @@ struct SettingsView: View {
                 transferMessage = NSLocalizedString("profiles.export.done", comment: "")
                 return .success(profiles.profiles.count)
             case .import(let url):
-                let count = try profiles.importEncryptedProfiles(Data(contentsOf: url), passphrase: passphrase)
+                let data = try ProfileStore.readBoundedFile(at: url, maximumBytes: ProfileStore.maximumProfileTransferBytes)
+                let count = try profiles.importEncryptedProfiles(data, passphrase: passphrase)
                 transferMessage = String(format: NSLocalizedString("profiles.import.done", comment: ""), count)
                 return .success(count)
             }

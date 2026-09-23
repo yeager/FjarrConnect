@@ -1,4 +1,5 @@
 import XCTest
+import CryptoKit
 @testable import FjarrConnect
 
 final class ConnectionTests: XCTestCase {
@@ -176,6 +177,9 @@ final class ConnectionTests: XCTestCase {
         let profile = ConnectionProfile(name: "Private desktop", transport: .rdp, host: "private.example", username: "admin")
         try source.save(profile, password: nil)
         let exported = try source.encryptedExport(passphrase: "fixture-export-passphrase")
+        let envelope = try XCTUnwrap(JSONSerialization.jsonObject(with: exported) as? [String: Any])
+        XCTAssertEqual(envelope["version"] as? Int, 2)
+        XCTAssertEqual(envelope["iterations"] as? Int, 600_000)
         let document = String(decoding: exported, as: UTF8.self)
         XCTAssertFalse(document.contains("private.example"))
         XCTAssertFalse(document.contains("admin"))
@@ -187,6 +191,68 @@ final class ConnectionTests: XCTestCase {
         XCTAssertEqual(imported.host, profile.host)
         XCTAssertEqual(imported.username, profile.username)
         XCTAssertNotEqual(imported.id, profile.id)
+    }
+
+    func testProfileTransferPBKDF2MatchesKnownSHA256Vector() throws {
+        let key = try ProfileStore.pbkdf2Key(passphrase: "password", salt: Data("salt".utf8), iterations: 1)
+        let expected: [UInt8] = [
+            0x12, 0x0f, 0xb6, 0xcf, 0xfc, 0xf8, 0xb3, 0x2c,
+            0x43, 0xe7, 0x22, 0x52, 0x56, 0xc4, 0xf8, 0x37,
+            0xa8, 0x65, 0x48, 0xc9, 0x2c, 0xcc, 0x35, 0x48,
+            0x08, 0x05, 0x98, 0x7c, 0xb7, 0x0b, 0xe1, 0x7b
+        ]
+        XCTAssertEqual(key.withUnsafeBytes { Array($0) }, expected)
+    }
+
+    func testBoundedProfileFileReaderAllowsLimitAndRejectsExcess() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let file = directory.appendingPathComponent("transfer.bin")
+        try Data(repeating: 0x5a, count: 4).write(to: file)
+        XCTAssertEqual(try ProfileStore.readBoundedFile(at: file, maximumBytes: 4), Data(repeating: 0x5a, count: 4))
+        try Data(repeating: 0x5a, count: 5).write(to: file)
+        XCTAssertThrowsError(try ProfileStore.readBoundedFile(at: file, maximumBytes: 4)) { error in
+            guard case ProfileTransferError.unsupportedFormat = error else {
+                return XCTFail("Expected over-limit file to be rejected")
+            }
+        }
+        for invalidLimit in [-1, Int.max] {
+            XCTAssertThrowsError(try ProfileStore.readBoundedFile(at: file, maximumBytes: invalidLimit))
+        }
+    }
+
+    func testLegacyEncryptedProfileTransferStillImportsAndOversizedInputIsRejected() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let profile = ConnectionProfile(name: "Legacy desktop", host: "legacy.local")
+        let passphrase = "legacy-transfer-test"
+        let plaintext = try JSONEncoder().encode([profile])
+        let salt = Data((0..<16).map(UInt8.init))
+        var material = salt
+        material.append(Data(passphrase.utf8))
+        var digest = Data(SHA256.hash(data: material))
+        let iterations = 120_000
+        for _ in 1..<iterations {
+            var round = digest
+            round.append(material)
+            digest = Data(SHA256.hash(data: round))
+        }
+        let sealed = try AES.GCM.seal(plaintext, using: SymmetricKey(data: digest))
+        let legacy = try JSONEncoder().encode(LegacyEncryptedProfileTransfer(
+            version: 1, iterations: iterations, salt: salt, ciphertext: try XCTUnwrap(sealed.combined)))
+        let destination = ProfileStore(fileURL: directory.appendingPathComponent("profiles.json"))
+        XCTAssertEqual(try destination.importEncryptedProfiles(legacy, passphrase: passphrase), 1)
+        XCTAssertEqual(destination.profiles.first?.host, profile.host)
+        XCTAssertNotEqual(destination.profiles.first?.id, profile.id)
+
+        let tooLarge = Data(repeating: 0, count: ProfileStore.maximumProfileTransferBytes + 1)
+        XCTAssertThrowsError(try destination.importEncryptedProfiles(tooLarge, passphrase: passphrase)) { error in
+            guard case ProfileTransferError.unsupportedFormat = error else {
+                return XCTFail("Expected oversized transfer to be rejected before decoding")
+            }
+        }
+        XCTAssertEqual(destination.profiles.count, 1)
     }
 
     func testCommonRDPAndVNCFilesImportOnlyConnectionFields() throws {
@@ -216,4 +282,11 @@ final class ConnectionTests: XCTestCase {
         XCTAssertEqual(importedVNC.username, "operator")
         XCTAssertNil(ExternalProfileImporter.profile(data: Data("Password=secret".utf8), fileExtension: "vnc"))
     }
+}
+
+private struct LegacyEncryptedProfileTransfer: Encodable {
+    let version: Int
+    let iterations: Int
+    let salt: Data
+    let ciphertext: Data
 }

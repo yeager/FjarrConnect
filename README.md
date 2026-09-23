@@ -363,9 +363,11 @@ passwords are stored as per-profile Keychain items. When editing a profile, enab
 **Change saved password** to replace it; an empty replacement removes the saved password.
 
 Under **Settings → Advanced**, profiles can be exported as an AES-GCM encrypted file
-using a temporary export password. The password is not saved, and neither desktop nor
-gateway Keychain passwords are included. Import adds new profile identities, so it
-cannot reuse a Keychain item that belongs to an existing profile.
+using PBKDF2-HMAC-SHA256 (600,000 iterations) and a temporary export password. The
+password is not saved, and neither desktop nor gateway Keychain passwords are included.
+Imports accept files up to 8 MiB and add new profile identities, so they cannot reuse a
+Keychain item that belongs to an existing profile. The previous encrypted export format
+remains importable. External `.rdp` and `.vnc` files are limited to 1 MiB.
 
 For VNC, RDP and RemoteApp profiles, **Require Touch ID before using saved
 credentials** makes macOS authenticate locally before FjarrConnect reads the

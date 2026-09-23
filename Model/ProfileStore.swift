@@ -1,10 +1,12 @@
 import Foundation
 import Combine
 import CryptoKit
+import CommonCrypto
 import Security
 
 private struct EncryptedProfileExport: Codable {
-    static let version = 1
+    static let legacyVersion = 1
+    static let currentVersion = 2
     let version: Int
     let iterations: Int
     let salt: Data
@@ -78,6 +80,10 @@ enum ExternalProfileImporter {
 }
 
 final class ProfileStore: ObservableObject {
+    static let maximumProfileTransferBytes = 8 * 1024 * 1024
+    static let maximumExternalProfileBytes = 1_048_576
+    private static let profileTransferIterations = 600_000
+
     @Published private(set) var profiles: [ConnectionProfile] = []
     @Published var errorMessage: String?
     private let fileURL: URL
@@ -140,15 +146,23 @@ final class ProfileStore: ObservableObject {
     func encryptedExport(passphrase: String) throws -> Data {
         guard !passphrase.isEmpty else { throw ProfileTransferError.emptyPassphrase }
         let salt = try Self.randomBytes(count: 16)
-        let iterations = 120_000
         let plaintext = try JSONEncoder().encode(profiles)
-        let key = Self.key(passphrase: passphrase, salt: salt, iterations: iterations)
+        guard plaintext.count <= Self.maximumProfileTransferBytes else {
+            throw ProfileTransferError.unsupportedFormat
+        }
+        let key = try Self.pbkdf2Key(passphrase: passphrase, salt: salt,
+                                     iterations: Self.profileTransferIterations)
         let sealed = try AES.GCM.seal(plaintext, using: key)
         guard let ciphertext = sealed.combined else { throw ProfileTransferError.unsupportedFormat }
-        return try JSONEncoder().encode(EncryptedProfileExport(version: EncryptedProfileExport.version,
-                                                                 iterations: iterations,
-                                                                 salt: salt,
-                                                                 ciphertext: ciphertext))
+        let document = try JSONEncoder().encode(EncryptedProfileExport(
+            version: EncryptedProfileExport.currentVersion,
+            iterations: Self.profileTransferIterations,
+            salt: salt,
+            ciphertext: ciphertext))
+        guard document.count <= Self.maximumProfileTransferBytes else {
+            throw ProfileTransferError.unsupportedFormat
+        }
+        return document
     }
 
     /// Imports profiles as new identities. The export contains no credentials,
@@ -156,14 +170,35 @@ final class ProfileStore: ObservableObject {
     @discardableResult
     func importEncryptedProfiles(_ data: Data, passphrase: String) throws -> Int {
         guard !passphrase.isEmpty else { throw ProfileTransferError.emptyPassphrase }
+        guard data.count <= Self.maximumProfileTransferBytes else {
+            throw ProfileTransferError.unsupportedFormat
+        }
         let document = try JSONDecoder().decode(EncryptedProfileExport.self, from: data)
-        guard document.version == EncryptedProfileExport.version,
-              (10_000...500_000).contains(document.iterations), document.salt.count == 16,
+        guard document.salt.count == 16,
               let sealed = try? AES.GCM.SealedBox(combined: document.ciphertext) else {
             throw ProfileTransferError.unsupportedFormat
         }
-        let key = Self.key(passphrase: passphrase, salt: document.salt, iterations: document.iterations)
+        let key: SymmetricKey
+        switch document.version {
+        case EncryptedProfileExport.legacyVersion:
+            guard (10_000...500_000).contains(document.iterations) else {
+                throw ProfileTransferError.unsupportedFormat
+            }
+            key = Self.legacyKey(passphrase: passphrase, salt: document.salt,
+                                 iterations: document.iterations)
+        case EncryptedProfileExport.currentVersion:
+            guard (Self.profileTransferIterations...1_000_000).contains(document.iterations) else {
+                throw ProfileTransferError.unsupportedFormat
+            }
+            key = try Self.pbkdf2Key(passphrase: passphrase, salt: document.salt,
+                                     iterations: document.iterations)
+        default:
+            throw ProfileTransferError.unsupportedFormat
+        }
         let plaintext = try AES.GCM.open(sealed, using: key)
+        guard plaintext.count <= Self.maximumProfileTransferBytes else {
+            throw ProfileTransferError.unsupportedFormat
+        }
         var imported = try JSONDecoder().decode([ConnectionProfile].self, from: plaintext)
         guard imported.allSatisfy(\.isValid) else { throw ProfileTransferError.invalidProfiles }
         for index in imported.indices {
@@ -174,6 +209,24 @@ final class ProfileStore: ObservableObject {
         guard !imported.isEmpty else { return 0 }
         try persist(profiles + imported, credentialID: UUID(), password: nil, gatewayPassword: nil)
         return imported.count
+    }
+
+    static func readBoundedFile(at url: URL, maximumBytes: Int) throws -> Data {
+        guard maximumBytes >= 0, maximumBytes < Int.max else {
+            throw ProfileTransferError.unsupportedFormat
+        }
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        var data = Data()
+        while data.count <= maximumBytes {
+            let remaining = maximumBytes + 1 - data.count
+            guard remaining > 0 else { break }
+            let chunk = try handle.read(upToCount: min(64 * 1024, remaining)) ?? Data()
+            guard !chunk.isEmpty else { break }
+            data.append(chunk)
+        }
+        guard data.count <= maximumBytes else { throw ProfileTransferError.unsupportedFormat }
+        return data
     }
 
     func importExternalProfile(data: Data, fileExtension: String) throws {
@@ -224,7 +277,33 @@ final class ProfileStore: ObservableObject {
         return bytes
     }
 
-    private static func key(passphrase: String, salt: Data, iterations: Int) -> SymmetricKey {
+    static func pbkdf2Key(passphrase: String, salt: Data, iterations: Int) throws -> SymmetricKey {
+        let password = Data(passphrase.utf8)
+        guard !password.isEmpty, let rounds = UInt32(exactly: iterations) else {
+            throw ProfileTransferError.unsupportedFormat
+        }
+        var derived = Data(count: 32)
+        let derivedCount = derived.count
+        let status = password.withUnsafeBytes { passwordBytes in
+            salt.withUnsafeBytes { saltBytes in
+                derived.withUnsafeMutableBytes { derivedBytes in
+                    CCKeyDerivationPBKDF(CCPBKDFAlgorithm(kCCPBKDF2),
+                                         passwordBytes.bindMemory(to: Int8.self).baseAddress,
+                                         password.count,
+                                         saltBytes.bindMemory(to: UInt8.self).baseAddress,
+                                         salt.count,
+                                         CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256),
+                                         rounds,
+                                         derivedBytes.bindMemory(to: UInt8.self).baseAddress,
+                                         derivedCount)
+                }
+            }
+        }
+        guard status == kCCSuccess else { throw ProfileTransferError.unsupportedFormat }
+        return SymmetricKey(data: derived)
+    }
+
+    private static func legacyKey(passphrase: String, salt: Data, iterations: Int) -> SymmetricKey {
         let password = Data(passphrase.utf8)
         var material = salt
         material.append(password)
