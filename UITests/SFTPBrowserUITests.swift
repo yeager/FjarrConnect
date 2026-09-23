@@ -170,7 +170,10 @@ final class SFTPBrowserUITests: XCTestCase {
         app.typeKey("a", modifierFlags: .command)
         app.typeText(path)
         app.typeKey(.return, modifierFlags: [])
-        let button = app.buttons[confirm].firstMatch
-        XCTAssertTrue(button.waitForExistence(timeout: 5)); button.click()
+        // NSOpenPanel exposes a Touch Bar copy of its action button which can
+        // win an accessibility query. Return invokes the visible panel's
+        // default action without relying on that ambiguous copy.
+        _ = confirm
+        app.typeKey(.return, modifierFlags: [])
     }
 }

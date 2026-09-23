@@ -64,7 +64,7 @@ final class ConnectionUITests: XCTestCase {
         row.doubleClick()
         XCTAssertTrue(app.secureTextFields["auth.password"].waitForExistence(timeout: 5))
         app.buttons["auth.cancel"].click()
-        app.buttons["favorite.Double click host"].click()
+        app.buttons["favorite.Double click host"].firstMatch.click()
         XCTAssertTrue(app.staticTexts["Favorites"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.secureTextFields["auth.password"].exists)
         row.click()
