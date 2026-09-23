@@ -73,6 +73,9 @@ struct SFTPBrowserView: View {
             }
         }
         .onChange(of: session.directory, initial: true) { _, value in path = value; selection = nil }
+        .onAppear(perform: uploadQueuedFilesIfReady)
+        .onChange(of: session.status) { _, _ in uploadQueuedFilesIfReady() }
+        .onChange(of: session.queuedUploads) { _, _ in uploadQueuedFilesIfReady() }
         .alert("error.title", isPresented: Binding(get: { session.errorMessage != nil }, set: { if !$0 { session.errorMessage = nil } })) {
             Button("action.ok", role: .cancel) { session.errorMessage = nil }
         } message: { Text(session.errorMessage ?? "") }
@@ -94,6 +97,10 @@ struct SFTPBrowserView: View {
             files.append((url, exists))
         }
         if !files.isEmpty { session.upload(files) }
+    }
+    private func uploadQueuedFilesIfReady() {
+        guard session.status == .connected, !session.busy, !session.queuedUploads.isEmpty else { return }
+        upload(session.takeQueuedUploads())
     }
     private func download(_ entry: SFTPEntry) {
         let panel = NSSavePanel(); panel.nameFieldStringValue = entry.name; panel.canCreateDirectories = true

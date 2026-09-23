@@ -302,7 +302,7 @@
 "settings.autoHideSessionTabsWhileConnected" = "Masquer les onglets de session pendant une connexion";
 
 "files.drop.title" = "Transférer les fichiers déposés";
-"files.drop.hint" = "Le transfert de fichiers par le presse-papiers n’est pas disponible pour cette session. Ouvrez plutôt Fichiers (SFTP) pour le même hôte.";
+"files.drop.hint" = "Le transfert de fichiers par le presse-papiers n’est pas disponible ici. Choisissez Envoyer pour ouvrir SFTP et ajouter ces fichiers à la file de transfert de cet hôte.";
 
 "diagnostics.save" = "Enregistrer le rapport de diagnostic";
 

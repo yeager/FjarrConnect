@@ -43,7 +43,9 @@ struct ContentView: View {
                             requestConnect(current, forcePrompt: true)
                         },
                                           close: { connection.requestClose(tab.id) },
-                                          openFiles: { connection.connect(tab.backend.profile.fileProfile) })
+                                          openFiles: { urls in
+                                              connection.connect(tab.backend.profile.fileProfile, initialFileUploads: urls)
+                                          })
                             .id(tab.id)
                     }
                 } else { welcome }
@@ -330,9 +332,10 @@ private struct SessionDetailView: View {
     @ObservedObject var tab: SessionTab
     let reconnect: () -> Void
     let close: () -> Void
-    let openFiles: () -> Void
+    let openFiles: ([URL]) -> Void
     @State private var showingCommandLog = false
     @State private var showingFileTransferSuggestion = false
+    @State private var pendingFileURLs: [URL] = []
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -371,7 +374,7 @@ private struct SessionDetailView: View {
                         .help("ssh.log.title")
                 }
                 if tab.backend.profile.transport.isGraphical {
-                    Button(action: openFiles) { Image(systemName: "folder.badge.plus") }
+                    Button { openFiles([]) } label: { Image(systemName: "folder.badge.plus") }
                         .help("files.title")
                         .accessibilityIdentifier("session.files")
                 }
@@ -384,7 +387,7 @@ private struct SessionDetailView: View {
                     Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                         .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                     Spacer()
-                    Button("diagnostics.save") { DiagnosticReport.save(profile: tab.backend.profile, status: tab.backend.status) }
+                    Button("diagnostics.save") { DiagnosticReport.save(profile: tab.backend.profile, status: tab.backend.status, health: tab.health) }
                 }.padding().frame(maxWidth: .infinity, alignment: .leading)
             }
             if let notice = tab.backend.notice {
@@ -403,6 +406,7 @@ private struct SessionDetailView: View {
                     .dropDestination(for: URL.self) { urls, _ in
                         guard tab.backend.profile.transport.isGraphical,
                               urls.allSatisfy(\.isFileURL) else { return false }
+                        pendingFileURLs = urls
                         showingFileTransferSuggestion = true
                         return true
                     }
@@ -410,8 +414,12 @@ private struct SessionDetailView: View {
         }
         .sheet(isPresented: $showingCommandLog) { SSHCommandLogView(profile: tab.backend.profile) }
         .confirmationDialog("files.drop.title", isPresented: $showingFileTransferSuggestion, titleVisibility: .visible) {
-            Button("files.title", action: openFiles)
-            Button("action.cancel", role: .cancel) {}
+            Button("files.upload") {
+                let urls = pendingFileURLs
+                pendingFileURLs = []
+                openFiles(urls)
+            }
+            Button("action.cancel", role: .cancel) { pendingFileURLs = [] }
         } message: { Text("files.drop.hint") }
     }
 }

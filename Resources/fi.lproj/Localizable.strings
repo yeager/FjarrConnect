@@ -302,7 +302,7 @@
 "settings.autoHideSessionTabsWhileConnected" = "Piilota istuntovälilehdet yhteyden aikana";
 
 "files.drop.title" = "Siirrä pudotetut tiedostot";
-"files.drop.hint" = "Tiedostoleikepöytä ei ole käytettävissä tässä istunnossa. Avaa sen sijaan saman palvelimen Tiedostot (SFTP).";
+"files.drop.hint" = "Tiedostojen siirto leikepöydän kautta ei ole käytettävissä. Valitse Lähetä avataksesi SFTP:n ja lisätäksesi nämä tiedostot tämän palvelimen siirtojonoon.";
 
 "diagnostics.save" = "Tallenna diagnostiikkaraportti";
 

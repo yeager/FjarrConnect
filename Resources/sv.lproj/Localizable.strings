@@ -317,7 +317,7 @@
 "settings.autoHideSessionTabsWhileConnected" = "Dölj sessionsflikar när en session är ansluten";
 
 "files.drop.title" = "Överför släppta filer";
-"files.drop.hint" = "Filurklipp är inte tillgängligt för den här sessionen. Öppna Filer (SFTP) för samma värd i stället.";
+"files.drop.hint" = "Filurklipp är inte tillgängligt här. Välj Skicka för att öppna SFTP och lägga filerna i uppladdningskön till den här värden.";
 
 "diagnostics.save" = "Spara diagnostikrapport";
 

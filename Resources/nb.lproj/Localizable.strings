@@ -317,7 +317,7 @@
 "settings.autoHideSessionTabsWhileConnected" = "Skjul øktfaner ved aktiv tilkobling";
 
 "files.drop.title" = "Overfør slupne filer";
-"files.drop.hint" = "Filutklipp er ikke tilgjengelig for denne økten. Åpne Filer (SFTP) for samme vert i stedet.";
+"files.drop.hint" = "Filutklipp er ikke tilgjengelig her. Velg Last opp for å åpne SFTP og legge filene i opplastingskøen for denne verten.";
 
 "diagnostics.save" = "Lagre diagnostikkrapport";
 

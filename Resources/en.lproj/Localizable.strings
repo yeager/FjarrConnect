@@ -317,7 +317,7 @@
 "settings.autoHideSessionTabsWhileConnected" = "Hide session tabs while connected";
 
 "files.drop.title" = "Transfer dropped files";
-"files.drop.hint" = "Clipboard file transfer is not available for this session. Open Files (SFTP) for the same host instead.";
+"files.drop.hint" = "File clipboard is not available here. Choose Upload to open SFTP and carry these files into the upload queue for this host.";
 
 "diagnostics.save" = "Save diagnostic report";
 

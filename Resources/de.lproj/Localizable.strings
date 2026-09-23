@@ -302,7 +302,7 @@
 "settings.autoHideSessionTabsWhileConnected" = "Sitzungs-Tabs bei aktiver Verbindung ausblenden";
 
 "files.drop.title" = "Abgelegte Dateien übertragen";
-"files.drop.hint" = "Dateiablage über die Zwischenablage ist für diese Sitzung nicht verfügbar. Öffnen Sie stattdessen Dateien (SFTP) für denselben Host.";
+"files.drop.hint" = "Dateiübertragung über die Zwischenablage ist hier nicht verfügbar. Wählen Sie Hochladen, um SFTP zu öffnen und diese Dateien für diesen Host zur Uploadliste hinzuzufügen.";
 
 "diagnostics.save" = "Diagnosebericht sichern";
 

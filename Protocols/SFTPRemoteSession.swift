@@ -20,6 +20,7 @@ final class SFTPRemoteSession: NSObject, RemoteSession, LocalProcessTerminalView
     private var stopped = false
     private let configurationArguments: [String]
     @Published private(set) var recoveringTransfer = false
+    @Published private(set) var queuedUploads: [URL] = []
 
     // An explicit configuration lets integration tests isolate host keys and
     // identities while exercising the real OpenSSH master and subsystem.
@@ -81,6 +82,16 @@ final class SFTPRemoteSession: NSObject, RemoteSession, LocalProcessTerminalView
         recoveringTransfer = true
         clientLock.lock(); let client = self.client; clientLock.unlock()
         client?.cancel()
+    }
+    func enqueueUploads(_ urls: [URL]) {
+        let valid = urls.filter { $0.isFileURL && FileManager.default.fileExists(atPath: $0.path) }
+        guard !valid.isEmpty else { return }
+        queuedUploads.append(contentsOf: valid)
+    }
+    func takeQueuedUploads() -> [URL] {
+        let result = queuedUploads
+        queuedUploads.removeAll()
+        return result
     }
     func browse(_ path: String) {
         perform { client in

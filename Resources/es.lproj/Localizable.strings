@@ -302,7 +302,7 @@
 "settings.autoHideSessionTabsWhileConnected" = "Ocultar las pestañas de sesión mientras haya conexión";
 
 "files.drop.title" = "Transferir archivos soltados";
-"files.drop.hint" = "La transferencia de archivos mediante el portapapeles no está disponible para esta sesión. Abra Archivos (SFTP) para el mismo host.";
+"files.drop.hint" = "El portapapeles no permite transferir archivos aquí. Elija Subir para abrir SFTP y poner estos archivos en la cola de carga de este host.";
 
 "diagnostics.save" = "Guardar informe de diagnóstico";
 

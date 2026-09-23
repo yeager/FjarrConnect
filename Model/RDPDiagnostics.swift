@@ -1,6 +1,5 @@
 import Foundation
 import AppKit
-import CryptoKit
 
 /// Retains only known FreeRDP error categories, never backend log messages.
 struct RDPDiagnostics {
@@ -50,10 +49,9 @@ struct RDPDiagnostics {
 
 /// A user-saveable connection report with no credentials or raw backend output.
 enum DiagnosticReport {
-    static func text(profile: ConnectionProfile, status: SessionStatus, now: Date = .now) -> String {
+    static func text(profile: ConnectionProfile, status: SessionStatus,
+                     health: SessionHealth? = nil, now: Date = .now) -> String {
         let formatter = ISO8601DateFormatter()
-        let endpoint = Data("\(profile.host):\(profile.port)".utf8)
-        let fingerprint = SHA256.hash(data: endpoint).prefix(12).map { String(format: "%02x", $0) }.joined()
         let state: String
         switch status {
         case .disconnected(let reason): state = reason == nil ? "disconnected" : "failed"
@@ -63,22 +61,39 @@ enum DiagnosticReport {
         case .running: state = "running"
         case .disconnecting: state = "disconnecting"
         }
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+        #if arch(arm64)
+        let architecture = "arm64"
+        #elseif arch(x86_64)
+        let architecture = "x86_64"
+        #else
+        let architecture = "unknown"
+        #endif
+        let latency = health?.latencyMilliseconds.map(String.init) ?? "unavailable"
+        let packetLoss = health?.packetLossPercent.map { String(format: "%.1f", locale: Locale(identifier: "en_US_POSIX"), $0) } ?? "unavailable"
         return [
             "FjarrConnect diagnostic report",
             "created: \(formatter.string(from: now))",
+            "app-version: \(version)",
+            "macOS: \(ProcessInfo.processInfo.operatingSystemVersionString)",
+            "architecture: \(architecture)",
             "protocol: \(profile.transport.rawValue)",
-            "endpoint-id: \(fingerprint)",
             "state: \(state)",
+            "tcp-handshake-ms: \(latency)",
+            "packet-loss-percent: \(packetLoss)",
+            "graphics-codec: \(health?.codec ?? "unavailable")",
+            "endpoint: omitted",
             "credentials: omitted",
-            "server-output: omitted"
+            "server-output: omitted",
+            "failure-details: omitted"
         ].joined(separator: "\n") + "\n"
     }
 
-    static func save(profile: ConnectionProfile, status: SessionStatus) {
+    static func save(profile: ConnectionProfile, status: SessionStatus, health: SessionHealth? = nil) {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = "FjarrConnect-diagnostic.txt"
         panel.allowedContentTypes = [.plainText]
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        try? text(profile: profile, status: status).write(to: url, atomically: true, encoding: .utf8)
+        try? text(profile: profile, status: status, health: health).write(to: url, atomically: true, encoding: .utf8)
     }
 }

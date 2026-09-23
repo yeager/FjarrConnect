@@ -158,7 +158,10 @@ For files, choose **Files (SFTP)** from a host’s context menu. VNC/RDP profile
 specify a separate SSH address, port, username and starting directory under
 Advanced options. The destination must run an SSH server with SFTP enabled.
 Authentication stays in an embedded terminal; the file panel opens after it succeeds.
-Uploads can also be started by dropping files onto the panel. Existing files require
+Drop files on an RDP or VNC desktop to open the SFTP upload flow for that host; the
+dropped files are carried into the SFTP upload queue. The destination must have an
+SSH server with SFTP enabled. File clipboard transfer through RDP and VNC is not
+available. Uploads can also be started by dropping files onto the panel. Existing files require
 confirmation before replacement. Folders are transferred recursively without merging
 into existing folders; symbolic links and special files are rejected. Transfers use
 private staging files, and originals are preserved on failure. Cancelling a transfer
@@ -308,10 +311,11 @@ the hint clears when desktop content arrives. It does not change the remote
 computer’s access permissions.
 
 RDP requires a listening Remote Desktop service on the destination port (normally
-3389). The app reports the destination, a recognized error category and the client
-exit code when a connection fails. NLA requirements and Remote Desktop licence
-negotiation have separate guidance. Backend logs and passwords are not displayed
-or saved as diagnostics.
+3389). The session view reports the destination, a recognized error category and
+the client exit code when a connection fails. NLA requirements and Remote Desktop
+licence negotiation have separate guidance. A saved diagnostic report includes
+app and macOS versions, architecture, session state and available connection-health
+values. It omits the endpoint, credentials, backend output and failure text.
 
 Quick-connect examples:
 

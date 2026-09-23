@@ -185,17 +185,21 @@ final class ConnectionManager: ObservableObject {
         return names.isEmpty || !AppSettings.shouldConfirmClosingSessions || CloseConfirmation.application(names)
     }
 
-    func connect(_ profile: ConnectionProfile, password: String? = nil, gatewayPassword: String? = nil) {
+    func connect(_ profile: ConnectionProfile, password: String? = nil, gatewayPassword: String? = nil,
+                 initialFileUploads: [URL] = []) {
         guard profile.isValid else { return }
         if let tab = tabs.first(where: { $0.backend.profile.id == profile.id &&
             $0.backend.profile.host == profile.host && $0.backend.profile.port == profile.port &&
             $0.backend.profile.transport == profile.transport && $0.backend.profile.username == profile.username &&
             !$0.backend.status.isFinished }) {
+            (tab.backend as? SFTPRemoteSession)?.enqueueUploads(initialFileUploads)
             selectedID = tab.id
             return
         }
         let credentials = SessionCredentials(password: password, gatewayPassword: gatewayPassword)
-        let tab = SessionTab(backend: makeSession(profile, credentials), credentials: credentials, makeSession: makeSession)
+        let backend = makeSession(profile, credentials)
+        (backend as? SFTPRemoteSession)?.enqueueUploads(initialFileUploads)
+        let tab = SessionTab(backend: backend, credentials: credentials, makeSession: makeSession)
         tabSubscriptions[tab.id] = tab.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }

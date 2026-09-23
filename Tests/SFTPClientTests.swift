@@ -2,6 +2,21 @@ import XCTest
 @testable import FjarrConnect
 
 final class SFTPClientTests: XCTestCase {
+    func testQueuedFileUploadsAcceptOnlyExistingLocalFilesAndDrainOnce() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("report.txt")
+        try Data("contents".utf8).write(to: file)
+        let remote = try XCTUnwrap(URL(string: "https://example.invalid/report.txt"))
+        let session = SFTPRemoteSession(profile: ConnectionProfile(name: "Files", transport: .sftp, host: "files.local"))
+
+        session.enqueueUploads([file, remote, directory.appendingPathComponent("missing.txt")])
+
+        XCTAssertEqual(session.takeQueuedUploads(), [file])
+        XCTAssertTrue(session.takeQueuedUploads().isEmpty)
+    }
+
     func testRealSubsystemTransfersUnicodeFilesAndDirectoriesWithoutShellParsing() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)

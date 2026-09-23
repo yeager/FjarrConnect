@@ -302,7 +302,7 @@
 "settings.autoHideSessionTabsWhileConnected" = "接続中はセッションタブを隠す";
 
 "files.drop.title" = "ドロップしたファイルを転送";
-"files.drop.hint" = "このセッションではクリップボードによるファイル転送を使用できません。代わりに同じホストの「ファイル（SFTP）」を開いてください。";
+"files.drop.hint" = "ここではクリップボードによるファイル転送を利用できません。「アップロード」を選ぶとSFTPを開き、このホストへのアップロード待ちにファイルを追加します。";
 
 "diagnostics.save" = "診断レポートを保存";
 
