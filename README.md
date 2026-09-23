@@ -83,7 +83,7 @@ The downloads are ad-hoc signed and not notarized. macOS may ask for approval in
 |---|---|---|
 | VNC / Mac Screen Sharing | Embedded desktop through [RoyalVNCKit](https://github.com/royalapplications/royalvnc), with keyboard, mouse and clipboard support | VNC password or remote Mac username/password; optional Keychain storage |
 | SSH | Embedded [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) terminal running macOS `/usr/bin/ssh`, with optional encrypted keep-alives during idle periods | Your SSH configuration, keys and ssh-agent; passwords and new host-key confirmation in the terminal |
-| RDP | Embedded [FreeRDP](https://github.com/FreeRDP/FreeRDP) desktop or RemoteApp, keyboard/mouse, resizing, text and image clipboard, shared folders, local-device options and gateway settings | Username/password; localized certificate verification and separate gateway credentials |
+| RDP | Embedded [FreeRDP](https://github.com/FreeRDP/FreeRDP) desktop or RemoteApp, keyboard/mouse, resizing, text and image clipboard, shared folders and RD Gateway over HTTPS | Username/password; localized certificate verification and separate gateway credentials |
 | SFTP | Built-in file panel using the authenticated OpenSSH connection | Keys/agent or interactive password and host-key prompts |
 
 For a saved VNC profile, choose **Standard VNC** for password-only VNC, or **Mac
