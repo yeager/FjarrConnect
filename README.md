@@ -31,6 +31,9 @@ sidebar, dialogs, other tabs or audio.
 The downloads are ad-hoc signed and not notarized. macOS may ask for approval in
 **System Settings → Privacy & Security** on first launch.
 
+The feature list below describes the current `main` branch. Changes not yet included
+in version 0.2.23 are listed under **Unreleased** in [RELEASE_NOTES.md](RELEASE_NOTES.md).
+
 ## Features
 
 - **Favorites:** star saved connections to pin them above the list.
