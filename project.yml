@@ -10,7 +10,7 @@ packages:
   RoyalVNCKit:
     # Includes bounded RFB extended-clipboard image support stacked on royalvnc#2.
     url: https://github.com/yeager/royalvnc
-    revision: "9707039d8141d1c7cf696fa8a238cb9f374dd464"
+    revision: "5b5f350108e70dbc7beecd583fd9d2e4630827ba"
   SwiftTerm:
     url: https://github.com/migueldeicaza/SwiftTerm
     exactVersion: "1.10.1"
