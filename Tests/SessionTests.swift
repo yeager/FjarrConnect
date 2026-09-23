@@ -166,12 +166,22 @@ final class SessionTests: XCTestCase {
         wait(for: [restarted], timeout: 3)
     }
 
+    func testHealthUsesReportedCodecAndDoesNotInventPacketLoss() {
+        let backend = TestSession(profile: ConnectionProfile(name: "Office", host: "office.local"))
+        backend.codec = "H.264"
+        let tab = SessionTab(backend: backend, credentials: SessionCredentials(), makeSession: { _, _ in backend })
+        XCTAssertEqual(tab.health.codec, "H.264")
+        XCTAssertNil(tab.health.packetLossPercent)
+    }
+
 }
 
 private final class TestSession: RemoteSession {
     let profile: ConnectionProfile
     @Published var status: SessionStatus = .idle
     var active = false
+    var codec: String?
+    var negotiatedCodec: String? { codec }
     func setActive(_ active: Bool) { self.active = active }
     var startCount = 0
     var stopCount = 0

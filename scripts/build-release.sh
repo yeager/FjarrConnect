@@ -11,8 +11,12 @@ APP="build/release-$ARCH/Build/Products/Release/FjarrConnect.app"
 test -d "$APP"
 python3 scripts/check-resources.py --app "$APP"
 mkdir -p "$APP/Contents/Frameworks" "$APP/Contents/Resources/Licenses"
-cp "build/rdp-artifacts/rdp-$ARCH/libFjarrRDP.dylib" "$APP/Contents/Frameworks/libFjarrRDP.dylib"
-cp "build/rdp-artifacts/rdp-$ARCH/Licenses/"* "$APP/Contents/Resources/Licenses/"
+ARTIFACT="build/rdp-artifacts/rdp-$ARCH"
+OUTPUT="build/rdp-output/$ARCH"
+RUNTIME_ROOT="$ARTIFACT"
+if [ -f "$OUTPUT/libFjarrRDP.dylib" ] && { [ ! -f "$ARTIFACT/libFjarrRDP.dylib" ] || [ "$OUTPUT/libFjarrRDP.dylib" -nt "$ARTIFACT/libFjarrRDP.dylib" ]; }; then RUNTIME_ROOT="$OUTPUT"; fi
+cp "$RUNTIME_ROOT/libFjarrRDP.dylib" "$APP/Contents/Frameworks/libFjarrRDP.dylib"
+cp "$RUNTIME_ROOT/Licenses/"* "$APP/Contents/Resources/Licenses/"
 # Every executable, including the required embedded VNC framework, is single-architecture.
 test -f "$APP/Contents/Frameworks/RoyalVNCKit.framework/Versions/A/RoyalVNCKit"
 while IFS= read -r binary; do

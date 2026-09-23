@@ -8,10 +8,17 @@ xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
   -derivedDataPath "$DERIVED_DATA" ARCHS="$ARCH" ONLY_ACTIVE_ARCH=YES \
   CODE_SIGNING_ALLOWED=NO build
 APP="$DERIVED_DATA/Build/Products/Debug/FjarrConnect.app"
-RUNTIME="build/rdp-artifacts/rdp-$ARCH/libFjarrRDP.dylib"
-if [ ! -f "$RUNTIME" ]; then RUNTIME="build/rdp-output/$ARCH/libFjarrRDP.dylib"; fi
+ARTIFACT="build/rdp-artifacts/rdp-$ARCH/libFjarrRDP.dylib"
+OUTPUT="build/rdp-output/$ARCH/libFjarrRDP.dylib"
+# A locally rebuilt runtime must win over an older cached artifact. Clean CI
+# checkouts have only the artifact and retain their reproducible input.
+RUNTIME="$ARTIFACT"
+if [ -f "$OUTPUT" ] && { [ ! -f "$ARTIFACT" ] || [ "$OUTPUT" -nt "$ARTIFACT" ]; }; then RUNTIME="$OUTPUT"; fi
 test -f "$RUNTIME"
 mkdir -p "$APP/Contents/Frameworks"
 cp "$RUNTIME" "$APP/Contents/Frameworks/libFjarrRDP.dylib"
+# macOS rejects newly copied executable code in an ad-hoc signed debug app on
+# Apple Silicon. Sign after the copy, before the runtime smoke test.
+codesign --force --sign - "$APP/Contents/Frameworks/libFjarrRDP.dylib"
 python3 scripts/smoke-rdp.py "$APP/Contents/Frameworks/libFjarrRDP.dylib"
 echo "$APP"

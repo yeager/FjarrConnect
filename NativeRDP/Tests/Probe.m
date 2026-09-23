@@ -42,7 +42,7 @@ int main(int argc, const char **argv) {
         NSData *translations = [NSData dataWithContentsOfFile:[NSString stringWithUTF8String:argv[1]]];
         NSString *json = [[NSString alloc] initWithData:translations encoding:NSUTF8StringEncoding];
         NSView *view = (__bridge_transfer NSView *)fc_rdp_create(arguments.UTF8String, json.UTF8String);
-        if (!view || fc_rdp_abi() != 1) return 3;
+        if (!view || fc_rdp_abi() != 2) return 3;
         NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(80, 80, 1100, 750) styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskResizable backing:NSBackingStoreBuffered defer:NO];
         window.title = @"FjärrConnect — embedded RDP integration test";
         window.contentView = view; [window makeKeyAndOrderFront:nil]; [NSApp activateIgnoringOtherApps:YES];

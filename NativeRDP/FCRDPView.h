@@ -12,3 +12,6 @@ FC_EXPORT void fc_rdp_set_active(void *view, int active);
 FC_EXPORT int fc_rdp_status(void *view);
 FC_EXPORT uint32_t fc_rdp_error(void *view);
 FC_EXPORT int fc_rdp_failure(void *view);
+// The graphics codec negotiated by this RDP connection, or an empty string
+// before negotiation. The returned string is owned by the runtime.
+FC_EXPORT const char *fc_rdp_codec(void *view);

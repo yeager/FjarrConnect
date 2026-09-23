@@ -380,3 +380,16 @@
 "session.reconnect.hint" = "Tries at most three times after a connection ends unexpectedly.";
 
 "session.reconnect.status" = "Reconnecting (%d of %d)…";
+
+/* Connection health */
+"health.title" = "Connection health";
+"health.latency" = "Latency";
+"health.latency.value" = "%d ms";
+"health.packetLoss" = "Packet loss";
+"health.packetLoss.value" = "%.1f%%";
+"health.packetLoss.unavailable" = "Unavailable for this TCP session";
+"health.codec" = "Codec";
+"health.reconnect" = "Reconnection";
+"health.reconnect.value" = "Attempt %d of %d";
+"health.reconnect.none" = "No reconnecting attempt";
+"health.unavailable" = "Unavailable";

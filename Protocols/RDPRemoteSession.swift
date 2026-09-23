@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Owns one embedded desktop, including its native connection worker. Changing
 /// tabs detaches the view without stopping the connection.
-final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource {
+final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource, SessionHealthProviding {
     let profile: ConnectionProfile
     private var credentials: SessionCredentials
     @Published private(set) var status: SessionStatus = .idle
@@ -12,6 +12,11 @@ final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource {
     private let runtime: RDPRuntime?
 
     var recordingView: NSView? { screen }
+    var negotiatedCodec: String? {
+        guard let pointer, let value = runtime?.codec(pointer) else { return nil }
+        let codec = String(cString: value)
+        return codec.isEmpty ? nil : codec
+    }
 
     static var isAvailable: Bool { RDPRuntime.shared != nil }
     init(profile: ConnectionProfile, password: String?, gatewayPassword: String? = nil, runtime: RDPRuntime? = .shared) {

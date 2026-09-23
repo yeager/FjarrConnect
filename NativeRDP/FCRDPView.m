@@ -130,6 +130,7 @@ static NSData *FCBMPFromDIB(NSData *dib) {
 @property(atomic) BOOL unicodeSupported;
 @property(atomic) uint32_t requestedWidth;
 @property(atomic) uint32_t requestedHeight;
+@property(atomic) int negotiatedCodec;
 @property(nonatomic) NSCursor *remoteCursor;
 - (instancetype)initWithArguments:(NSString *)arguments translations:(NSDictionary *)translations;
 - (void)start;
@@ -691,7 +692,14 @@ static BOOL FCPreConnect(freerdp *instance) {
 static BOOL FCPostConnect(freerdp *instance) {
     if (!gdi_init(instance, PIXEL_FORMAT_BGRX32)) return FALSE;
     rdpContext *ctx = instance->context;
-    FCView(ctx).unicodeSupported = freerdp_settings_get_bool(ctx->settings, FreeRDP_UnicodeInput);
+    FCRDPView *view = FCView(ctx);
+    view.unicodeSupported = freerdp_settings_get_bool(ctx->settings, FreeRDP_UnicodeInput);
+    // These settings are finalized by FreeRDP's capability exchange. Prefer
+    // the most specific graphics codec when several compatible flags remain.
+    if (freerdp_settings_get_bool(ctx->settings, FreeRDP_GfxH264)) view.negotiatedCodec = 1;
+    else if (freerdp_settings_get_bool(ctx->settings, FreeRDP_RemoteFxCodec)) view.negotiatedCodec = 2;
+    else if (freerdp_settings_get_bool(ctx->settings, FreeRDP_NSCodec)) view.negotiatedCodec = 3;
+    else view.negotiatedCodec = 4;
     ctx->update->BeginPaint = FCBeginPaint; ctx->update->EndPaint = FCEndPaint; ctx->update->DesktopResize = FCResize;
     rdpPointer pointer = {0}; pointer.size = sizeof(pointer); pointer.New = FCPointerNew; pointer.Free = FCPointerFree;
     pointer.Set = FCPointerSet; pointer.SetNull = FCPointerNull; pointer.SetDefault = FCPointerDefault;
@@ -703,7 +711,7 @@ static void FCPostDisconnect(freerdp *instance) {
     PubSub_UnsubscribeChannelDisconnected(instance->context->pubSub, FCChannelDisconnected);
     gdi_free(instance);
 }
-uint32_t fc_rdp_abi(void) { return 1; }
+uint32_t fc_rdp_abi(void) { return 2; }
 void *fc_rdp_create(const char *arguments, const char *translations) {
     if (!arguments || !translations || !NSThread.isMainThread) return NULL;
     NSData *json = [NSData dataWithBytes:translations length:strlen(translations)];
@@ -717,6 +725,15 @@ void fc_rdp_stop(void *view) { [(__bridge FCRDPView *)view stop]; }
 void fc_rdp_set_active(void *view, int active) { [(__bridge FCRDPView *)view setSessionActive:active != 0]; }
 int fc_rdp_status(void *view) { return ((__bridge FCRDPView *)view).connectionStatus; }
 uint32_t fc_rdp_error(void *view) { return ((__bridge FCRDPView *)view).errorCode; }
+const char *fc_rdp_codec(void *view) {
+    switch (((__bridge FCRDPView *)view).negotiatedCodec) {
+        case 1: return "H.264";
+        case 2: return "RemoteFX";
+        case 3: return "NSCodec";
+        case 4: return "Bitmap";
+        default: return "";
+    }
+}
 
 int fc_rdp_failure(void *view) {
     const UINT32 error = fc_rdp_error(view);

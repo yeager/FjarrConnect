@@ -380,3 +380,16 @@
 "session.reconnect.hint" = "Prøver højst tre gange efter en afbrudt forbindelse.";
 
 "session.reconnect.status" = "Genforbinder (%d af %d)…";
+
+/* Connection health */
+"health.title" = "Forbindelsestilstand";
+"health.latency" = "Ventetid";
+"health.latency.value" = "%d ms";
+"health.packetLoss" = "Pakketab";
+"health.packetLoss.value" = "%.1f %%";
+"health.packetLoss.unavailable" = "Ikke tilgængelig for denne TCP-session";
+"health.codec" = "Codec";
+"health.reconnect" = "Genforbindelse";
+"health.reconnect.value" = "Forsøg %d af %d";
+"health.reconnect.none" = "Ingen genforbindelse i gang";
+"health.unavailable" = "Ikke tilgængelig";

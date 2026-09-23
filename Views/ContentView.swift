@@ -336,6 +336,7 @@ private struct SessionDetailView: View {
                 }
                 Spacer()
                 Text(tab.backend.status.label).font(.callout).foregroundStyle(.secondary)
+                SessionHealthMenu(health: tab.health, reconnectAttempt: tab.reconnectAttempt)
                 if let attempt = tab.reconnectAttempt {
                     Text(String(format: NSLocalizedString("session.reconnect.status", comment: ""), attempt, 3))
                         .font(.caption).foregroundStyle(.secondary)
@@ -406,6 +407,31 @@ private struct SessionDetailView: View {
             Button("files.title", action: openFiles)
             Button("action.cancel", role: .cancel) {}
         } message: { Text("files.drop.hint") }
+    }
+}
+
+private struct SessionHealthMenu: View {
+    let health: SessionHealth
+    let reconnectAttempt: Int?
+
+    var body: some View {
+        Menu {
+            Text("health.title").font(.headline)
+            Divider()
+            healthRow("health.latency", value: health.latencyMilliseconds.map { String(format: NSLocalizedString("health.latency.value", comment: ""), $0) } ?? NSLocalizedString("health.unavailable", comment: ""))
+            healthRow("health.packetLoss", value: health.packetLossPercent.map { String(format: NSLocalizedString("health.packetLoss.value", comment: ""), $0) } ?? NSLocalizedString("health.packetLoss.unavailable", comment: ""))
+            healthRow("health.codec", value: health.codec ?? NSLocalizedString("health.unavailable", comment: ""))
+            healthRow("health.reconnect", value: reconnectAttempt.map { String(format: NSLocalizedString("health.reconnect.value", comment: ""), $0, 3) } ?? NSLocalizedString("health.reconnect.none", comment: ""))
+        } label: {
+            Image(systemName: "chart.bar.xaxis")
+        }
+        .help("health.title")
+        .accessibilityIdentifier("session.health")
+    }
+
+    @ViewBuilder
+    private func healthRow(_ key: LocalizedStringKey, value: String) -> some View {
+        HStack { Text(key); Spacer(); Text(value).foregroundStyle(.secondary) }
     }
 }
 

@@ -365,3 +365,16 @@
 "session.reconnect.hint" = "Effectue au plus trois tentatives après une déconnexion inattendue.";
 
 "session.reconnect.status" = "Reconnexion (%d sur %d)…";
+
+/* Connection health */
+"health.title" = "État de la connexion";
+"health.latency" = "Latence";
+"health.latency.value" = "%d ms";
+"health.packetLoss" = "Perte de paquets";
+"health.packetLoss.value" = "%.1f %%";
+"health.packetLoss.unavailable" = "Indisponible pour cette session TCP";
+"health.codec" = "Codec";
+"health.reconnect" = "Reconnexion";
+"health.reconnect.value" = "Tentative %d sur %d";
+"health.reconnect.none" = "Aucune reconnexion en cours";
+"health.unavailable" = "Indisponible";

@@ -365,3 +365,16 @@
 "session.reconnect.hint" = "Yrittää enintään kolme kertaa odottamattoman katkaisun jälkeen.";
 
 "session.reconnect.status" = "Yhdistetään uudelleen (%d / %d)…";
+
+/* Connection health */
+"health.title" = "Yhteyden tila";
+"health.latency" = "Viive";
+"health.latency.value" = "%d ms";
+"health.packetLoss" = "Pakettihäviö";
+"health.packetLoss.value" = "%.1f %%";
+"health.packetLoss.unavailable" = "Ei saatavilla tälle TCP-istunnolle";
+"health.codec" = "Koodekki";
+"health.reconnect" = "Uudelleenyhdistäminen";
+"health.reconnect.value" = "Yritys %d / %d";
+"health.reconnect.none" = "Uudelleenyhdistämistä ei ole käynnissä";
+"health.unavailable" = "Ei saatavilla";

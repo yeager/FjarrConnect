@@ -365,3 +365,16 @@
 "session.reconnect.hint" = "予期しない切断後に最大3回試行します。";
 
 "session.reconnect.status" = "再接続中（%d/%d）…";
+
+/* Connection health */
+"health.title" = "接続の状態";
+"health.latency" = "遅延";
+"health.latency.value" = "%d ms";
+"health.packetLoss" = "パケット損失";
+"health.packetLoss.value" = "%.1f %%";
+"health.packetLoss.unavailable" = "この TCP セッションでは利用できません";
+"health.codec" = "コーデック";
+"health.reconnect" = "再接続";
+"health.reconnect.value" = "%d / %d 回目";
+"health.reconnect.none" = "再接続は実行されていません";
+"health.unavailable" = "利用できません";

@@ -380,3 +380,16 @@
 "session.reconnect.hint" = "Försöker högst tre gånger efter en oväntad frånkoppling.";
 
 "session.reconnect.status" = "Återansluter (%d av %d)…";
+
+/* Connection health */
+"health.title" = "Anslutningshälsa";
+"health.latency" = "Latens";
+"health.latency.value" = "%d ms";
+"health.packetLoss" = "Paketförlust";
+"health.packetLoss.value" = "%.1f %%";
+"health.packetLoss.unavailable" = "Inte tillgängligt för denna TCP-session";
+"health.codec" = "Codec";
+"health.reconnect" = "Återanslutning";
+"health.reconnect.value" = "Försök %d av %d";
+"health.reconnect.none" = "Ingen återanslutning pågår";
+"health.unavailable" = "Inte tillgängligt";

@@ -31,10 +31,26 @@ enum SessionStatus: Equatable {
     var error: String? { if case .disconnected(let reason) = self { return reason }; return nil }
 }
 
+/// Measurements that can be shown without pretending that a transport exposes
+/// information it does not provide. `latencyMilliseconds` is a TCP handshake
+/// sample to the profile endpoint, rather than an estimate of desktop-frame
+/// latency. TCP does not expose packet loss, so that value intentionally stays
+/// nil until a runtime can report it.
+struct SessionHealth: Equatable {
+    var latencyMilliseconds: Int?
+    var packetLossPercent: Double?
+    var codec: String?
+}
+
+/// Marker adopted only by live graphical backends. Test doubles and terminal
+/// sessions do not start background endpoint probes.
+protocol SessionHealthProviding {}
+
 protocol RemoteSession: ObservableObject, AnyObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     var profile: ConnectionProfile { get }
     var status: SessionStatus { get }
     var notice: String? { get }
+    var negotiatedCodec: String? { get }
     func start()
     func stop()
     func setActive(_ active: Bool)
@@ -44,6 +60,7 @@ protocol RemoteSession: ObservableObject, AnyObject where ObjectWillChangePublis
 extension RemoteSession {
     var notice: String? { nil }
     func setActive(_ active: Bool) {}
+    var negotiatedCodec: String? { nil }
 }
 
 enum ProtocolRegistry {

@@ -7,7 +7,7 @@ import RoyalVNCKit
 ///
 /// RoyalVNCKit's `VNCCAFramebufferView` both renders the framebuffer and forwards
 /// local mouse/keyboard events to the server, so we don't inject input by hand.
-final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VNCClipboardDelegate, SessionRecordingSource {
+final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VNCClipboardDelegate, SessionRecordingSource, SessionHealthProviding {
     let profile: ConnectionProfile
     private var password: String?
     private var connectionDeadline: DispatchWorkItem?

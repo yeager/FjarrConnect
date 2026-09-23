@@ -365,3 +365,16 @@
 "session.reconnect.hint" = "Nach einer unterbrochenen Verbindung werden höchstens drei Versuche unternommen.";
 
 "session.reconnect.status" = "Wiederverbindung (%d von %d)…";
+
+/* Connection health */
+"health.title" = "Verbindungsstatus";
+"health.latency" = "Latenz";
+"health.latency.value" = "%d ms";
+"health.packetLoss" = "Paketverlust";
+"health.packetLoss.value" = "%.1f %%";
+"health.packetLoss.unavailable" = "Für diese TCP-Sitzung nicht verfügbar";
+"health.codec" = "Codec";
+"health.reconnect" = "Wiederverbindung";
+"health.reconnect.value" = "Versuch %d von %d";
+"health.reconnect.none" = "Keine Wiederverbindung aktiv";
+"health.unavailable" = "Nicht verfügbar";

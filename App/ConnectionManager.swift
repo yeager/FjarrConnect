@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import Network
 
 /// Each tab owns its connection material for its lifetime. Saved credentials are
 /// never copied to a profile or log; keeping them here permits an opted-in retry.
@@ -12,10 +13,13 @@ final class SessionTab: ObservableObject, Identifiable {
     private let credentials: SessionCredentials
     private let makeSession: (ConnectionProfile, SessionCredentials) -> any RemoteSession
     private var reconnectWork: DispatchWorkItem?
+    private var healthTimer: DispatchSourceTimer?
+    private var healthProbe: NWConnection?
     private var reconnectAttempts = 0
     private var manuallyStopped = false
     private var active = false
     @Published private(set) var reconnectAttempt: Int?
+    @Published private(set) var latencyMilliseconds: Int?
 
     init(backend: any RemoteSession, credentials: SessionCredentials,
          makeSession: @escaping (ConnectionProfile, SessionCredentials) -> any RemoteSession) {
@@ -35,16 +39,23 @@ final class SessionTab: ObservableObject, Identifiable {
                 guard let self else { return }
                 if self.backend.status.isFinished {
                     self.recorder.stop()
+                    self.stopHealthMonitoring()
                     self.scheduleReconnectIfNeeded()
                 } else if self.backend.status.isEstablished {
                     self.reconnectAttempts = 0
                     self.reconnectAttempt = nil
+                    self.startHealthMonitoring()
                 }
             }
         }
     }
 
     var canRecord: Bool { backend is any SessionRecordingSource }
+    var health: SessionHealth {
+        SessionHealth(latencyMilliseconds: latencyMilliseconds,
+                      packetLossPercent: nil,
+                      codec: backend.negotiatedCodec)
+    }
 
     func startRecording() {
         guard let source = backend as? any SessionRecordingSource,
@@ -66,7 +77,63 @@ final class SessionTab: ObservableObject, Identifiable {
         reconnectWork?.cancel()
         reconnectWork = nil
         reconnectAttempt = nil
+        stopHealthMonitoring()
         backend.stop()
+    }
+
+    private func startHealthMonitoring() {
+        guard healthTimer == nil, backend is any SessionHealthProviding else { return }
+        sampleLatency()
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue(label: "se.fjarrconnect.health"))
+        timer.schedule(deadline: .now() + 15, repeating: 15)
+        timer.setEventHandler { [weak self] in
+            DispatchQueue.main.async { self?.sampleLatency() }
+        }
+        healthTimer = timer
+        timer.resume()
+    }
+
+    private func stopHealthMonitoring() {
+        healthTimer?.cancel(); healthTimer = nil
+        healthProbe?.cancel(); healthProbe = nil
+        latencyMilliseconds = nil
+    }
+
+    private func sampleLatency() {
+        let profile = backend.profile
+        guard let port = NWEndpoint.Port(rawValue: profile.port) else { return }
+        healthProbe?.cancel()
+        let began = DispatchTime.now().uptimeNanoseconds
+        let probe = NWConnection(host: NWEndpoint.Host(profile.host), port: port, using: .tcp)
+        healthProbe = probe
+        probe.stateUpdateHandler = { [weak self, weak probe] state in
+            guard let probe else { return }
+            switch state {
+            case .ready:
+                let elapsed = DispatchTime.now().uptimeNanoseconds - began
+                let milliseconds = Int(elapsed / 1_000_000)
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.healthProbe === probe else { return }
+                    self.latencyMilliseconds = milliseconds
+                    probe.cancel(); self.healthProbe = nil
+                }
+            case .failed, .cancelled:
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.healthProbe === probe else { return }
+                    self.latencyMilliseconds = nil; self.healthProbe = nil
+                }
+            default: break
+            }
+        }
+        probe.start(queue: DispatchQueue(label: "se.fjarrconnect.health.probe"))
+    }
+
+    deinit {
+        // Deinitialization can happen while a parent @Published array is
+        // sending its change notification. Publishing again here recursively
+        // locks Combine's ObservableObjectPublisher on current macOS.
+        healthTimer?.cancel()
+        healthProbe?.cancel()
     }
 
     private func scheduleReconnectIfNeeded() {

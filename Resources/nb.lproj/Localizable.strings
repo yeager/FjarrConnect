@@ -380,3 +380,16 @@
 "session.reconnect.hint" = "Prøver høyst tre ganger etter et uventet brudd.";
 
 "session.reconnect.status" = "Kobler til igjen (%d av %d)…";
+
+/* Connection health */
+"health.title" = "Tilkoblingsstatus";
+"health.latency" = "Forsinkelse";
+"health.latency.value" = "%d ms";
+"health.packetLoss" = "Pakketap";
+"health.packetLoss.value" = "%.1f %%";
+"health.packetLoss.unavailable" = "Ikke tilgjengelig for denne TCP-økten";
+"health.codec" = "Kodek";
+"health.reconnect" = "Tilkobler på nytt";
+"health.reconnect.value" = "Forsøk %d av %d";
+"health.reconnect.none" = "Ingen ny tilkobling pågår";
+"health.unavailable" = "Ikke tilgjengelig";
