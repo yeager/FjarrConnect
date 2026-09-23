@@ -76,6 +76,21 @@ final class SessionTests: XCTestCase {
         manager.disconnectAll()
     }
 
+    func testActiveSessionStateClearsWhenTheBackendDisconnects() throws {
+        var sessions: [TestSession] = []
+        let manager = ConnectionManager { profile, _ in
+            let session = TestSession(profile: profile)
+            sessions.append(session)
+            return session
+        }
+
+        manager.connect(ConnectionProfile(name: "Office", host: "office.local"))
+        XCTAssertTrue(manager.hasActiveSessions)
+
+        sessions[0].status = .disconnected(reason: nil)
+        XCTAssertFalse(manager.hasActiveSessions)
+    }
+
 }
 
 private final class TestSession: RemoteSession {

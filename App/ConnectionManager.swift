@@ -38,6 +38,7 @@ final class ConnectionManager: ObservableObject {
         didSet { tabs.forEach { $0.backend.setActive($0.id == selectedID) } }
     }
     private let makeSession: (ConnectionProfile, SessionCredentials) -> any RemoteSession
+    private var tabSubscriptions: [UUID: AnyCancellable] = [:]
 
     init(makeSession: @escaping (ConnectionProfile, SessionCredentials) -> any RemoteSession = ProtocolRegistry.makeSession) {
         self.makeSession = makeSession
@@ -45,6 +46,7 @@ final class ConnectionManager: ObservableObject {
 
     var selected: SessionTab? { tabs.first { $0.id == selectedID } }
     var activeSessions: [SessionTab] { tabs.filter { $0.backend.status.isActive } }
+    var hasActiveSessions: Bool { !activeSessions.isEmpty }
 
     func requestClose(_ id: UUID, confirm: (String) -> Bool = CloseConfirmation.session) {
         guard let tab = tabs.first(where: { $0.id == id }) else { return }
@@ -67,6 +69,9 @@ final class ConnectionManager: ObservableObject {
             return
         }
         let tab = SessionTab(backend: makeSession(profile, SessionCredentials(password: password, gatewayPassword: gatewayPassword)))
+        tabSubscriptions[tab.id] = tab.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
         tabs.append(tab)
         selectedID = tab.id
         tab.backend.start()
@@ -76,6 +81,7 @@ final class ConnectionManager: ObservableObject {
         guard let index = tabs.firstIndex(where: { $0.id == id }) else { return }
         tabs[index].stopRecording()
         tabs[index].backend.stop()
+        tabSubscriptions[id] = nil
         tabs.remove(at: index)
         if selectedID == id { selectedID = tabs.isEmpty ? nil : tabs[min(index, tabs.count - 1)].id }
     }
@@ -83,6 +89,7 @@ final class ConnectionManager: ObservableObject {
     func disconnectAll() {
         tabs.forEach { $0.stopRecording(); $0.backend.stop() }
         tabs.removeAll()
+        tabSubscriptions.removeAll()
         selectedID = nil
     }
 }
