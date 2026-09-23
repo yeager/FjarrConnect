@@ -1,5 +1,6 @@
 Unreleased
 
+- Bundle FreeRDP 3.32.0 for Apple Silicon and Intel Macs.
 - New VNC profiles and quick-connect addresses default to Mac Screen Sharing and require a username. Select Standard VNC in the sign-in dialog for password-only servers.
 - Add bidirectional VNC clipboard support for text and standard DIB V5 images, with per-session isolation.
 - Add per-profile Wake-on-LAN and RDP network presets.

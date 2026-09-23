@@ -97,8 +97,8 @@ images are supported when the server advertises the RFB extended-clipboard forma
 clipboard file transfer is not supported. Use the file panel or SFTP for files.
 
 **RDP is bundled:** no Homebrew installation is needed for the downloaded app.
-Each app includes the matching FreeRDP runtime and loads it in the app process. No
-Homebrew installation or separate RDP window is used. Unknown or changed
+Each app includes the matching FreeRDP 3.32.0 runtime and loads it in the app process.
+No Homebrew installation or separate RDP window is used. Unknown or changed
 certificates show the server identity and SHA-256 fingerprint with **Cancel**,
 **Connect once**, and **Trust and connect** in the chosen interface language.
 Certificate verification remains enabled. The Windows desktop-start disconnection
