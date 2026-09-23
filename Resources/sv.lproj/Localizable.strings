@@ -339,3 +339,5 @@
 "profiles.transfer.password" = "Exportlösenord";
 "profiles.transfer.confirm" = "Bekräfta exportlösenord";
 "action.continue" = "Fortsätt";
+"profiles.importExternal" = "Importera .rdp- eller .vnc-fil";
+"profiles.importExternal.done" = "Anslutningsprofil importerad utan inloggningsuppgifter.";

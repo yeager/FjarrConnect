@@ -15,6 +15,68 @@ enum ProfileTransferError: Error {
     case emptyPassphrase, unsupportedFormat, invalidProfiles
 }
 
+enum ExternalProfileImporter {
+    static func profile(data: Data, fileExtension: String) -> ConnectionProfile? {
+        guard data.count <= 1_048_576,
+              let text = String(data: data, encoding: .utf8) else { return nil }
+        switch fileExtension.lowercased() {
+        case "rdp": return rdp(text)
+        case "vnc": return vnc(text)
+        default: return nil
+        }
+    }
+
+    private static func rdp(_ text: String) -> ConnectionProfile? {
+        let values = typedValues(text)
+        guard let endpoint = values["full address"],
+              var profile = ConnectionURI.profile(from: "rdp://" + endpoint) else { return nil }
+        profile.transport = .rdp
+        if let username = values["username"], ConnectionOptions.validValue(username), !username.isEmpty {
+            profile.username = username
+        }
+        return profile
+    }
+
+    private static func vnc(_ text: String) -> ConnectionProfile? {
+        let values = iniValues(text)
+        guard let host = values["host"], !host.isEmpty else { return nil }
+        let endpoint = values["port"].flatMap(UInt16.init).map { host + ":" + String($0) } ?? host
+        guard var profile = ConnectionURI.profile(from: "vnc://" + endpoint) else { return nil }
+        if let username = values["username"], ConnectionOptions.validValue(username), !username.isEmpty {
+            profile.username = username
+        }
+        return profile
+    }
+
+    /// Microsoft .rdp uses `name:type:value`; only string-valued connection
+    /// fields are read. Password fields and every unrecognised key are ignored.
+    private static func typedValues(_ text: String) -> [String: String] {
+        var values: [String: String] = [:]
+        for line in text.split(whereSeparator: \.isNewline) {
+            let pieces = line.split(separator: ":", maxSplits: 2, omittingEmptySubsequences: false)
+            guard pieces.count == 3, pieces[1].lowercased() == "s" else { continue }
+            let key = pieces[0].trimmingCharacters(in: .whitespaces).lowercased()
+            guard key == "full address" || key == "username", values[key] == nil else { continue }
+            values[key] = pieces[2].trimmingCharacters(in: .whitespaces)
+        }
+        return values
+    }
+
+    /// RealVNC/TigerVNC style files are INI-like. Only endpoint and username
+    /// values are accepted; `Password` and all secret extensions are ignored.
+    private static func iniValues(_ text: String) -> [String: String] {
+        var values: [String: String] = [:]
+        for line in text.split(whereSeparator: \.isNewline) {
+            let pieces = line.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+            guard pieces.count == 2 else { continue }
+            let key = pieces[0].trimmingCharacters(in: .whitespaces).lowercased()
+            guard ["host", "port", "username"].contains(key), values[key] == nil else { continue }
+            values[key] = pieces[1].trimmingCharacters(in: .whitespaces)
+        }
+        return values
+    }
+}
+
 final class ProfileStore: ObservableObject {
     @Published private(set) var profiles: [ConnectionProfile] = []
     @Published var errorMessage: String?
@@ -112,6 +174,14 @@ final class ProfileStore: ObservableObject {
         guard !imported.isEmpty else { return 0 }
         try persist(profiles + imported, credentialID: UUID(), password: nil, gatewayPassword: nil)
         return imported.count
+    }
+
+    func importExternalProfile(data: Data, fileExtension: String) throws {
+        guard var profile = ExternalProfileImporter.profile(data: data, fileExtension: fileExtension) else {
+            throw ProfileTransferError.unsupportedFormat
+        }
+        profile.id = UUID()
+        try save(profile, password: nil)
     }
 
     var grouped: [(group: String, profiles: [ConnectionProfile])] {

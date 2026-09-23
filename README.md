@@ -335,6 +335,10 @@ using a temporary export password. The password is not saved, and neither deskto
 gateway Keychain passwords are included. Import adds new profile identities, so it
 cannot reuse a Keychain item that belongs to an existing profile.
 
+The same settings page imports Microsoft `.rdp` files and common INI-style `.vnc`
+files. It reads only host, port and username; password fields and other client-specific
+settings are ignored.
+
 Saving reports errors instead of silently losing changes. An unreadable or corrupt
 profile file is preserved and blocks further saves so it cannot be overwritten by
 an empty connection list. Back up the file before repairing or removing it.

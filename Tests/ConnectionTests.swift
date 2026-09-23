@@ -148,4 +148,32 @@ final class ConnectionTests: XCTestCase {
         XCTAssertEqual(imported.username, profile.username)
         XCTAssertNotEqual(imported.id, profile.id)
     }
+
+    func testCommonRDPAndVNCFilesImportOnlyConnectionFields() throws {
+        XCTAssertNotNil(ConnectionURI.profile(from: "rdp://desktop.local:3390"))
+        let rdp = Data("""
+        full address:s:desktop.local:3390
+        username:s:DOMAIN\\admin
+        password 51:b:secret
+        """.utf8)
+        let importedRDP = try XCTUnwrap(ExternalProfileImporter.profile(data: rdp, fileExtension: "rdp"))
+        XCTAssertEqual(importedRDP.transport, .rdp)
+        XCTAssertEqual(importedRDP.host, "desktop.local")
+        XCTAssertEqual(importedRDP.port, 3390)
+        XCTAssertEqual(importedRDP.username, "DOMAIN\\admin")
+
+        let vnc = Data("""
+        [Connection]
+        Host=screen.local
+        Port=5901
+        Username=operator
+        Password=secret
+        """.utf8)
+        let importedVNC = try XCTUnwrap(ExternalProfileImporter.profile(data: vnc, fileExtension: "vnc"))
+        XCTAssertEqual(importedVNC.transport, .vnc)
+        XCTAssertEqual(importedVNC.host, "screen.local")
+        XCTAssertEqual(importedVNC.port, 5901)
+        XCTAssertEqual(importedVNC.username, "operator")
+        XCTAssertNil(ExternalProfileImporter.profile(data: Data("Password=secret".utf8), fileExtension: "vnc"))
+    }
 }

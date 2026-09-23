@@ -324,3 +324,5 @@
 "profiles.transfer.password" = "Mot de passe d’exportation";
 "profiles.transfer.confirm" = "Confirmer le mot de passe d’exportation";
 "action.continue" = "Continuer";
+"profiles.importExternal" = "Importer un fichier .rdp ou .vnc";
+"profiles.importExternal.done" = "Profil de connexion importé sans identifiants.";

@@ -56,6 +56,7 @@ struct SettingsView: View {
                     HStack {
                         Button("profiles.export", action: chooseExport)
                         Button("profiles.import", action: chooseImport)
+                        Button("profiles.importExternal", action: chooseExternalImport)
                     }
                     if let transferMessage { Text(transferMessage).foregroundStyle(.secondary) }
                 }
@@ -86,6 +87,20 @@ struct SettingsView: View {
         panel.canChooseDirectories = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
         transfer = .import(url)
+    }
+
+    private func chooseExternalImport() {
+        let panel = NSOpenPanel()
+        panel.allowedFileTypes = ["rdp", "vnc"]
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try profiles.importExternalProfile(data: Data(contentsOf: url), fileExtension: url.pathExtension)
+            transferMessage = NSLocalizedString("profiles.importExternal.done", comment: "")
+        } catch {
+            transferMessage = NSLocalizedString("profiles.transfer.error", comment: "")
+        }
     }
 
     private func perform(_ transfer: ProfileTransfer, passphrase: String) -> Result<Int, Error> {

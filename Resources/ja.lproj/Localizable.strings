@@ -324,3 +324,5 @@
 "profiles.transfer.password" = "エクスポートパスワード";
 "profiles.transfer.confirm" = "エクスポートパスワードを確認";
 "action.continue" = "続ける";
+"profiles.importExternal" = ".rdpまたは.vncファイルをインポート";
+"profiles.importExternal.done" = "認証情報なしで接続プロファイルをインポートしました。";

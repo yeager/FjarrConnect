@@ -339,3 +339,5 @@
 "profiles.transfer.password" = "Eksportpassord";
 "profiles.transfer.confirm" = "Bekreft eksportpassord";
 "action.continue" = "Fortsett";
+"profiles.importExternal" = "Importer .rdp- eller .vnc-fil";
+"profiles.importExternal.done" = "Tilkoblingsprofil importert uten legitimasjon.";

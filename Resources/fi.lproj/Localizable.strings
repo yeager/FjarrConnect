@@ -324,3 +324,5 @@
 "profiles.transfer.password" = "Vientisalasana";
 "profiles.transfer.confirm" = "Vahvista vientisalasana";
 "action.continue" = "Jatka";
+"profiles.importExternal" = "Tuo .rdp- tai .vnc-tiedosto";
+"profiles.importExternal.done" = "Yhteysprofiili tuotu ilman tunnistetietoja.";

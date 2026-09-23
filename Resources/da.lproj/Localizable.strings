@@ -339,3 +339,5 @@
 "profiles.transfer.password" = "Eksportadgangskode";
 "profiles.transfer.confirm" = "Bekræft eksportadgangskode";
 "action.continue" = "Fortsæt";
+"profiles.importExternal" = "Importér .rdp- eller .vnc-fil";
+"profiles.importExternal.done" = "Forbindelsesprofil importeret uden legitimationsoplysninger.";
