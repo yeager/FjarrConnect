@@ -311,3 +311,6 @@
 "settings.connections" = "Tilkoblinger";
 "settings.autoHideSidebarWhileConnected" = "Skjul venstre sidefelt ved aktiv tilkobling";
 "settings.autoHideSessionTabsWhileConnected" = "Skjul øktfaner ved aktiv tilkobling";
+
+"files.drop.title" = "Overfør slupne filer";
+"files.drop.hint" = "Filutklipp er ikke tilgjengelig for denne økten. Åpne Filer (SFTP) for samme vert i stedet.";

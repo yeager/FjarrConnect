@@ -296,3 +296,6 @@
 "settings.connections" = "Verbindungen";
 "settings.autoHideSidebarWhileConnected" = "Linke Seitenleiste bei aktiver Verbindung ausblenden";
 "settings.autoHideSessionTabsWhileConnected" = "Sitzungs-Tabs bei aktiver Verbindung ausblenden";
+
+"files.drop.title" = "Abgelegte Dateien übertragen";
+"files.drop.hint" = "Dateiablage über die Zwischenablage ist für diese Sitzung nicht verfügbar. Öffnen Sie stattdessen Dateien (SFTP) für denselben Host.";

@@ -296,3 +296,6 @@
 "settings.connections" = "Conexiones";
 "settings.autoHideSidebarWhileConnected" = "Ocultar la barra lateral izquierda mientras haya conexión";
 "settings.autoHideSessionTabsWhileConnected" = "Ocultar las pestañas de sesión mientras haya conexión";
+
+"files.drop.title" = "Transferir archivos soltados";
+"files.drop.hint" = "La transferencia de archivos mediante el portapapeles no está disponible para esta sesión. Abra Archivos (SFTP) para el mismo host.";

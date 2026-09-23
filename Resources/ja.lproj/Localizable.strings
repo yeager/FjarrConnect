@@ -296,3 +296,6 @@
 "settings.connections" = "接続";
 "settings.autoHideSidebarWhileConnected" = "接続中は左のサイドバーを隠す";
 "settings.autoHideSessionTabsWhileConnected" = "接続中はセッションタブを隠す";
+
+"files.drop.title" = "ドロップしたファイルを転送";
+"files.drop.hint" = "このセッションではクリップボードによるファイル転送を使用できません。代わりに同じホストの「ファイル（SFTP）」を開いてください。";

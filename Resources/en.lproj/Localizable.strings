@@ -311,3 +311,6 @@
 "settings.connections" = "Connections";
 "settings.autoHideSidebarWhileConnected" = "Hide the left sidebar while connected";
 "settings.autoHideSessionTabsWhileConnected" = "Hide session tabs while connected";
+
+"files.drop.title" = "Transfer dropped files";
+"files.drop.hint" = "Clipboard file transfer is not available for this session. Open Files (SFTP) for the same host instead.";

@@ -311,3 +311,6 @@
 "settings.connections" = "Forbindelser";
 "settings.autoHideSidebarWhileConnected" = "Skjul venstre sidepanel ved aktiv forbindelse";
 "settings.autoHideSessionTabsWhileConnected" = "Skjul sessionsfaner ved aktiv forbindelse";
+
+"files.drop.title" = "Overfør slipte filer";
+"files.drop.hint" = "Filudklip er ikke tilgængeligt for denne session. Åbn Filer (SFTP) for den samme vært i stedet.";

@@ -41,7 +41,8 @@ struct ContentView: View {
                             let current = tab.backend.profile.transport == .sftp ? saved.fileProfile : saved
                             requestConnect(current, forcePrompt: true)
                         },
-                                          close: { connection.requestClose(tab.id) })
+                                          close: { connection.requestClose(tab.id) },
+                                          openFiles: { connection.connect(tab.backend.profile.fileProfile) })
                             .id(tab.id)
                     }
                 } else { welcome }
@@ -295,7 +296,9 @@ private struct SessionDetailView: View {
     @ObservedObject var tab: SessionTab
     let reconnect: () -> Void
     let close: () -> Void
+    let openFiles: () -> Void
     @State private var showingCommandLog = false
+    @State private var showingFileTransferSuggestion = false
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -327,6 +330,11 @@ private struct SessionDetailView: View {
                     Button { showingCommandLog = true } label: { Image(systemName: "lock.doc") }
                         .help("ssh.log.title")
                 }
+                if tab.backend.profile.transport.isGraphical {
+                    Button(action: openFiles) { Image(systemName: "folder.badge.plus") }
+                        .help("files.title")
+                        .accessibilityIdentifier("session.files")
+                }
                 if tab.backend.status.isFinished { Button("action.reconnect", action: reconnect) }
                 Button("action.disconnect", action: close)
             }.padding(12).background(.bar)
@@ -347,9 +355,21 @@ private struct SessionDetailView: View {
             }
             if tab.backend.status.isFinished && tab.backend.profile.transport != .ssh {
                 ContentUnavailableView("status.disconnected", systemImage: "network.slash", description: Text("session.retry"))
-            } else { tab.backend.makeScreenView() }
+            } else {
+                tab.backend.makeScreenView()
+                    .dropDestination(for: URL.self) { urls, _ in
+                        guard tab.backend.profile.transport.isGraphical,
+                              urls.allSatisfy(\.isFileURL) else { return false }
+                        showingFileTransferSuggestion = true
+                        return true
+                    }
+            }
         }
         .sheet(isPresented: $showingCommandLog) { SSHCommandLogView(profile: tab.backend.profile) }
+        .confirmationDialog("files.drop.title", isPresented: $showingFileTransferSuggestion, titleVisibility: .visible) {
+            Button("files.title", action: openFiles)
+            Button("action.cancel", role: .cancel) {}
+        } message: { Text("files.drop.hint") }
     }
 }
 
