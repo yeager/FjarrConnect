@@ -86,11 +86,11 @@ The downloads are ad-hoc signed and not notarized. macOS may ask for approval in
 | RDP | Embedded [FreeRDP](https://github.com/FreeRDP/FreeRDP) desktop or RemoteApp, keyboard/mouse, resizing, text and image clipboard, shared folders and RD Gateway over HTTPS | Username/password; localized certificate verification and separate gateway credentials |
 | SFTP | Built-in file panel using the authenticated OpenSSH connection | Keys/agent or interactive password and host-key prompts |
 
-New VNC profiles default to **Mac Screen Sharing**, which requires the short username
-and password of an account allowed in the remote Mac's Screen Sharing settings. Choose
-**Standard VNC** for password-only VNC servers; those profiles can omit the username.
-If the server requires no authentication, choose Standard VNC and leave both credentials
-empty.
+New VNC profiles and VNC quick-connect addresses default to **Mac Screen Sharing**,
+which requires the short username and password of an account allowed in the remote Mac's
+Screen Sharing settings. The sign-in dialog lets you choose **Standard VNC** for
+password-only servers; that mode does not require a username. If the server requires no
+authentication, choose Standard VNC and leave both credentials empty.
 
 VNC clipboard synchronization follows the active session. Text and standard DIB V5
 images are supported when the server advertises the RFB extended-clipboard format;

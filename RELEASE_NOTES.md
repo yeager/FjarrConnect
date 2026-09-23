@@ -1,6 +1,6 @@
 Unreleased
 
-- New VNC profiles default to Mac Screen Sharing and require a username. Select Standard VNC for password-only servers.
+- New VNC profiles and quick-connect addresses default to Mac Screen Sharing and require a username. Select Standard VNC in the sign-in dialog for password-only servers.
 - Add bidirectional VNC clipboard support for text and standard DIB V5 images, with per-session isolation.
 - Add per-profile Wake-on-LAN and RDP network presets.
 - Let users select an RDP keyboard layout or map the current macOS input source automatically.
