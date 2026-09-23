@@ -295,3 +295,19 @@
 "record.stop" = "Stop recording";
 "record.recording" = "Recording";
 "record.error" = "The session recording could not be saved.";
+
+// App settings
+"settings.simple" = "Simple";
+"settings.advanced" = "Advanced";
+"settings.showSidebar" = "Show left sidebar";
+"settings.autoStartDiscovery" = "Find nearby servers when FjärrConnect opens";
+"settings.confirmClosingSessions" = "Ask before closing active sessions";
+"settings.networkScan" = "Network scan";
+"settings.scanTimeout" = "Probe timeout: %.1f seconds";
+"settings.scanTimeout.hint" = "Maximum wait for each address and port.";
+"settings.scanConcurrency" = "Parallel probes: %d";
+"settings.scanConcurrency.hint" = "More probes finish a scan sooner but create more network traffic.";
+"settings.appearance" = "Appearance";
+"settings.connections" = "Connections";
+"settings.autoHideSidebarWhileConnected" = "Hide the left sidebar while connected";
+"settings.autoHideSessionTabsWhileConnected" = "Hide session tabs while connected";

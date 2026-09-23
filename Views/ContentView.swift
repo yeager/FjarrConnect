@@ -16,19 +16,25 @@ struct ContentView: View {
     @State private var deleting: ConnectionProfile?
     @State private var commandLog: ConnectionProfile?
     @State private var errorMessage: String?
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @AppStorage(AppSettings.showSidebar) private var showSidebar = true
+    @AppStorage(AppSettings.autoHideSidebarWhileConnected) private var autoHideSidebarWhileConnected = false
+    @AppStorage(AppSettings.autoHideSessionTabsWhileConnected) private var autoHideSessionTabsWhileConnected = false
     @FocusState private var quickFocused: Bool
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             sidebar.navigationSplitViewColumnWidth(min: 250, ideal: 290, max: 400)
         } detail: {
             VStack(spacing: 0) {
                 if !connection.tabs.isEmpty {
-                    SessionTabBar(tabs: connection.tabs, selectedID: connection.selectedID,
-                                  select: { connection.selectedID = $0 }, close: { connection.requestClose($0) })
-                    .frame(height: 56)
-                    .background(.bar, ignoresSafeAreaEdges: [])
-                    Divider()
+                    if !autoHideSessionTabsWhileConnected {
+                        SessionTabBar(tabs: connection.tabs, selectedID: connection.selectedID,
+                                      select: { connection.selectedID = $0 }, close: { connection.requestClose($0) })
+                        .frame(height: 56)
+                        .background(.bar, ignoresSafeAreaEdges: [])
+                        Divider()
+                    }
                     if let tab = connection.selected {
                         SessionDetailView(tab: tab, reconnect: {
                             let saved = profiles.profiles.first { $0.id == tab.backend.profile.id } ?? tab.backend.profile
@@ -42,6 +48,11 @@ struct ContentView: View {
             }
         }
         .navigationTitle("FjärrConnect")
+        .onAppear(perform: syncSidebarVisibility)
+        .onChange(of: showSidebar) { _, _ in syncSidebarVisibility() }
+        .onChange(of: autoHideSidebarWhileConnected) { _, _ in syncSidebarVisibility() }
+        .onChange(of: connection.tabs.count) { _, _ in syncSidebarVisibility() }
+        .onChange(of: columnVisibility) { _, _ in syncSidebarVisibility() }
         .toolbar {
             ToolbarItemGroup {
                 Button { quickFocused = true } label: { Image(systemName: "bolt") }
@@ -89,6 +100,15 @@ struct ContentView: View {
                 deleting = nil
             }
         } message: { Text(deleting?.name ?? "") }
+    }
+
+    private var keepsSidebarVisible: Bool {
+        showSidebar && !(autoHideSidebarWhileConnected && !connection.tabs.isEmpty)
+    }
+
+    private func syncSidebarVisibility() {
+        let target: NavigationSplitViewVisibility = keepsSidebarVisible ? .all : .detailOnly
+        if columnVisibility != target { columnVisibility = target }
     }
 
     private var sidebar: some View {

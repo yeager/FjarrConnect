@@ -295,3 +295,19 @@
 "record.stop" = "Stoppa inspelning";
 "record.recording" = "Inspelning pågår";
 "record.error" = "Sessionsinspelningen kunde inte sparas.";
+
+// App settings
+"settings.simple" = "Enkla";
+"settings.advanced" = "Avancerade";
+"settings.showSidebar" = "Visa vänstersidofältet";
+"settings.autoStartDiscovery" = "Sök närliggande servrar när FjärrConnect öppnas";
+"settings.confirmClosingSessions" = "Fråga innan aktiva sessioner stängs";
+"settings.networkScan" = "Nätverkssökning";
+"settings.scanTimeout" = "Tidsgräns per kontroll: %.1f sekunder";
+"settings.scanTimeout.hint" = "Längsta väntetid för varje adress och port.";
+"settings.scanConcurrency" = "Parallella kontroller: %d";
+"settings.scanConcurrency.hint" = "Fler kontroller ger snabbare sökning men mer nätverkstrafik.";
+"settings.appearance" = "Utseende";
+"settings.connections" = "Anslutningar";
+"settings.autoHideSidebarWhileConnected" = "Dölj vänsterkolumnen när en session är ansluten";
+"settings.autoHideSessionTabsWhileConnected" = "Dölj sessionsflikar när en session är ansluten";

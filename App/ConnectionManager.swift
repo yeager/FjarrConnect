@@ -48,13 +48,13 @@ final class ConnectionManager: ObservableObject {
 
     func requestClose(_ id: UUID, confirm: (String) -> Bool = CloseConfirmation.session) {
         guard let tab = tabs.first(where: { $0.id == id }) else { return }
-        if tab.backend.status.isActive && !confirm(tab.backend.profile.name) { return }
+        if tab.backend.status.isActive && AppSettings.shouldConfirmClosingSessions && !confirm(tab.backend.profile.name) { return }
         close(id)
     }
 
     func confirmClosingAll() -> Bool {
         let names = activeSessions.map { $0.backend.profile.name }
-        return names.isEmpty || CloseConfirmation.application(names)
+        return names.isEmpty || !AppSettings.shouldConfirmClosingSessions || CloseConfirmation.application(names)
     }
 
     func connect(_ profile: ConnectionProfile, password: String? = nil, gatewayPassword: String? = nil) {

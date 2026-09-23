@@ -280,3 +280,19 @@
 "record.stop" = "Detener grabación";
 "record.recording" = "Grabando";
 "record.error" = "No se pudo guardar la grabación de la sesión.";
+
+// App settings
+"settings.simple" = "Sencillas";
+"settings.advanced" = "Avanzadas";
+"settings.showSidebar" = "Mostrar barra lateral izquierda";
+"settings.autoStartDiscovery" = "Buscar servidores cercanos al abrir FjärrConnect";
+"settings.confirmClosingSessions" = "Preguntar antes de cerrar sesiones activas";
+"settings.networkScan" = "Búsqueda de red";
+"settings.scanTimeout" = "Tiempo de espera por prueba: %.1f segundos";
+"settings.scanTimeout.hint" = "Tiempo máximo de espera para cada dirección y puerto.";
+"settings.scanConcurrency" = "Pruebas en paralelo: %d";
+"settings.scanConcurrency.hint" = "Más pruebas aceleran la búsqueda, pero generan más tráfico de red.";
+"settings.appearance" = "Apariencia";
+"settings.connections" = "Conexiones";
+"settings.autoHideSidebarWhileConnected" = "Ocultar la barra lateral izquierda mientras haya conexión";
+"settings.autoHideSessionTabsWhileConnected" = "Ocultar las pestañas de sesión mientras haya conexión";

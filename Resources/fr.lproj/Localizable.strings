@@ -280,3 +280,19 @@
 "record.stop" = "Arrêter l’enregistrement";
 "record.recording" = "Enregistrement en cours";
 "record.error" = "L’enregistrement de la session n’a pas pu être enregistré.";
+
+// App settings
+"settings.simple" = "Simples";
+"settings.advanced" = "Avancés";
+"settings.showSidebar" = "Afficher la barre latérale gauche";
+"settings.autoStartDiscovery" = "Rechercher les serveurs proches à l’ouverture de FjärrConnect";
+"settings.confirmClosingSessions" = "Demander avant de fermer les sessions actives";
+"settings.networkScan" = "Analyse du réseau";
+"settings.scanTimeout" = "Délai par sonde : %.1f secondes";
+"settings.scanTimeout.hint" = "Durée d’attente maximale pour chaque adresse et port.";
+"settings.scanConcurrency" = "Sondes parallèles : %d";
+"settings.scanConcurrency.hint" = "Plus de sondes accélèrent la recherche, mais augmentent le trafic réseau.";
+"settings.appearance" = "Apparence";
+"settings.connections" = "Connexions";
+"settings.autoHideSidebarWhileConnected" = "Masquer la barre latérale gauche pendant une connexion";
+"settings.autoHideSessionTabsWhileConnected" = "Masquer les onglets de session pendant une connexion";

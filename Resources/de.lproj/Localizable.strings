@@ -280,3 +280,19 @@
 "record.stop" = "Aufzeichnung stoppen";
 "record.recording" = "Aufzeichnung läuft";
 "record.error" = "Die Sitzungsaufzeichnung konnte nicht gespeichert werden.";
+
+// App settings
+"settings.simple" = "Einfach";
+"settings.advanced" = "Erweitert";
+"settings.showSidebar" = "Linke Seitenleiste anzeigen";
+"settings.autoStartDiscovery" = "Nahe Server beim Öffnen von FjärrConnect suchen";
+"settings.confirmClosingSessions" = "Vor dem Schließen aktiver Sitzungen fragen";
+"settings.networkScan" = "Netzwerksuche";
+"settings.scanTimeout" = "Zeitlimit pro Prüfung: %.1f Sekunden";
+"settings.scanTimeout.hint" = "Maximale Wartezeit für jede Adresse und jeden Port.";
+"settings.scanConcurrency" = "Parallele Prüfungen: %d";
+"settings.scanConcurrency.hint" = "Mehr Prüfungen beschleunigen die Suche, erzeugen aber mehr Netzwerkverkehr.";
+"settings.appearance" = "Erscheinungsbild";
+"settings.connections" = "Verbindungen";
+"settings.autoHideSidebarWhileConnected" = "Linke Seitenleiste bei aktiver Verbindung ausblenden";
+"settings.autoHideSessionTabsWhileConnected" = "Sitzungs-Tabs bei aktiver Verbindung ausblenden";

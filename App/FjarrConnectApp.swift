@@ -46,7 +46,7 @@ struct FjarrConnectApp: App {
                     if ProcessInfo.processInfo.environment["FJARRCONNECT_DISABLE_DISCOVERY"] == "1" ||
                         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { return }
                     #endif
-                    discovery.start()
+                    if AppSettings.shouldAutoStartDiscovery { discovery.start() }
                 }
                 .onDisappear { connection.disconnectAll(); discovery.stop() }
                 .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
@@ -55,6 +55,11 @@ struct FjarrConnectApp: App {
                 }
         }
         .windowStyle(.titleBar)
+
+        Settings {
+            SettingsView()
+        }
+
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("about.menu", action: AboutPanel.show)

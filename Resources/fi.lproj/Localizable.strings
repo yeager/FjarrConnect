@@ -280,3 +280,19 @@
 "record.stop" = "Lopeta tallennus";
 "record.recording" = "Tallennus käynnissä";
 "record.error" = "Istunnon tallennusta ei voitu tallentaa.";
+
+// App settings
+"settings.simple" = "Yksinkertaiset";
+"settings.advanced" = "Lisäasetukset";
+"settings.showSidebar" = "Näytä vasen sivupalkki";
+"settings.autoStartDiscovery" = "Etsi lähiverkon palvelimet, kun FjärrConnect avataan";
+"settings.confirmClosingSessions" = "Kysy ennen aktiivisten istuntojen sulkemista";
+"settings.networkScan" = "Verkkohaku";
+"settings.scanTimeout" = "Tarkistuksen aikaraja: %.1f sekuntia";
+"settings.scanTimeout.hint" = "Enimmäisodotus jokaiselle osoitteelle ja portille.";
+"settings.scanConcurrency" = "Rinnakkaiset tarkistukset: %d";
+"settings.scanConcurrency.hint" = "Useammat tarkistukset nopeuttavat hakua, mutta lisäävät verkkoliikennettä.";
+"settings.appearance" = "Ulkoasu";
+"settings.connections" = "Yhteydet";
+"settings.autoHideSidebarWhileConnected" = "Piilota vasen sivupalkki yhteyden aikana";
+"settings.autoHideSessionTabsWhileConnected" = "Piilota istuntovälilehdet yhteyden aikana";

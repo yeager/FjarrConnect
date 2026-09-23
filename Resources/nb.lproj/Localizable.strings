@@ -295,3 +295,19 @@
 "record.stop" = "Stopp opptak";
 "record.recording" = "Opptak pågår";
 "record.error" = "Øktopptaket kunne ikke lagres.";
+
+// App settings
+"settings.simple" = "Enkle";
+"settings.advanced" = "Avanserte";
+"settings.showSidebar" = "Vis venstre sidefelt";
+"settings.autoStartDiscovery" = "Finn servere i nærheten når FjärrConnect åpnes";
+"settings.confirmClosingSessions" = "Spør før aktive økter lukkes";
+"settings.networkScan" = "Nettverkssøk";
+"settings.scanTimeout" = "Tidsgrense per kontroll: %.1f sekunder";
+"settings.scanTimeout.hint" = "Maksimal ventetid for hver adresse og port.";
+"settings.scanConcurrency" = "Parallelle kontroller: %d";
+"settings.scanConcurrency.hint" = "Flere kontroller gjør søket raskere, men gir mer nettverkstrafikk.";
+"settings.appearance" = "Utseende";
+"settings.connections" = "Tilkoblinger";
+"settings.autoHideSidebarWhileConnected" = "Skjul venstre sidefelt ved aktiv tilkobling";
+"settings.autoHideSessionTabsWhileConnected" = "Skjul øktfaner ved aktiv tilkobling";

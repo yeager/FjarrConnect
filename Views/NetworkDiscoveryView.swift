@@ -13,6 +13,8 @@ struct NetworkDiscoveryView: View {
     @State private var vncPorts = "5900,5901"
     @State private var rdpPorts = "3389"
     @State private var sshPorts = "22"
+    @AppStorage(AppSettings.scanTimeout) private var scanTimeout = 2.0
+    @AppStorage(AppSettings.scanConcurrency) private var scanConcurrency = 32
 
     private var services: [ScanService]? {
         var result: [ScanService] = []
@@ -109,6 +111,6 @@ struct NetworkDiscoveryView: View {
     private func start() {
         guard let range = IPv4Subnet(subnet), let services else { return }
         subnet = range.description; selected = nil
-        scanner.start(subnet: range, services: services)
+        scanner.start(subnet: range, services: services, timeout: scanTimeout, concurrency: scanConcurrency)
     }
 }

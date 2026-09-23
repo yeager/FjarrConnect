@@ -280,3 +280,19 @@
 "record.stop" = "録画を停止";
 "record.recording" = "録画中";
 "record.error" = "セッション録画を保存できませんでした。";
+
+// App settings
+"settings.simple" = "基本";
+"settings.advanced" = "詳細";
+"settings.showSidebar" = "左のサイドバーを表示";
+"settings.autoStartDiscovery" = "FjärrConnect を開いたときに近くのサーバを検索";
+"settings.confirmClosingSessions" = "アクティブなセッションを閉じる前に確認する";
+"settings.networkScan" = "ネットワーク検索";
+"settings.scanTimeout" = "プローブのタイムアウト: %.1f 秒";
+"settings.scanTimeout.hint" = "各アドレスとポートの最大待機時間です。";
+"settings.scanConcurrency" = "並列プローブ数: %d";
+"settings.scanConcurrency.hint" = "プローブを増やすと検索は速くなりますが、ネットワーク通信も増えます。";
+"settings.appearance" = "外観";
+"settings.connections" = "接続";
+"settings.autoHideSidebarWhileConnected" = "接続中は左のサイドバーを隠す";
+"settings.autoHideSessionTabsWhileConnected" = "接続中はセッションタブを隠す";
