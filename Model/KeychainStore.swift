@@ -1,5 +1,6 @@
 import Foundation
 import Security
+import LocalAuthentication
 
 /// Update in place so a failed write never deletes a previously saved password.
 enum KeychainStore {
@@ -53,5 +54,34 @@ enum KeychainStore {
     private static func query(id: UUID, purpose: Purpose) -> [String: Any] {
         [kSecClass as String: kSecClassGenericPassword,
          kSecAttrService as String: (purpose == .login ? service : service + ".rdp-gateway"), kSecAttrAccount as String: id.uuidString]
+    }
+}
+
+/// Keeps the UI authentication boundary ahead of every Keychain read for a
+/// protected profile. This does not alter the Keychain item's access control,
+/// so users can turn protection off later without losing a saved credential.
+enum ProfileAccessAuthenticator {
+    static func authenticate(reason: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        let context = LAContext()
+        var failure: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &failure) else {
+            completion(.failure(failure ?? AuthenticationFailure.unavailable))
+            return
+        }
+        context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, error in
+            if success { completion(.success(())) }
+            else { completion(.failure(error ?? AuthenticationFailure.cancelled)) }
+        }
+    }
+
+    enum AuthenticationFailure: LocalizedError {
+        case unavailable, cancelled
+
+        var errorDescription: String? {
+            switch self {
+            case .unavailable: return NSLocalizedString("profile.touchID.unavailable", comment: "")
+            case .cancelled: return NSLocalizedString("profile.touchID.failed", comment: "")
+            }
+        }
     }
 }

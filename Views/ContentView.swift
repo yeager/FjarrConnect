@@ -295,6 +295,21 @@ struct ContentView: View {
         if (profile.transport == .rdp || profile.transport == .remoteApp) && !RDPRemoteSession.isAvailable {
             errorMessage = NSLocalizedString("rdp.install", comment: ""); return
         }
+        guard profile.requiresBiometricUnlock else {
+            continueConnect(profile, forcePrompt: forcePrompt)
+            return
+        }
+        ProfileAccessAuthenticator.authenticate(reason: NSLocalizedString("profile.touchID.reason", comment: "")) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success: self.continueConnect(profile, forcePrompt: forcePrompt)
+                case .failure: self.errorMessage = NSLocalizedString("profile.touchID.failed", comment: "")
+                }
+            }
+        }
+    }
+
+    private func continueConnect(_ profile: ConnectionProfile, forcePrompt: Bool) {
         do {
             if !forcePrompt, let password = try KeychainStore.password(for: profile.id) {
                 let gatewayPassword = profile.rdp?.gatewayUsername == nil ? nil : try KeychainStore.password(for: profile.id, purpose: .gateway)

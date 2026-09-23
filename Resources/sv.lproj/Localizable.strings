@@ -341,3 +341,13 @@
 "action.continue" = "Fortsätt";
 "profiles.importExternal" = "Importera .rdp- eller .vnc-fil";
 "profiles.importExternal.done" = "Anslutningsprofil importerad utan inloggningsuppgifter.";
+
+"profile.touchID" = "Kräv Touch ID före sparade inloggningsuppgifter används";
+
+"profile.touchID.hint" = "FjärrConnect frågar efter Touch ID innan profilens lösenord läses från Nyckelring.";
+
+"profile.touchID.reason" = "Autentisera för att använda sparade inloggningsuppgifter";
+
+"profile.touchID.failed" = "Touch ID-autentiseringen slutfördes inte.";
+
+"profile.touchID.unavailable" = "Touch ID är inte tillgängligt på den här Macen.";

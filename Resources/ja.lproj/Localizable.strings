@@ -326,3 +326,13 @@
 "action.continue" = "続ける";
 "profiles.importExternal" = ".rdpまたは.vncファイルをインポート";
 "profiles.importExternal.done" = "認証情報なしで接続プロファイルをインポートしました。";
+
+"profile.touchID" = "保存済み認証情報の使用前にTouch IDを要求";
+
+"profile.touchID.hint" = "FjarrConnectは、このプロファイルのパスワードをキーチェーンから読み取る前にTouch IDを求めます。";
+
+"profile.touchID.reason" = "保存済み認証情報を使うために認証してください";
+
+"profile.touchID.failed" = "Touch ID認証は完了しませんでした。";
+
+"profile.touchID.unavailable" = "このMacではTouch IDを使用できません。";

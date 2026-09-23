@@ -129,6 +129,21 @@ final class ConnectionTests: XCTestCase {
         XCTAssertEqual(store.recent.map(\.id), [newer.id, older.id])
     }
 
+    func testBiometricProfileLockPersistsAndDefaultsOff() throws {
+        let legacy = try JSONDecoder().decode(ConnectionProfile.self, from: Data("""
+        {"id":"11111111-1111-1111-1111-111111111111","name":"Studio","transport":"rdp","host":"studio.local","port":3389}
+        """.utf8))
+        XCTAssertFalse(legacy.requiresBiometricUnlock)
+
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ProfileStore(fileURL: directory.appendingPathComponent("profiles.json"))
+        var protected = ConnectionProfile(name: "Locked", transport: .rdp, host: "locked.local")
+        protected.requiresBiometricUnlock = true
+        try store.save(protected, password: nil)
+        XCTAssertTrue(try XCTUnwrap(ProfileStore(fileURL: directory.appendingPathComponent("profiles.json")).profiles.first).requiresBiometricUnlock)
+    }
+
     func testEncryptedProfileTransferExcludesCredentialsAndImportsNewIdentities() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }

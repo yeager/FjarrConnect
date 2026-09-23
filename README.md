@@ -335,6 +335,10 @@ using a temporary export password. The password is not saved, and neither deskto
 gateway Keychain passwords are included. Import adds new profile identities, so it
 cannot reuse a Keychain item that belongs to an existing profile.
 
+For VNC, RDP and RemoteApp profiles, **Require Touch ID before using saved
+credentials** makes macOS authenticate locally before FjarrConnect reads the
+profile’s desktop or gateway password from Keychain.
+
 The same settings page imports Microsoft `.rdp` files and common INI-style `.vnc`
 files. It reads only host, port and username; password fields and other client-specific
 settings are ignored.

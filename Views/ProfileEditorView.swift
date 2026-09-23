@@ -14,6 +14,7 @@ struct ProfileEditorView: View {
     @State private var group: String
     @State private var tags: String
     @State private var logsSSHCommands: Bool
+    @State private var requiresBiometricUnlock: Bool
     @State private var ssh: SSHOptions
     @State private var rdp: RDPOptions
     @State private var links: HostLinks
@@ -36,6 +37,7 @@ struct ProfileEditorView: View {
         _group = State(initialValue: profile?.group ?? "")
         _tags = State(initialValue: profile?.normalizedTags.joined(separator: ", ") ?? "")
         _logsSSHCommands = State(initialValue: profile?.logsSSHCommands ?? false)
+        _requiresBiometricUnlock = State(initialValue: profile?.requiresBiometricUnlock ?? false)
     }
 
     var body: some View {
@@ -69,6 +71,8 @@ struct ProfileEditorView: View {
                             .accessibilityIdentifier("profile.sshLogging")
                         Text("ssh.log.hint").font(.caption).foregroundStyle(.secondary) }
                     } else {
+                        Toggle("profile.touchID", isOn: $requiresBiometricUnlock)
+                        Text("profile.touchID.hint").font(.caption).foregroundStyle(.secondary)
                         if existing != nil { Toggle("field.changePassword", isOn: $changePassword) }
                         if existing == nil || changePassword {
                             SecureField("field.password", text: $password)
@@ -104,6 +108,7 @@ struct ProfileEditorView: View {
         result.rdp = rdp
         result.links = links
         result.clipboardEnabled = clipboard
+        result.requiresBiometricUnlock = transport.isGraphical && requiresBiometricUnlock
         result.tags = Array(Set(tags.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty })).sorted { $0.localizedStandardCompare($1) == .orderedAscending }
         return result.isValid ? result : nil

@@ -341,3 +341,13 @@
 "action.continue" = "Fortsæt";
 "profiles.importExternal" = "Importér .rdp- eller .vnc-fil";
 "profiles.importExternal.done" = "Forbindelsesprofil importeret uden legitimationsoplysninger.";
+
+"profile.touchID" = "Kræv Touch ID før gemte legitimationsoplysninger bruges";
+
+"profile.touchID.hint" = "FjarrConnect beder om Touch ID, før den læser denne profils adgangskode fra Nøglering.";
+
+"profile.touchID.reason" = "Godkend for at bruge gemte legitimationsoplysninger";
+
+"profile.touchID.failed" = "Touch ID-godkendelse blev ikke gennemført.";
+
+"profile.touchID.unavailable" = "Touch ID er ikke tilgængelig på denne Mac.";

@@ -326,3 +326,13 @@
 "action.continue" = "Jatka";
 "profiles.importExternal" = "Tuo .rdp- tai .vnc-tiedosto";
 "profiles.importExternal.done" = "Yhteysprofiili tuotu ilman tunnistetietoja.";
+
+"profile.touchID" = "Vaadi Touch ID ennen tallennettujen tunnusten käyttöä";
+
+"profile.touchID.hint" = "FjarrConnect pyytää Touch ID:tä ennen tämän profiilin salasanan lukemista avainnipusta.";
+
+"profile.touchID.reason" = "Todenna tallennettujen tunnusten käyttöä varten";
+
+"profile.touchID.failed" = "Touch ID -todennusta ei suoritettu loppuun.";
+
+"profile.touchID.unavailable" = "Touch ID ei ole käytettävissä tässä Macissa.";

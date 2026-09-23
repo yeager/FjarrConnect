@@ -341,3 +341,13 @@
 "action.continue" = "Continue";
 "profiles.importExternal" = "Import .rdp or .vnc file";
 "profiles.importExternal.done" = "Connection profile imported without credentials.";
+
+"profile.touchID" = "Require Touch ID before using saved credentials";
+
+"profile.touchID.hint" = "FjarrConnect asks for Touch ID before reading this profile’s password from Keychain.";
+
+"profile.touchID.reason" = "Authenticate to use saved credentials";
+
+"profile.touchID.failed" = "Touch ID authentication was not completed.";
+
+"profile.touchID.unavailable" = "Touch ID is not available on this Mac.";

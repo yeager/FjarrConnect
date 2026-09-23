@@ -64,6 +64,8 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
     // Optional on disk so profiles created before favorites decode unchanged.
     private var favorite: Bool?
     private var sshCommandLogging: Bool?
+    /// Kept optional for backwards-compatible decoding of existing profiles.
+    private var biometricLock: Bool?
     var logsSSHCommands: Bool {
         get { transport == .ssh && (sshCommandLogging ?? false) }
         set { sshCommandLogging = newValue ? true : nil }
@@ -71,6 +73,13 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
     var isFavorite: Bool {
         get { favorite ?? false }
         set { favorite = newValue }
+    }
+
+    /// Requires a local biometric check before this profile can read saved
+    /// desktop credentials from the Keychain.
+    var requiresBiometricUnlock: Bool {
+        get { biometricLock ?? false }
+        set { biometricLock = newValue ? true : nil }
     }
 
     var normalizedTags: [String] {
