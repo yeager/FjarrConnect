@@ -3,9 +3,9 @@ import AppKit
 enum AboutPanel {
     static let repositoryURL = URL(string: "https://github.com/yeager/FjarrConnect")!
 
-    static func credits() -> NSAttributedString {
-        let author = NSLocalizedString("about.author", comment: "")
-        let repository = NSLocalizedString("about.repository", comment: "")
+    static func credits(bundle: Bundle = .main) -> NSAttributedString {
+        let author = bundle.localizedString(forKey: "about.author", value: nil, table: nil)
+        let repository = bundle.localizedString(forKey: "about.repository", value: nil, table: nil)
         let result = NSMutableAttributedString(string: author + "\n\n" + repository)
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .center
