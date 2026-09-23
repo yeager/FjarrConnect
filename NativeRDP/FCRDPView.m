@@ -322,6 +322,10 @@ static NSData *FCBMPFromDIB(NSData *dib) {
     freerdp_settings_set_bool(base->settings, FreeRDP_CertificateCallbackPreferPEM, FALSE);
     freerdp_settings_set_bool(base->settings, FreeRDP_AutoReconnectionEnabled, FALSE);
     freerdp_settings_set_bool(base->settings, FreeRDP_UnicodeInput, TRUE);
+    // A direct server may advertise RDSTLS before NLA when the client offers
+    // it. The embedded runtime does not use the RDSTLS gateway transport, so
+    // restrict direct connections to the NLA/TLS negotiation path.
+    freerdp_settings_set_bool(base->settings, FreeRDP_RdstlsSecurity, FALSE);
     // Keep FreeRDP's network autodetection enabled: Windows sends RTT requests
     // during desktop activation and the core must be able to answer them.
     [_lock lock]; _context = ctx; BOOL cancelled = self.cancelled; [_lock unlock];
