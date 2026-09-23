@@ -86,6 +86,13 @@ final class SFTPBrowserUITests: XCTestCase {
         app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = profiles.path
         app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
         app.launchEnvironment["FJARRCONNECT_TEST_SSH_CONFIG"] = try XCTUnwrap(fixture["configuration"] as? String)
+        addUIInterruptionMonitor(withDescription: "Dismiss macOS warning dialogs") { dialog in
+            for title in ["OK", "Close", "Dismiss", "Stäng"] where dialog.buttons[title].exists {
+                dialog.buttons[title].click()
+                return true
+            }
+            return false
+        }
         app.launch(); defer { app.terminate() }
         let profileRow = app.buttons["connect.UI files"].firstMatch
         XCTAssertTrue(profileRow.waitForExistence(timeout: 15)); profileRow.doubleClick()
