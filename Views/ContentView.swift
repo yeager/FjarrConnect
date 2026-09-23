@@ -128,6 +128,11 @@ struct ContentView: View {
                     ForEach(profiles.favorites.filter { matches($0) }) { profile in profileRow(profile) }
                 }
             }
+            if !profiles.recent.isEmpty {
+                Section("sidebar.recent") {
+                    ForEach(profiles.recent.filter { matches($0) }) { profile in profileRow(profile) }
+                }
+            }
             Section("sidebar.saved") {
                 ForEach(profiles.grouped, id: \.group) { bucket in
                     let visible = bucket.profiles.filter { matches($0) }
@@ -278,6 +283,7 @@ struct ContentView: View {
         requestConnect(profile)
     }
     private func requestConnect(_ profile: ConnectionProfile, forcePrompt: Bool = false) {
+        profiles.markUsed(profile.id)
         if profile.transport == .ssh || profile.transport == .sftp { connection.connect(profile); return }
         if (profile.transport == .rdp || profile.transport == .remoteApp) && !RDPRemoteSession.isAvailable {
             errorMessage = NSLocalizedString("rdp.install", comment: ""); return

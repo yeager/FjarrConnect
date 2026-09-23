@@ -318,3 +318,5 @@
 "diagnostics.save" = "Lagre diagnostikkrapport";
 
 "field.tags" = "Etiketter (kommaseparert)";
+
+"sidebar.recent" = "Nylige tilkoblinger";

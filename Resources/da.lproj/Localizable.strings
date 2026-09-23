@@ -318,3 +318,5 @@
 "diagnostics.save" = "Gem diagnosticeringsrapport";
 
 "field.tags" = "Mærker (kommasepareret)";
+
+"sidebar.recent" = "Seneste forbindelser";

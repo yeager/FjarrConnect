@@ -318,3 +318,5 @@
 "diagnostics.save" = "Spara diagnostikrapport";
 
 "field.tags" = "Taggar (kommaseparerade)";
+
+"sidebar.recent" = "Senaste anslutningar";

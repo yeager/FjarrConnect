@@ -303,3 +303,5 @@
 "diagnostics.save" = "Tallenna diagnostiikkaraportti";
 
 "field.tags" = "Tunnisteet (pilkuin eroteltuna)";
+
+"sidebar.recent" = "Viimeisimmät yhteydet";

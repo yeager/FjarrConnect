@@ -303,3 +303,5 @@
 "diagnostics.save" = "診断レポートを保存";
 
 "field.tags" = "タグ（コンマ区切り）";
+
+"sidebar.recent" = "最近の接続";

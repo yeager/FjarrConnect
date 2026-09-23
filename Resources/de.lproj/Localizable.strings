@@ -303,3 +303,5 @@
 "diagnostics.save" = "Diagnosebericht sichern";
 
 "field.tags" = "Tags (durch Komma getrennt)";
+
+"sidebar.recent" = "Letzte Verbindungen";

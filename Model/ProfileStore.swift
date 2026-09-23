@@ -47,6 +47,17 @@ final class ProfileStore: ObservableObject {
         profiles.filter(\.isFavorite).sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
+    var recent: [ConnectionProfile] {
+        profiles.compactMap { profile in profile.lastConnected.map { ($0, profile) } }
+            .sorted { $0.0 > $1.0 }.prefix(8).map(\.1)
+    }
+
+    func markUsed(_ id: UUID, now: Date = .now) {
+        guard var profile = profiles.first(where: { $0.id == id }) else { return }
+        profile.lastConnected = now
+        try? save(profile, password: nil)
+    }
+
     var grouped: [(group: String, profiles: [ConnectionProfile])] {
         Dictionary(grouping: profiles.filter { !$0.isFavorite }) { $0.group ?? NSLocalizedString("group.ungrouped", comment: "") }
             .map { (group: $0.key, profiles: $0.value.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }) }

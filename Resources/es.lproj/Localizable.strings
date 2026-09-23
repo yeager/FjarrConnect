@@ -303,3 +303,5 @@
 "diagnostics.save" = "Guardar informe de diagnóstico";
 
 "field.tags" = "Etiquetas (separadas por comas)";
+
+"sidebar.recent" = "Conexiones recientes";

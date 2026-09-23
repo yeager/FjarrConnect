@@ -54,6 +54,7 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
     var group: String?
     /// User-defined labels used for filtering and quick access.
     var tags: [String]?
+    var lastConnected: Date?
     var ssh: SSHOptions?
     var rdp: RDPOptions?
     var links: HostLinks?

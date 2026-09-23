@@ -318,3 +318,5 @@
 "diagnostics.save" = "Save diagnostic report";
 
 "field.tags" = "Tags (comma-separated)";
+
+"sidebar.recent" = "Recent connections";
