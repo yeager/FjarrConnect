@@ -296,6 +296,12 @@ final class VNCIntegrationTests: XCTestCase {
             framebuffer(in: host)?.framebufferSize == CGSize(width: 2, height: 2)
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [original], timeout: 5), .completed)
+        let initiallyFocused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let view = framebuffer(in: host) else { return false }
+            return window.firstResponder === view
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [initiallyFocused], timeout: 5), .completed,
+                       "A connected VNC desktop should receive keyboard focus without a click")
         let originalView = try XCTUnwrap(framebuffer(in: host))
         let originalCursor = originalView.currentCursor
         XCTAssertEqual(originalCursor.image.size, CGSize(width: 2, height: 2))
