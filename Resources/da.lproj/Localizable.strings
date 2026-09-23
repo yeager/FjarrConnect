@@ -314,3 +314,5 @@
 
 "files.drop.title" = "Overfør slipte filer";
 "files.drop.hint" = "Filudklip er ikke tilgængeligt for denne session. Åbn Filer (SFTP) for den samme vært i stedet.";
+
+"diagnostics.save" = "Gem diagnosticeringsrapport";

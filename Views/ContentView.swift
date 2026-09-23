@@ -340,9 +340,12 @@ private struct SessionDetailView: View {
             }.padding(12).background(.bar)
             Divider()
             if let error = tab.backend.status.error {
-                Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
-                    .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
-                    .padding().frame(maxWidth: .infinity, alignment: .leading)
+                HStack(alignment: .top) {
+                    Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+                        .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                    Spacer()
+                    Button("diagnostics.save") { DiagnosticReport.save(profile: tab.backend.profile, status: tab.backend.status) }
+                }.padding().frame(maxWidth: .infinity, alignment: .leading)
             }
             if let notice = tab.backend.notice {
                 Label(notice, systemImage: "info.circle").foregroundStyle(.secondary)

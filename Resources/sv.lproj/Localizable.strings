@@ -314,3 +314,5 @@
 
 "files.drop.title" = "Överför släppta filer";
 "files.drop.hint" = "Filurklipp är inte tillgängligt för den här sessionen. Öppna Filer (SFTP) för samma värd i stället.";
+
+"diagnostics.save" = "Spara diagnostikrapport";

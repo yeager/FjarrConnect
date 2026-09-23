@@ -299,3 +299,5 @@
 
 "files.drop.title" = "Transferir archivos soltados";
 "files.drop.hint" = "La transferencia de archivos mediante el portapapeles no está disponible para esta sesión. Abra Archivos (SFTP) para el mismo host.";
+
+"diagnostics.save" = "Guardar informe de diagnóstico";

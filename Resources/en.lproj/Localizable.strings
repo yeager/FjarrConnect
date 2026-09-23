@@ -314,3 +314,5 @@
 
 "files.drop.title" = "Transfer dropped files";
 "files.drop.hint" = "Clipboard file transfer is not available for this session. Open Files (SFTP) for the same host instead.";
+
+"diagnostics.save" = "Save diagnostic report";

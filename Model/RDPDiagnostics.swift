@@ -1,4 +1,6 @@
 import Foundation
+import AppKit
+import CryptoKit
 
 /// Retains only known FreeRDP error categories, never backend log messages.
 struct RDPDiagnostics {
@@ -43,5 +45,40 @@ struct RDPDiagnostics {
         let detail = NSLocalizedString(key, comment: "")
         return "RDP \(host):\(port)\n\(detail)\n" +
             "\(NSLocalizedString("rdp.exitCode", comment: "")) \(exitCode)"
+    }
+}
+
+/// A user-saveable connection report with no credentials or raw backend output.
+enum DiagnosticReport {
+    static func text(profile: ConnectionProfile, status: SessionStatus, now: Date = .now) -> String {
+        let formatter = ISO8601DateFormatter()
+        let endpoint = Data("\(profile.host):\(profile.port)".utf8)
+        let fingerprint = SHA256.hash(data: endpoint).prefix(12).map { String(format: "%02x", $0) }.joined()
+        let state: String
+        switch status {
+        case .disconnected(let reason): state = reason == nil ? "disconnected" : "failed"
+        case .idle: state = "idle"
+        case .connecting: state = "connecting"
+        case .connected: state = "connected"
+        case .running: state = "running"
+        case .disconnecting: state = "disconnecting"
+        }
+        return [
+            "FjarrConnect diagnostic report",
+            "created: \(formatter.string(from: now))",
+            "protocol: \(profile.transport.rawValue)",
+            "endpoint-id: \(fingerprint)",
+            "state: \(state)",
+            "credentials: omitted",
+            "server-output: omitted"
+        ].joined(separator: "\n") + "\n"
+    }
+
+    static func save(profile: ConnectionProfile, status: SessionStatus) {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "FjarrConnect-diagnostic.txt"
+        panel.allowedContentTypes = [.plainText]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        try? text(profile: profile, status: status).write(to: url, atomically: true, encoding: .utf8)
     }
 }

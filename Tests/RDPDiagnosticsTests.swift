@@ -31,4 +31,15 @@ final class RDPDiagnosticsTests: XCTestCase {
         diagnostics.consume(Data("ERRCONNECT_TLS_CONNECT_FAILED".utf8))
         XCTAssertEqual(diagnostics.failure, .certificate)
     }
-}
+
+
+    func testDiagnosticReportOmitsEndpointCredentialsAndBackendDetails() {
+        let profile = ConnectionProfile(name: "Private", transport: .rdp, host: "private.example", port: 3390, username: "alice")
+        let report = DiagnosticReport.text(profile: profile, status: .disconnected(reason: "backend secret detail"), now: Date(timeIntervalSince1970: 0))
+        XCTAssertTrue(report.contains("protocol: rdp"))
+        XCTAssertTrue(report.contains("state: failed"))
+        XCTAssertFalse(report.contains("private.example"))
+        XCTAssertFalse(report.contains("alice"))
+        XCTAssertFalse(report.contains("backend secret detail"))
+    }
+} 

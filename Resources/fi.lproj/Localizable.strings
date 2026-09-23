@@ -299,3 +299,5 @@
 
 "files.drop.title" = "Siirrä pudotetut tiedostot";
 "files.drop.hint" = "Tiedostoleikepöytä ei ole käytettävissä tässä istunnossa. Avaa sen sijaan saman palvelimen Tiedostot (SFTP).";
+
+"diagnostics.save" = "Tallenna diagnostiikkaraportti";

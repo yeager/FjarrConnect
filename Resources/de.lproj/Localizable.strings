@@ -299,3 +299,5 @@
 
 "files.drop.title" = "Abgelegte Dateien übertragen";
 "files.drop.hint" = "Dateiablage über die Zwischenablage ist für diese Sitzung nicht verfügbar. Öffnen Sie stattdessen Dateien (SFTP) für denselben Host.";
+
+"diagnostics.save" = "Diagnosebericht sichern";
