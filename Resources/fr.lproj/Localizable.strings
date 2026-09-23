@@ -282,7 +282,7 @@
 "rdp.smartCard" = "Partager les cartes à puce";
 "rdp.audio" = "Lire l’audio distant sur ce Mac";
 "rdp.microphone" = "Partager le microphone de ce Mac";
-"rdp.devices.hint" = "La redirection audio et microphone est facultative et peut être désactivée par profil.";
+"rdp.devices.hint" = "La redirection audio et microphone est indisponible dans l’app macOS tant qu’elle n’a pas été testée dans une véritable session RDP.";
 "rdp.remoteApp" = "RemoteApp";
 "rdp.remoteApp.program" = "Programme RemoteApp";
 "rdp.remoteApp.example" = "par exemple ||wordpad";

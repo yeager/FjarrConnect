@@ -297,7 +297,7 @@
 "rdp.smartCard" = "Del smartkort";
 "rdp.audio" = "Spill av ekstern lyd på denne Macen";
 "rdp.microphone" = "Del mikrofonen på denne Macen";
-"rdp.devices.hint" = "Lyd- og mikrofonvideresending er valgfri og kan deaktiveres per profil.";
+"rdp.devices.hint" = "Lyd- og mikrofonvideresending er ikke tilgjengelig i macOS-appen før den er testet i en faktisk RDP-økt.";
 "rdp.remoteApp" = "RemoteApp";
 "rdp.remoteApp.program" = "RemoteApp-program";
 "rdp.remoteApp.example" = "for eksempel ||wordpad";

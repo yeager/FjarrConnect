@@ -110,8 +110,6 @@ struct AdvancedConnectionOptions: View {
                 }
                 }
                 Section("rdp.devices") {
-                    Toggle("rdp.audio", isOn: Binding(get: { rdp.redirectsAudio }, set: { rdp.audioRedirection = $0 }))
-                    Toggle("rdp.microphone", isOn: Binding(get: { rdp.redirectsMicrophone }, set: { rdp.microphoneRedirection = $0 }))
                     Text("rdp.devices.hint").font(.caption).foregroundStyle(.secondary)
                 }
                 if transport == .rdp {

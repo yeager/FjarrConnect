@@ -297,7 +297,7 @@
 "rdp.smartCard" = "Del smartkort";
 "rdp.audio" = "Afspil fjernlyd på denne Mac";
 "rdp.microphone" = "Del denne Macs mikrofon";
-"rdp.devices.hint" = "Lyd- og mikrofonomdirigering er valgfri og kan slås fra pr. profil.";
+"rdp.devices.hint" = "Lyd- og mikrofonomdirigering er ikke tilgængelig i macOS-versionen, før den er testet i en rigtig RDP-session.";
 "rdp.remoteApp" = "RemoteApp";
 "rdp.remoteApp.program" = "RemoteApp-program";
 "rdp.remoteApp.example" = "for eksempel ||wordpad";

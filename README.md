@@ -213,10 +213,10 @@ or an RDP-to-VNC gateway, rejects a display resize or disconnects during one, di
 **Adapt remote desktop to window size** in that profile’s Advanced options and
 reconnect. The remote desktop then keeps its initial size.
 
-RDP profiles can opt in to audio and microphone redirection. Both use FreeRDP's
-macOS audio backends and require server support; macOS asks for microphone permission
-when it is first used. Printer and smart-card redirection are unavailable in the bundled
-runtime and are not shown. **RemoteApp** is a separate session type: enter the
+Audio and microphone redirection are unavailable until verified in a real macOS RDP
+session. FjärrConnect does not expose their profile controls or send those arguments.
+Printer and smart-card redirection are unavailable in the bundled runtime and are
+not shown. **RemoteApp** is a separate session type: enter the
 server-published alias, such as `||wordpad`, and it opens in its own FjärrConnect tab
 without dynamic desktop resizing. Shared folders remain the supported file flow.
 Clipboard file transfer is intentionally not enabled until it has been tested against
@@ -228,9 +228,8 @@ RemoteApp must use the alias published by the RDS administrator (for example
 Windows Server with a published RemoteApp alias available for an end-to-end RemoteApp
 launch test, so a particular RDS deployment still needs that final validation.
 
-The project also has no RDS environment configured to allow practical audio and
-microphone-redirection testing. The per-profile controls remain opt-in and are only
-documented as runtime/server-dependent until they are exercised against such a server.
+The project has no RDS environment configured to test audio or microphone redirection.
+Those options stay unavailable on macOS until an end-to-end session verifies them.
 
 An RDP profile can also select **Automatic**, **Slow**, **Balanced**, or **LAN** network
 behavior. Automatic leaves FreeRDP's network detection unchanged; the other choices

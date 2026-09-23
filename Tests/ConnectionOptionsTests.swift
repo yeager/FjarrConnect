@@ -184,21 +184,28 @@ final class ConnectionOptionsTests: XCTestCase {
         for flag in ["/printer", "/smartcard", "/sound", "/microphone", "/app:"] {
             XCTAssertFalse(defaults.contains(flag), flag)
         }
-        profile.rdp = RDPOptions(audioRedirection: true, microphoneRedirection: true)
         let arguments = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
-        for flag in ["/sound:sys:mac", "/microphone:sys:mac"] {
-            XCTAssertTrue(arguments.contains(flag + "\n"), flag)
+        for flag in ["/sound", "/microphone"] {
+            XCTAssertFalse(arguments.contains(flag), flag)
         }
         XCTAssertTrue(arguments.contains("/dynamic-resolution\n"))
         XCTAssertFalse(arguments.contains("/printer\n"))
         XCTAssertFalse(arguments.contains("/smartcard\n"))
         profile.transport = .remoteApp
-        profile.rdp?.remoteApp = "||wordpad"
+        profile.rdp = RDPOptions(remoteApp: "||wordpad")
         let remoteApp = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
         XCTAssertTrue(remoteApp.contains("/app:||wordpad\n"))
         XCTAssertFalse(remoteApp.contains("/dynamic-resolution\n"))
         profile.rdp?.remoteApp = "wordpad\n/cert:ignore"
         XCTAssertFalse(profile.isValid)
+    }
+
+    func testLegacyAudioPreferencesAreIgnoredUntilTheyCanBeVerifiedOnMacOS() throws {
+        let legacy = Data(#"{"id":"11111111-1111-1111-1111-111111111111","name":"Old RDP","transport":"rdp","host":"desktop.local","port":3389,"rdp":{"audioRedirection":true,"microphoneRedirection":true}}"#.utf8)
+        let profile = try JSONDecoder().decode(ConnectionProfile.self, from: legacy)
+        let arguments = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
+        XCTAssertFalse(arguments.contains("/sound"))
+        XCTAssertFalse(arguments.contains("/microphone"))
     }
 
     func testRDPNetworkProfileIsOptInAndEscapesNoUserValues() throws {

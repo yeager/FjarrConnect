@@ -282,7 +282,7 @@
 "rdp.smartCard" = "Jaa älykortit";
 "rdp.audio" = "Toista etäääni tässä Macissa";
 "rdp.microphone" = "Jaa tämän Macin mikrofoni";
-"rdp.devices.hint" = "Äänen ja mikrofonin uudelleenohjaus on valinnainen ja sen voi poistaa käytöstä profiilikohtaisesti.";
+"rdp.devices.hint" = "Äänen ja mikrofonin uudelleenohjaus ei ole käytettävissä macOS-sovelluksessa ennen testausta aidossa RDP-istunnossa.";
 "rdp.remoteApp" = "RemoteApp";
 "rdp.remoteApp.program" = "RemoteApp-ohjelma";
 "rdp.remoteApp.example" = "esimerkiksi ||wordpad";

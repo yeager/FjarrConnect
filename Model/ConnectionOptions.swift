@@ -114,8 +114,6 @@ struct RDPOptions: Codable, Hashable {
     var gatewayPort: UInt16?
     var gatewayUsername: String?
     var sharedFolders: [String]?
-    var audioRedirection: Bool? = nil
-    var microphoneRedirection: Bool? = nil
     // A Windows RemoteApp executable or alias, for example "||wordpad".
     // Nil means a full desktop session.
     var remoteApp: String? = nil
@@ -125,8 +123,6 @@ struct RDPOptions: Codable, Hashable {
     var networkProfile: NetworkProfile?
 
     var resizesRemoteDesktop: Bool { dynamicResolution ?? true }
-    var redirectsAudio: Bool { audioRedirection ?? false }
-    var redirectsMicrophone: Bool { microphoneRedirection ?? false }
     var selectedNetworkProfile: NetworkProfile { networkProfile ?? .automatic }
     var remoteAppProgram: String? {
         let program = remoteApp?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

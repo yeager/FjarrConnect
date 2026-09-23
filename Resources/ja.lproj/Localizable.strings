@@ -282,7 +282,7 @@
 "rdp.smartCard" = "スマートカードを共有";
 "rdp.audio" = "リモート音声をこのMacで再生";
 "rdp.microphone" = "このMacのマイクを共有";
-"rdp.devices.hint" = "オーディオとマイクのリダイレクトは任意で、プロファイルごとに無効にできます。";
+"rdp.devices.hint" = "音声とマイクのリダイレクトは、実際のRDPセッションでテストされるまでmacOSアプリでは利用できません。";
 "rdp.remoteApp" = "RemoteApp";
 "rdp.remoteApp.program" = "RemoteAppプログラム";
 "rdp.remoteApp.example" = "例: ||wordpad";

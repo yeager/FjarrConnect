@@ -297,7 +297,7 @@
 "rdp.smartCard" = "Dela smartkort";
 "rdp.audio" = "Spela upp fjärrljud på denna Mac";
 "rdp.microphone" = "Dela denna Macs mikrofon";
-"rdp.devices.hint" = "Ljud- och mikrofonvidarebefordran är valfri och kan stängas av per profil.";
+"rdp.devices.hint" = "Ljud- och mikrofonvidarebefordran är inte tillgänglig i macOS-appen förrän den har testats i en riktig RDP-session.";
 "rdp.remoteApp" = "RemoteApp";
 "rdp.remoteApp.program" = "RemoteApp-program";
 "rdp.remoteApp.example" = "till exempel ||wordpad";

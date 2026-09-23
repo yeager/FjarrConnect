@@ -9,6 +9,7 @@ Unreleased
 - Expand saved diagnostic reports with app, macOS and architecture details while
   omitting the endpoint, credentials and server output.
 - Keep RDP file clipboard transfer disabled pending a real Windows integration test; continue to recommend SFTP or shared folders.
+- Keep RDP audio and microphone redirection unavailable until verified in a real macOS RDP session.
 
 Known limitations: RDP file clipboard support is not enabled pending Windows integration
 testing. VNC file transfer requires the server to advertise the legacy Tight channel.
@@ -17,8 +18,8 @@ server; refresh the listing to check the result. SFTP remains the recommended fi
 VNC clipboard supports text only; clipboard
 file copying is not implemented.
 Multi-monitor RDP, USB redirection, RDP printer redirection and RDP smart-card redirection
-are not implemented. RDP audio and microphone redirection are opt-in and require server
-support, but await RDS integration testing. RemoteApp is a separate tabbed session type
+are not implemented. RDP audio and microphone redirection are unavailable pending
+macOS RDS integration testing. RemoteApp is a separate tabbed session type
 with dynamic desktop resizing disabled, but end-to-end launch verification awaits a
 Windows Server with a published alias. Certificate-authenticated VeNCrypt/TLS is
 supported on macOS; RSA-AES and unsupported VeNCrypt subtypes remain unavailable. See

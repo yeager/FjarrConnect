@@ -282,7 +282,7 @@
 "rdp.smartCard" = "Compartir tarjetas inteligentes";
 "rdp.audio" = "Reproducir audio remoto en este Mac";
 "rdp.microphone" = "Compartir el micrófono de este Mac";
-"rdp.devices.hint" = "La redirección de audio y micrófono es opcional y puede desactivarse por perfil.";
+"rdp.devices.hint" = "La redirección de audio y micrófono no está disponible en la app para macOS hasta probarla en una sesión RDP real.";
 "rdp.remoteApp" = "RemoteApp";
 "rdp.remoteApp.program" = "Programa RemoteApp";
 "rdp.remoteApp.example" = "por ejemplo ||wordpad";

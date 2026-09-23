@@ -297,7 +297,7 @@
 "rdp.smartCard" = "Share smart cards";
 "rdp.audio" = "Play remote audio on this Mac";
 "rdp.microphone" = "Share this Mac's microphone";
-"rdp.devices.hint" = "Audio and microphone redirection are optional and can be disabled per profile.";
+"rdp.devices.hint" = "Audio and microphone redirection are unavailable in the macOS app until tested in a real RDP session.";
 "rdp.remoteApp" = "RemoteApp";
 "rdp.remoteApp.program" = "RemoteApp program";
 "rdp.remoteApp.example" = "for example ||wordpad";
