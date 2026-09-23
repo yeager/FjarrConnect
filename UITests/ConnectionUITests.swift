@@ -24,6 +24,7 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertTrue(authentication.exists)
         authentication.click()
         app.menuItems["Mac Screen Sharing (username required)"].click()
+        XCTAssertEqual(username.placeholderValue, "Username (required)")
         XCTAssertFalse(app.buttons["profile.save"].isEnabled)
         username.click(); username.typeText("macuser")
         XCTAssertTrue(app.buttons["profile.save"].isEnabled)
@@ -31,6 +32,28 @@ final class ConnectionUITests: XCTestCase {
         let profiles = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [[String: Any]])
         XCTAssertEqual(profiles.first?["username"] as? String, "macuser")
         XCTAssertEqual(profiles.first?["macScreenSharing"] as? Bool, true)
+    }
+
+    func testStandardVNCUsernameRemainsOptional() throws {
+        continueAfterFailure = false
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = file.path
+        app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        app.launch()
+        defer { app.terminate() }
+        XCTAssertTrue(app.buttons["newConnection"].firstMatch.waitForExistence(timeout: 15))
+        app.buttons["newConnection"].firstMatch.click()
+        let name = app.textFields["profile.name"].firstMatch
+        let host = app.textFields["profile.host"].firstMatch
+        let username = app.textFields["profile.username"].firstMatch
+        name.click(); name.typeText("Standard VNC")
+        host.click(); host.typeText("vnc.local")
+        XCTAssertEqual(username.placeholderValue, "Username")
+        XCTAssertTrue(app.buttons["profile.save"].isEnabled)
     }
 
     func testNetworkSearchVerifiesAndSavesALoopbackVNCService() throws {

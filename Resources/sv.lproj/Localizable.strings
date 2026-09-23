@@ -27,6 +27,7 @@
 "field.host"                 = "Värd";
 "field.username"             = "Användarnamn";
 "field.vncUsername" = "Användarnamn";
+"field.vncUsernameRequired" = "Användarnamn (obligatoriskt)";
 "field.password"             = "Lösenord";
 "field.group"                = "Grupp";
 "field.port.format"          = "Port (standard %d)";

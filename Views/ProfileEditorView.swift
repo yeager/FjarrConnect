@@ -66,7 +66,9 @@ struct ProfileEditorView: View {
                     TextField("field.tags", text: $tags)
                 }
                 Section {
-                    TextField(LocalizedStringKey(transport == .vnc ? "field.vncUsername" : "field.username"), text: $username)
+                    TextField(LocalizedStringKey(transport == .vnc
+                        ? (usesMacScreenSharingAuthentication ? "field.vncUsernameRequired" : "field.vncUsername")
+                        : "field.username"), text: $username)
                         .accessibilityIdentifier("profile.username")
                     if transport == .vnc {
                         Picker("vnc.authenticationMode", selection: $usesMacScreenSharingAuthentication) {

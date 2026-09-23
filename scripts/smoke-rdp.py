@@ -54,7 +54,7 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
                                  env=dict(os.environ, FC_TEST_CLIPBOARD_FILES='1'))
     assert files_check.returncode == 0, (
         f'RDP file clipboard manifest validation failed: {files_check.stdout}\n{files_check.stderr}')
-    print(f'RDP {architecture}: local file clipboard manifest passed (Unicode name, regular files only).')
+    print(f'RDP {architecture}: local file-descriptor validation passed; network file clipboard remains disabled.')
     certificate, key = directory / 'certificate.pem', directory / 'key.pem'
     subprocess.run(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
                     '-keyout', str(key), '-out', str(certificate), '-subj', '/CN=FjarrConnect local test'],

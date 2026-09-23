@@ -22,6 +22,7 @@
 "field.host" = "ホスト";
 "field.username" = "ユーザ名";
 "field.vncUsername" = "ユーザ名";
+"field.vncUsernameRequired" = "ユーザ名（必須）";
 "field.password" = "パスワード";
 "field.group" = "グループ";
 "field.port.format" = "ポート（デフォルト：%d）";

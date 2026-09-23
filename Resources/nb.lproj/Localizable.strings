@@ -27,6 +27,7 @@
 "field.host"                 = "Vert";
 "field.username"             = "Brukernavn";
 "field.vncUsername" = "Brukernavn";
+"field.vncUsernameRequired" = "Brukernavn (obligatorisk)";
 "field.password"             = "Passord";
 "field.group"                = "Gruppe";
 "field.port.format"          = "Port (standard %d)";

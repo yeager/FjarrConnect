@@ -27,6 +27,7 @@
 "field.host"                 = "Host";
 "field.username"             = "Username";
 "field.vncUsername" = "Username";
+"field.vncUsernameRequired" = "Username (required)";
 "field.password"             = "Password";
 "field.group"                = "Group";
 "field.port.format"          = "Port (default %d)";

@@ -27,6 +27,7 @@
 "field.host"                 = "Vært";
 "field.username"             = "Brugernavn";
 "field.vncUsername" = "Brugernavn";
+"field.vncUsernameRequired" = "Brugernavn (påkrævet)";
 "field.password"             = "Adgangskode";
 "field.group"                = "Gruppe";
 "field.port.format"          = "Port (standard %d)";
