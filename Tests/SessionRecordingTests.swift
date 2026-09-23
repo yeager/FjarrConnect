@@ -32,4 +32,19 @@ final class SessionRecordingTests: XCTestCase {
         XCTAssertTrue(url.path.contains("FjarrConnect"))
         XCTAssertFalse(url.lastPathComponent.contains("/"))
     }
+
+    func testRecordingLibrarySearchesMoviesAndCleansByAge() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let old = directory.appendingPathComponent("old.mov")
+        let current = directory.appendingPathComponent("current.mov")
+        try Data([1]).write(to: old)
+        try Data([1, 2]).write(to: current)
+        try FileManager.default.setAttributes([.creationDate: Date(timeIntervalSince1970: 0)], ofItemAtPath: old.path)
+
+        XCTAssertEqual(RecordingLibrary.files(in: directory).map(\.url).count, 2)
+        XCTAssertEqual(RecordingLibrary.cleanup(olderThan: 30, in: directory, now: Date(timeIntervalSince1970: 60 * 60 * 24 * 31)), 1)
+        XCTAssertEqual(RecordingLibrary.files(in: directory).map { $0.url.standardizedFileURL.path }, [current.standardizedFileURL.path])
+    }
 }

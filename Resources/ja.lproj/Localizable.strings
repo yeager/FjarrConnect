@@ -336,3 +336,19 @@
 "profile.touchID.failed" = "Touch ID認証は完了しませんでした。";
 
 "profile.touchID.unavailable" = "このMacではTouch IDを使用できません。";
+
+"record.library" = "録画ライブラリ";
+
+"record.library.open" = "ライブラリを開く";
+
+"record.export" = "書き出す";
+
+"record.cleanup" = "古い録画を削除";
+
+"record.retention" = "録画の保持";
+
+"record.retention.days" = "録画を%d日間保持";
+
+"record.retention.never" = "すべての録画を保持";
+
+"record.cleanup.done" = "%d件の録画を削除しました。";

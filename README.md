@@ -62,7 +62,8 @@ The downloads are ad-hoc signed and not notarized. macOS may ask for approval in
   names and timestamps in an encrypted local log, with no arguments or terminal transcript.
 - **Session recording:** record embedded RDP or VNC desktops to H.264 `.mov` files in
   `~/Movies/FjarrConnect`. Recording stops on disconnect or when the tab closes. SSH and
-  SFTP cannot be recorded.
+  SFTP cannot be recorded. **Settings → Advanced** includes a searchable recording library,
+  export, deletion and a local retention policy.
 - **Localized interface:** English, Swedish, Danish, Norwegian Bokmål, German, Finnish, French,
   Spanish and Japanese. Follows your macOS language preference; a language can also be
   selected for FjärrConnect in **System Settings → General → Language & Region → Applications**.

@@ -351,3 +351,19 @@
 "profile.touchID.failed" = "Touch ID-autentiseringen slutfördes inte.";
 
 "profile.touchID.unavailable" = "Touch ID är inte tillgängligt på den här Macen.";
+
+"record.library" = "Inspelningsbibliotek";
+
+"record.library.open" = "Öppna bibliotek";
+
+"record.export" = "Exportera";
+
+"record.cleanup" = "Rensa gamla inspelningar";
+
+"record.retention" = "Behåll inspelningar";
+
+"record.retention.days" = "Behåll inspelningar i %d dagar";
+
+"record.retention.never" = "Behåll alla inspelningar";
+
+"record.cleanup.done" = "%d inspelning(ar) borttagna.";

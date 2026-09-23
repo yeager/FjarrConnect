@@ -336,3 +336,19 @@
 "profile.touchID.failed" = "Touch ID -todennusta ei suoritettu loppuun.";
 
 "profile.touchID.unavailable" = "Touch ID ei ole käytettävissä tässä Macissa.";
+
+"record.library" = "Tallennekirjasto";
+
+"record.library.open" = "Avaa kirjasto";
+
+"record.export" = "Vie";
+
+"record.cleanup" = "Siivoa vanhat tallenteet";
+
+"record.retention" = "Säilytä tallenteet";
+
+"record.retention.days" = "Säilytä tallenteet %d päivää";
+
+"record.retention.never" = "Säilytä kaikki tallenteet";
+
+"record.cleanup.done" = "%d tallenne(tta) poistettiin.";

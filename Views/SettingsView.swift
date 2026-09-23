@@ -12,8 +12,10 @@ struct SettingsView: View {
     @AppStorage(AppSettings.autoHideSessionTabsWhileConnected) private var autoHideSessionTabsWhileConnected = false
     @AppStorage(AppSettings.scanTimeout) private var scanTimeout = 2.0
     @AppStorage(AppSettings.scanConcurrency) private var scanConcurrency = 32
+    @AppStorage(AppSettings.recordingRetentionDays) private var recordingRetentionDays = 30
     @State private var transfer: ProfileTransfer?
     @State private var transferMessage: String?
+    @State private var showingRecordings = false
 
     var body: some View {
         TabView {
@@ -60,6 +62,15 @@ struct SettingsView: View {
                     }
                     if let transferMessage { Text(transferMessage).foregroundStyle(.secondary) }
                 }
+                Section("record.library") {
+                    Picker("record.retention", selection: $recordingRetentionDays) {
+                        Text("record.retention.never").tag(0)
+                        Text(String(format: NSLocalizedString("record.retention.days", comment: ""), 7)).tag(7)
+                        Text(String(format: NSLocalizedString("record.retention.days", comment: ""), 30)).tag(30)
+                        Text(String(format: NSLocalizedString("record.retention.days", comment: ""), 90)).tag(90)
+                    }
+                    Button("record.library.open") { showingRecordings = true }
+                }
             }
             .formStyle(.grouped)
             .padding()
@@ -71,6 +82,7 @@ struct SettingsView: View {
                 perform(transfer, passphrase: passphrase)
             }
         }
+        .sheet(isPresented: $showingRecordings) { RecordingLibraryView(retentionDays: recordingRetentionDays) }
     }
 
     private func chooseExport() {
@@ -121,6 +133,67 @@ struct SettingsView: View {
             transferMessage = NSLocalizedString("profiles.transfer.error", comment: "")
             return .failure(error)
         }
+    }
+}
+
+private struct RecordingLibraryView: View {
+    let retentionDays: Int
+    @Environment(\.dismiss) private var dismiss
+    @State private var recordings: [RecordingFile] = []
+    @State private var search = ""
+    @State private var message: String?
+
+    private var filtered: [RecordingFile] {
+        search.isEmpty ? recordings : recordings.filter { $0.url.lastPathComponent.localizedCaseInsensitiveContains(search) }
+    }
+
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Text("record.library").font(.title2.bold())
+                Spacer()
+                Button("action.done") { dismiss() }
+            }
+            TextField("search.placeholder", text: $search).textFieldStyle(.roundedBorder)
+            List(filtered) { recording in
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text(recording.url.deletingPathExtension().lastPathComponent)
+                        Text(recording.createdAt, style: .date).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Text(ByteCountFormatter.string(fromByteCount: recording.size, countStyle: .file)).font(.caption).foregroundStyle(.secondary)
+                    Button("record.export") { export(recording) }
+                    Button(role: .destructive) { delete(recording) } label: { Image(systemName: "trash") }
+                }
+            }
+            HStack {
+                Button("record.cleanup") { cleanup() }.disabled(retentionDays == 0)
+                Spacer()
+                if let message { Text(message).foregroundStyle(.secondary) }
+            }
+        }
+        .padding(20).frame(width: 620, height: 430)
+        .onAppear(perform: reload)
+    }
+
+    private func reload() { recordings = RecordingLibrary.files() }
+    private func delete(_ recording: RecordingFile) {
+        do { try FileManager.default.removeItem(at: recording.url); reload() }
+        catch { message = NSLocalizedString("record.error", comment: "") }
+    }
+    private func cleanup() {
+        let count = RecordingLibrary.cleanup(olderThan: retentionDays)
+        message = String(format: NSLocalizedString("record.cleanup.done", comment: ""), count)
+        reload()
+    }
+    private func export(_ recording: RecordingFile) {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.quickTimeMovie]
+        panel.nameFieldStringValue = recording.url.lastPathComponent
+        guard panel.runModal() == .OK, let destination = panel.url else { return }
+        do { try FileManager.default.copyItem(at: recording.url, to: destination) }
+        catch { message = NSLocalizedString("record.error", comment: "") }
     }
 }
 

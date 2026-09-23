@@ -10,6 +10,7 @@ enum AppSettings {
     static let confirmClosingSessions = "settings.confirmClosingSessions"
     static let scanTimeout = "settings.scanTimeout"
     static let scanConcurrency = "settings.scanConcurrency"
+    static let recordingRetentionDays = "settings.recordingRetentionDays"
 
     static var shouldAutoStartDiscovery: Bool {
         UserDefaults.standard.object(forKey: autoStartDiscovery) as? Bool ?? true

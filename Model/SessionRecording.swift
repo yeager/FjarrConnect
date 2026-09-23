@@ -136,14 +136,50 @@ final class SessionRecordingController: ObservableObject {
         return buffer
     }
 
+    static var recordingDirectory: URL {
+        FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("FjarrConnect", isDirectory: true)
+    }
+
     static func recordingDestination(for profileName: String, now: Date = .now) -> URL {
         let safeName = profileName.unicodeScalars.map { CharacterSet.alphanumerics.contains($0) ? String($0) : "-" }.joined()
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd-HHmmss"
-        let directory = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("FjarrConnect", isDirectory: true)
-        return directory.appendingPathComponent("\(safeName.isEmpty ? "session" : safeName)-\(formatter.string(from: now)).mov")
+        return recordingDirectory.appendingPathComponent("\(safeName.isEmpty ? "session" : safeName)-\(formatter.string(from: now)).mov")
+    }
+}
+
+struct RecordingFile: Identifiable, Equatable {
+    let url: URL
+    let createdAt: Date
+    let size: Int64
+    var id: URL { url }
+}
+
+enum RecordingLibrary {
+    static func files(in directory: URL = SessionRecordingController.recordingDirectory,
+                      fileManager: FileManager = .default) -> [RecordingFile] {
+        guard let urls = try? fileManager.contentsOfDirectory(at: directory,
+                                                               includingPropertiesForKeys: [.creationDateKey, .fileSizeKey],
+                                                               options: [.skipsHiddenFiles]) else { return [] }
+        return urls.compactMap { url in
+            guard url.pathExtension.lowercased() == "mov",
+                  let values = try? url.resourceValues(forKeys: [.creationDateKey, .fileSizeKey]),
+                  let createdAt = values.creationDate else { return nil }
+            return RecordingFile(url: url, createdAt: createdAt, size: Int64(values.fileSize ?? 0))
+        }.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    @discardableResult
+    static func cleanup(olderThan days: Int, in directory: URL = SessionRecordingController.recordingDirectory,
+                        now: Date = .now, fileManager: FileManager = .default) -> Int {
+        guard days > 0, let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: now) else { return 0 }
+        var removed = 0
+        for file in files(in: directory, fileManager: fileManager) where file.createdAt < cutoff {
+            if (try? fileManager.removeItem(at: file.url)) != nil { removed += 1 }
+        }
+        return removed
     }
 }
 

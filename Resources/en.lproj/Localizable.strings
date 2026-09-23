@@ -351,3 +351,19 @@
 "profile.touchID.failed" = "Touch ID authentication was not completed.";
 
 "profile.touchID.unavailable" = "Touch ID is not available on this Mac.";
+
+"record.library" = "Recording library";
+
+"record.library.open" = "Open library";
+
+"record.export" = "Export";
+
+"record.cleanup" = "Clean up old recordings";
+
+"record.retention" = "Keep recordings";
+
+"record.retention.days" = "Keep recordings for %d days";
+
+"record.retention.never" = "Keep all recordings";
+
+"record.cleanup.done" = "%d recording(s) removed.";

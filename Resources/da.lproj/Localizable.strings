@@ -351,3 +351,19 @@
 "profile.touchID.failed" = "Touch ID-godkendelse blev ikke gennemført.";
 
 "profile.touchID.unavailable" = "Touch ID er ikke tilgængelig på denne Mac.";
+
+"record.library" = "Optagelsesbibliotek";
+
+"record.library.open" = "Åbn bibliotek";
+
+"record.export" = "Eksportér";
+
+"record.cleanup" = "Ryd gamle optagelser";
+
+"record.retention" = "Behold optagelser";
+
+"record.retention.days" = "Behold optagelser i %d dage";
+
+"record.retention.never" = "Behold alle optagelser";
+
+"record.cleanup.done" = "%d optagelse(r) fjernet.";
