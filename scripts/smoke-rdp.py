@@ -22,8 +22,15 @@ assert library.is_file(), library
 architectures = subprocess.check_output(['lipo', '-archs', str(library)], text=True).split()
 assert len(architectures) == 1, f'Expected one runtime architecture, found {architectures}'
 architecture = architectures[0]
-freerdp = ROOT / f'build/rdp-{architecture}/FreeRDP'
-freerdp_build = ROOT / f'build/rdp-{architecture}/FreeRDP-build'
+artifact_headers = ROOT / f'build/rdp-artifacts/rdp-{architecture}/SmokeHeaders'
+if (artifact_headers / 'freerdp/include/freerdp/error.h').is_file():
+    freerdp = artifact_headers / 'freerdp'
+    freerdp_build = artifact_headers / 'build'
+else:
+    # Local runtime builds keep their source checkout and generated headers
+    # under build/rdp-ARCH; release jobs consume the header subset above.
+    freerdp = ROOT / f'build/rdp-{architecture}/FreeRDP'
+    freerdp_build = ROOT / f'build/rdp-{architecture}/FreeRDP-build'
 assert (freerdp / 'include/freerdp/error.h').is_file(), f'Pinned FreeRDP headers not found: {freerdp}'
 assert (freerdp_build / 'freerdp/winpr/include/winpr/config.h').is_file(), (
     f'Generated FreeRDP headers not found: {freerdp_build}')

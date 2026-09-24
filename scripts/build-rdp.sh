@@ -57,3 +57,15 @@ cp "$STAGE/FreeRDP/LICENSE" "$LICENSES/FreeRDP.txt"
 find "$STAGE/FreeRDP/resources" -iname '*license*' -o -iname '*OFL*' | while IFS= read -r license; do
   cp "$license" "$LICENSES/FreeRDP-resource-$(basename "$license")"
 done
+# The packaged-runtime smoke test compiles a small probe against both the
+# pinned public headers and CMake-generated configuration headers. Carry only
+# those include trees in the artifact so clean release jobs can run the same
+# test without rebuilding or cloning FreeRDP themselves.
+SMOKE_HEADERS="$ROOT/build/rdp-output/$RDP_ARCH/SmokeHeaders"
+for include in freerdp freerdp/winpr build/freerdp build/freerdp/winpr; do
+  mkdir -p "$SMOKE_HEADERS/$include/include"
+done
+cp -R "$STAGE/FreeRDP/include/." "$SMOKE_HEADERS/freerdp/include/"
+cp -R "$STAGE/FreeRDP/winpr/include/." "$SMOKE_HEADERS/freerdp/winpr/include/"
+cp -R "$STAGE/FreeRDP-build/freerdp/include/." "$SMOKE_HEADERS/build/freerdp/include/"
+cp -R "$STAGE/FreeRDP-build/freerdp/winpr/include/." "$SMOKE_HEADERS/build/freerdp/winpr/include/"
