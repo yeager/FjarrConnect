@@ -350,6 +350,7 @@
 "files.drop.hint" = "Filudklip er ikke tilgængeligt her. Vælg Upload for at åbne SFTP og sætte filerne i uploadkøen til denne vært.";
 
 "diagnostics.save" = "Gem diagnosticeringsrapport";
+"diagnostics.saveFailed" = "Diagnoserapporten kunne ikke gemmes. Kontrollér placeringen, og prøv igen.";
 
 "field.tags" = "Mærker (kommasepareret)";
 

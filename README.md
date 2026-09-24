@@ -346,6 +346,7 @@ logoff from authentication, network, NLA and Remote Desktop licence failures. A
 saved diagnostic report includes
 app and macOS versions, architecture, session state and available connection-health
 values. It omits the endpoint, credentials, backend output and failure text.
+If writing the report fails, the app reports the error instead of silently treating it as saved.
 
 Quick-connect examples:
 

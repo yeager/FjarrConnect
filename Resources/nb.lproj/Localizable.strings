@@ -350,6 +350,7 @@
 "files.drop.hint" = "Filutklipp er ikke tilgjengelig her. Velg Last opp for å åpne SFTP og legge filene i opplastingskøen for denne verten.";
 
 "diagnostics.save" = "Lagre diagnostikkrapport";
+"diagnostics.saveFailed" = "Diagnoserapporten kunne ikke lagres. Kontroller plasseringen og prøv igjen.";
 
 "field.tags" = "Etiketter (kommaseparert)";
 

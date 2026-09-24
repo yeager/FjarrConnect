@@ -63,4 +63,29 @@ final class RDPDiagnosticsTests: XCTestCase {
         XCTAssertTrue(report.contains("graphics-codec: RemoteFX"))
         XCTAssertFalse(report.contains(profile.host))
     }
+
+    func testDiagnosticReportWritesToSelectedFile() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let destination = directory.appendingPathComponent("diagnostic.txt")
+        let profile = ConnectionProfile(name: "Private", transport: .rdp, host: "private.example")
+
+        try DiagnosticReport.write(profile: profile, status: .connected,
+                                   to: destination, now: Date(timeIntervalSince1970: 0))
+
+        let saved = try String(contentsOf: destination, encoding: .utf8)
+        XCTAssertTrue(saved.contains("state: connected"))
+        XCTAssertFalse(saved.contains("private.example"))
+    }
+
+    func testDiagnosticReportPropagatesFileWriteFailure() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let profile = ConnectionProfile(name: "Private", transport: .rdp, host: "private.example")
+
+        XCTAssertThrowsError(try DiagnosticReport.write(profile: profile, status: .connected,
+                                                        to: directory))
+    }
 }

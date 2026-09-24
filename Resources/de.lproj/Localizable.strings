@@ -335,6 +335,7 @@
 "files.drop.hint" = "Dateiübertragung über die Zwischenablage ist hier nicht verfügbar. Wählen Sie Hochladen, um SFTP zu öffnen und diese Dateien für diesen Host zur Uploadliste hinzuzufügen.";
 
 "diagnostics.save" = "Diagnosebericht sichern";
+"diagnostics.saveFailed" = "Der Diagnosebericht konnte nicht gesichert werden. Prüfe den Speicherort und versuche es erneut.";
 
 "field.tags" = "Tags (durch Komma getrennt)";
 

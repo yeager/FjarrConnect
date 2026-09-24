@@ -335,6 +335,7 @@
 "files.drop.hint" = "El portapapeles no permite transferir archivos aquí. Elija Subir para abrir SFTP y poner estos archivos en la cola de carga de este host.";
 
 "diagnostics.save" = "Guardar informe de diagnóstico";
+"diagnostics.saveFailed" = "No se pudo guardar el informe de diagnóstico. Comprueba el destino e inténtalo de nuevo.";
 
 "field.tags" = "Etiquetas (separadas por comas)";
 

@@ -89,11 +89,18 @@ enum DiagnosticReport {
         ].joined(separator: "\n") + "\n"
     }
 
-    static func save(profile: ConnectionProfile, status: SessionStatus, health: SessionHealth? = nil) {
+    static func save(profile: ConnectionProfile, status: SessionStatus,
+                     health: SessionHealth? = nil) throws {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = "FjarrConnect-diagnostic.txt"
         panel.allowedContentTypes = [.plainText]
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        try? text(profile: profile, status: status, health: health).write(to: url, atomically: true, encoding: .utf8)
+        try write(profile: profile, status: status, health: health, to: url)
+    }
+
+    static func write(profile: ConnectionProfile, status: SessionStatus,
+                      health: SessionHealth? = nil, to url: URL, now: Date = .now) throws {
+        try text(profile: profile, status: status, health: health, now: now)
+            .write(to: url, atomically: true, encoding: .utf8)
     }
 }

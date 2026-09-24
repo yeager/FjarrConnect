@@ -344,6 +344,7 @@ private struct SessionDetailView: View {
     @State private var showingCommandLog = false
     @State private var showingFileTransferSuggestion = false
     @State private var showingVNCFileTransfer = false
+    @State private var diagnosticSaveFailed = false
     @State private var pendingFileURLs: [URL] = []
     var body: some View {
         VStack(spacing: 0) {
@@ -408,7 +409,15 @@ private struct SessionDetailView: View {
                     Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                         .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                     Spacer()
-                    Button("diagnostics.save") { DiagnosticReport.save(profile: tab.backend.profile, status: tab.backend.status, health: tab.health) }
+                    Button("diagnostics.save") {
+                        do {
+                            try DiagnosticReport.save(profile: tab.backend.profile,
+                                                      status: tab.backend.status,
+                                                      health: tab.health)
+                        } catch {
+                            diagnosticSaveFailed = true
+                        }
+                    }
                 }.padding().frame(maxWidth: .infinity, alignment: .leading)
             }
             if let notice = tab.backend.notice {
@@ -448,6 +457,11 @@ private struct SessionDetailView: View {
             }
             Button("action.cancel", role: .cancel) { pendingFileURLs = [] }
         } message: { Text("files.drop.hint") }
+        .alert("error.title", isPresented: $diagnosticSaveFailed) {
+            Button("action.ok", role: .cancel) { diagnosticSaveFailed = false }
+        } message: {
+            Text("diagnostics.saveFailed")
+        }
     }
 }
 

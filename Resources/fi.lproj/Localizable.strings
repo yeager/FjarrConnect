@@ -335,6 +335,7 @@
 "files.drop.hint" = "Tiedostojen siirto leikepöydän kautta ei ole käytettävissä. Valitse Lähetä avataksesi SFTP:n ja lisätäksesi nämä tiedostot tämän palvelimen siirtojonoon.";
 
 "diagnostics.save" = "Tallenna diagnostiikkaraportti";
+"diagnostics.saveFailed" = "Diagnostiikkaraporttia ei voitu tallentaa. Tarkista kohde ja yritä uudelleen.";
 
 "field.tags" = "Tunnisteet (pilkuin eroteltuna)";
 

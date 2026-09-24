@@ -350,6 +350,7 @@
 "files.drop.hint" = "Filurklipp är inte tillgängligt här. Välj Skicka för att öppna SFTP och lägga filerna i uppladdningskön till den här värden.";
 
 "diagnostics.save" = "Spara diagnostikrapport";
+"diagnostics.saveFailed" = "Diagnostikrapporten kunde inte sparas. Kontrollera målet och försök igen.";
 
 "field.tags" = "Taggar (kommaseparerade)";
 

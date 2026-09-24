@@ -350,6 +350,7 @@
 "files.drop.hint" = "File clipboard is not available here. Choose Upload to open SFTP and carry these files into the upload queue for this host.";
 
 "diagnostics.save" = "Save diagnostic report";
+"diagnostics.saveFailed" = "The diagnostic report could not be saved. Check the destination and try again.";
 
 "field.tags" = "Tags (comma-separated)";
 
