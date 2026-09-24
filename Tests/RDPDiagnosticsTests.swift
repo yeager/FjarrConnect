@@ -2,6 +2,12 @@ import XCTest
 @testable import FjarrConnect
 
 final class RDPDiagnosticsTests: XCTestCase {
+    func testServerInitiatedLogoffHasItsOwnExplanation() {
+        XCTAssertEqual(RDPRemoteSession.failureLocalizationKey(for: 8), "rdp.error.serverEndedSession")
+        XCTAssertEqual(RDPRemoteSession.failureLocalizationKey(for: 3), "rdp.error.authentication")
+        XCTAssertEqual(RDPRemoteSession.failureLocalizationKey(for: 99), "rdp.ended")
+    }
+
     func testNetworkFailureSurvivesSplitPipeReadsWithoutExposingLogs() {
         var diagnostics = RDPDiagnostics()
         diagnostics.consume(Data("private diagnostic data\n[ERROR] ERRCONNECT_CON".utf8))

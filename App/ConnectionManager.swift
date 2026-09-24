@@ -174,6 +174,16 @@ final class ConnectionManager: ObservableObject {
     var activeSessions: [SessionTab] { tabs.filter { $0.backend.status.isActive } }
     var hasActiveSessions: Bool { !activeSessions.isEmpty }
 
+    func selectNextSession() { selectSession(offset: 1) }
+    func selectPreviousSession() { selectSession(offset: -1) }
+
+    private func selectSession(offset: Int) {
+        guard tabs.count > 1 else { return }
+        let currentIndex = tabs.firstIndex { $0.id == selectedID } ?? (offset > 0 ? -1 : 0)
+        let nextIndex = (currentIndex + offset + tabs.count) % tabs.count
+        selectedID = tabs[nextIndex].id
+    }
+
     func requestClose(_ id: UUID, confirm: (String) -> Bool = CloseConfirmation.session) {
         guard let tab = tabs.first(where: { $0.id == id }) else { return }
         if tab.backend.status.isActive && AppSettings.shouldConfirmClosingSessions && !confirm(tab.backend.profile.name) { return }

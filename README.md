@@ -41,7 +41,9 @@ in version 0.2.23 are listed under **Unreleased** in [RELEASE_NOTES.md](RELEASE_
   protocol, username and optional group. Single-click to select a saved profile;
   **double-click to connect**, including favorites. Right-click for connection and editing actions.
 - **Session tabs:** open several connections at once. RDP and VNC desktops render inside
-  their tabs; closing a connected tab asks for confirmation.
+  their tabs; closing a connected tab asks for confirmation. Use **Control-Tab** and
+  **Control-Shift-Tab** to move to the next or previous session, even when the tab bar
+  is hidden.
 - **App settings:** choose whether the left sidebar is shown, whether the sidebar and
   session-tab bar hide automatically while connected, use larger controls, startup
   discovery, close confirmation, network-scan limits, and the RDP keyboard layout.
@@ -338,8 +340,9 @@ computer’s access permissions.
 
 RDP requires a listening Remote Desktop service on the destination port (normally
 3389). The session view reports the destination, a recognized error category and
-the client exit code when a connection fails. NLA requirements and Remote Desktop
-licence negotiation have separate guidance. A saved diagnostic report includes
+the client exit code when a connection fails. It distinguishes a server-initiated
+logoff from authentication, network, NLA and Remote Desktop licence failures. A
+saved diagnostic report includes
 app and macOS versions, architecture, session state and available connection-health
 values. It omits the endpoint, credentials, backend output and failure text.
 

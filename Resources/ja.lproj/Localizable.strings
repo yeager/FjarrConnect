@@ -266,6 +266,7 @@
 "rdp.error.activationTimeout" = "サーバーは応答しましたが、時間内にリモートデスクトップが起動しませんでした。Windowsのサインイン画面とリモートデスクトップサービスを確認してから、再接続してください。";
 "rdp.error.nla" = "サーバーにはネットワーク レベル認証（NLA）が必要です。アカウントがNLAを使用でき、Windowsサーバーが選択したサインイン方法をサポートしていることを確認してください。";
 "rdp.error.license" = "サーバーがリモート デスクトップのライセンス ネゴシエーションを拒否しました。リモート デスクトップ ライセンス サービスと使用可能なクライアント アクセス ライセンスを確認してください。";
+"rdp.error.serverEndedSession" = "接続後にサーバーがRDPセッションを終了しました。リモートアカウントのセッションポリシーと、サーバーのリモート デスクトップ ログを確認してください。";
 
 // Network service discovery
 "discovery.scan.title" = "サーバを検索";
@@ -341,6 +342,9 @@
 
 "menu.favorites" = "お気に入り";
 "menu.favorites.empty" = "保存されたお気に入りはありません";
+"menu.sessions" = "セッション";
+"session.previous" = "前のセッション";
+"session.next" = "次のセッション";
 
 // Encrypted profile transfer
 "profiles.transfer" = "プロファイルのインポートとエクスポート";

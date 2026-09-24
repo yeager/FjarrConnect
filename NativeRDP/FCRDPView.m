@@ -1002,6 +1002,7 @@ int fc_rdp_failure(void *view) {
         case FREERDP_ERROR_CONNECT_ACCOUNT_EXPIRED: case FREERDP_ERROR_CONNECT_LOGON_TYPE_NOT_GRANTED: return 4;
         case FREERDP_ERROR_CONNECT_ACTIVATION_TIMEOUT: return 5;
         case FREERDP_ERROR_CONNECT_HYBRID_REQUIRED_BY_SERVER: return 6;
+        case FREERDP_ERROR_LOGOFF_BY_USER: return 8;
         default: return 0;
     }
 }

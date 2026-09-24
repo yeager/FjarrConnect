@@ -281,6 +281,7 @@
 "rdp.error.activationTimeout" = "The server answered but did not start the remote desktop in time. Check the Windows sign-in screen and Remote Desktop service, then reconnect.";
 "rdp.error.nla" = "The server requires Network Level Authentication (NLA). Check that the account can use NLA and that the Windows server supports the selected sign-in method.";
 "rdp.error.license" = "The server rejected the Remote Desktop licence negotiation. Check the Remote Desktop licensing service and available client access licences.";
+"rdp.error.serverEndedSession" = "The server ended the RDP session after connecting. Check the remote account's session policy and the server's Remote Desktop logs.";
 
 // Network service discovery
 "discovery.scan.title" = "Find servers";
@@ -356,6 +357,9 @@
 
 "menu.favorites" = "Favorites";
 "menu.favorites.empty" = "No favorites saved";
+"menu.sessions" = "Sessions";
+"session.previous" = "Previous session";
+"session.next" = "Next session";
 
 // Encrypted profile transfer
 "profiles.transfer" = "Profile import and export";

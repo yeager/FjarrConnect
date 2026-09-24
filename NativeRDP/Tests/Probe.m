@@ -66,6 +66,7 @@ int main(int argc, const char **argv) {
                 {"activation", FREERDP_ERROR_CONNECT_ACTIVATION_TIMEOUT, 5},
                 {"nla", FREERDP_ERROR_CONNECT_HYBRID_REQUIRED_BY_SERVER, 6},
                 {"licensing", MAKE_FREERDP_ERROR(ERRINFO, ERRINFO_LICENSE_NO_LICENSE_SERVER), 7},
+                {"server-logoff", FREERDP_ERROR_LOGOFF_BY_USER, 8},
                 {"unknown", UINT32_MAX, 0}
             };
             for (size_t index = 0; index < sizeof(cases) / sizeof(cases[0]); index++) {
@@ -75,7 +76,7 @@ int main(int argc, const char **argv) {
                     return 11;
                 }
             }
-            puts("RDP failure categories passed: network, certificate, authentication, account, activation, NLA, licensing, unknown.");
+            puts("RDP failure categories passed: network, certificate, authentication, account, activation, NLA, licensing, server logoff, unknown.");
             return 0;
         }
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_KEYBOARD_INPUT"] isEqualToString:@"1"]) {

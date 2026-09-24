@@ -266,6 +266,7 @@
 "rdp.error.activationTimeout" = "Le serveur a répondu, mais le bureau à distance ne s’est pas ouvert à temps. Vérifiez l’écran de connexion Windows et le service Bureau à distance, puis reconnectez-vous.";
 "rdp.error.nla" = "Le serveur exige l’authentification au niveau du réseau (NLA). Vérifiez que le compte peut utiliser NLA et que le serveur Windows prend en charge la méthode d’identification choisie.";
 "rdp.error.license" = "Le serveur a refusé la négociation de licence Bureau à distance. Vérifiez le service de licences Bureau à distance et les licences d’accès client disponibles.";
+"rdp.error.serverEndedSession" = "Le serveur a fermé la session RDP après la connexion. Vérifiez la stratégie de session du compte distant et les journaux Bureau à distance du serveur.";
 
 // Network service discovery
 "discovery.scan.title" = "Rechercher des serveurs";
@@ -341,6 +342,9 @@
 
 "menu.favorites" = "Favoris";
 "menu.favorites.empty" = "Aucun favori enregistré";
+"menu.sessions" = "Sessions";
+"session.previous" = "Session précédente";
+"session.next" = "Session suivante";
 
 // Encrypted profile transfer
 "profiles.transfer" = "Importation et exportation de profils";

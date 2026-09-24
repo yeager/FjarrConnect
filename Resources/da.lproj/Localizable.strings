@@ -281,6 +281,7 @@
 "rdp.error.activationTimeout" = "Serveren svarede, men startede ikke fjernskrivebordet i tide. Kontrollér Windows-logonskærmen og tjenesten Fjernskrivebord, og opret derefter forbindelse igen.";
 "rdp.error.nla" = "Serveren kræver netværksgodkendelse (NLA). Kontrollér, at kontoen må bruge NLA, og at Windows-serveren understøtter den valgte loginmetode.";
 "rdp.error.license" = "Serveren afviste licensforhandlingen for Fjernskrivebord. Kontrollér licenstjenesten for Fjernskrivebord og tilgængelige klientadgangslicenser.";
+"rdp.error.serverEndedSession" = "Serveren afsluttede RDP-sessionen efter forbindelsen. Kontrollér fjernkontoens sessionspolitik og serverens logfiler for Fjernskrivebord.";
 
 // Network service discovery
 "discovery.scan.title" = "Find servere";
@@ -356,6 +357,9 @@
 
 "menu.favorites" = "Favoritter";
 "menu.favorites.empty" = "Ingen gemte favoritter";
+"menu.sessions" = "Sessioner";
+"session.previous" = "Forrige session";
+"session.next" = "Næste session";
 
 // Encrypted profile transfer
 "profiles.transfer" = "Profilimport og -eksport";

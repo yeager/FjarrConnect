@@ -68,6 +68,14 @@ struct FjarrConnectApp: App {
             CommandGroup(after: .appInfo) {
                 Button("about.repository", action: AboutPanel.openRepository)
             }
+            CommandMenu("menu.sessions") {
+                Button("session.previous") { connection.selectPreviousSession() }
+                    .keyboardShortcut(.tab, modifiers: [.control, .shift])
+                    .disabled(connection.tabs.count < 2)
+                Button("session.next") { connection.selectNextSession() }
+                    .keyboardShortcut(.tab, modifiers: [.control])
+                    .disabled(connection.tabs.count < 2)
+            }
             CommandMenu("menu.favorites") {
                 if profiles.favorites.isEmpty {
                     Text("menu.favorites.empty")

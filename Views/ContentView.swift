@@ -374,6 +374,7 @@ private struct SessionDetailView: View {
                         Image(systemName: tab.recorder.isRecording ? "stop.circle.fill" : "record.circle")
                             .foregroundStyle(tab.recorder.isRecording ? .red : .primary)
                     }
+                    .accessibilityLabel(Text(LocalizedStringKey(tab.recorder.isRecording ? "record.stop" : "record.start")))
                     .help(tab.recorder.isRecording ? "record.stop" : "record.start")
                     .accessibilityIdentifier("session.record")
                     .disabled(!tab.recorder.isRecording && (tab.backend.status.isFinished || !tab.backend.status.isActive))
@@ -465,6 +466,7 @@ private struct SessionHealthMenu: View {
         } label: {
             Image(systemName: "chart.bar.xaxis")
         }
+        .accessibilityLabel(Text("health.title"))
         .help("health.title")
         .accessibilityIdentifier("session.health")
     }

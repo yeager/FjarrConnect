@@ -1,6 +1,24 @@
 import XCTest
 
 final class ConnectionUITests: XCTestCase {
+    func testSessionNavigationMenuIsAccessibleWithoutOpenSessions() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = directory.appendingPathComponent("profiles.json").path
+        app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        app.launch(); defer { app.terminate() }
+
+        let menu = app.menuBars.menuBarItems["Sessions"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 15))
+        menu.click()
+        XCTAssertTrue(app.menuItems["Previous session"].exists)
+        XCTAssertTrue(app.menuItems["Next session"].exists)
+        XCTAssertFalse(app.menuItems["Previous session"].isEnabled)
+        XCTAssertFalse(app.menuItems["Next session"].isEnabled)
+    }
+
     func testMacScreenSharingProfileRequiresUsernameBeforeSave() throws {
         continueAfterFailure = false
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

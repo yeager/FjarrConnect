@@ -76,6 +76,35 @@ final class SessionTests: XCTestCase {
         manager.disconnectAll()
     }
 
+    func testKeyboardSessionNavigationWrapsAndKeepsTheCurrentSelection() throws {
+        let manager = ConnectionManager { profile, _ in TestSession(profile: profile) }
+        manager.connect(ConnectionProfile(name: "One", host: "one.local"))
+        let first = try XCTUnwrap(manager.selectedID)
+        manager.connect(ConnectionProfile(name: "Two", host: "two.local"))
+        let second = try XCTUnwrap(manager.selectedID)
+        manager.connect(ConnectionProfile(name: "Three", host: "three.local"))
+        let third = try XCTUnwrap(manager.selectedID)
+
+        manager.selectNextSession()
+        XCTAssertEqual(manager.selectedID, first)
+        manager.selectPreviousSession()
+        XCTAssertEqual(manager.selectedID, third)
+        manager.selectedID = second
+        manager.selectNextSession()
+        XCTAssertEqual(manager.selectedID, third)
+        manager.selectPreviousSession()
+        XCTAssertEqual(manager.selectedID, second)
+
+        manager.close(first)
+        manager.close(third)
+        manager.selectNextSession()
+        manager.selectPreviousSession()
+        XCTAssertEqual(manager.selectedID, second)
+        manager.disconnectAll()
+        manager.selectNextSession()
+        XCTAssertNil(manager.selectedID)
+    }
+
     func testActiveSessionStateClearsWhenTheBackendDisconnects() throws {
         var sessions: [TestSession] = []
         let manager = ConnectionManager { profile, _ in

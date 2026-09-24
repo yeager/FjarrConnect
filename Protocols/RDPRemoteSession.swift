@@ -3,6 +3,20 @@ import SwiftUI
 /// Owns one embedded desktop, including its native connection worker. Changing
 /// tabs detaches the view without stopping the connection.
 final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource, SessionHealthProviding {
+    static func failureLocalizationKey(for category: Int32) -> String {
+        switch category {
+        case 1: return "rdp.error.network"
+        case 2: return "rdp.error.certificate"
+        case 3: return "rdp.error.authentication"
+        case 4: return "rdp.error.account"
+        case 5: return "rdp.error.activationTimeout"
+        case 6: return "rdp.error.nla"
+        case 7: return "rdp.error.license"
+        case 8: return "rdp.error.serverEndedSession"
+        default: return "rdp.ended"
+        }
+    }
+
     let profile: ConnectionProfile
     private var credentials: SessionCredentials
     @Published private(set) var status: SessionStatus = .idle
@@ -56,17 +70,7 @@ final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource, S
             timer?.invalidate(); timer = nil
             let code = runtime.error(pointer)
             if code == 0 { status = .disconnected(reason: nil); return }
-            let key: String
-            switch runtime.failure(pointer) {
-            case 1: key = "rdp.error.network"
-            case 2: key = "rdp.error.certificate"
-            case 3: key = "rdp.error.authentication"
-            case 4: key = "rdp.error.account"
-            case 5: key = "rdp.error.activationTimeout"
-            case 6: key = "rdp.error.nla"
-            case 7: key = "rdp.error.license"
-            default: key = "rdp.ended"
-            }
+            let key = Self.failureLocalizationKey(for: runtime.failure(pointer))
             status = .disconnected(reason: "RDP \(profile.host):\(profile.port)\n" +
                 NSLocalizedString(key, comment: "") + "\n" + NSLocalizedString("rdp.exitCode", comment: "") + " " + String(format: "0x%08X", code))
         default: break

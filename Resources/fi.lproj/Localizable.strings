@@ -266,6 +266,7 @@
 "rdp.error.activationTimeout" = "Palvelin vastasi, mutta etätyöpöytä ei käynnistynyt ajoissa. Tarkista Windowsin kirjautumisnäyttö ja etätyöpöytäpalvelu ja yhdistä uudelleen.";
 "rdp.error.nla" = "Palvelin vaatii verkkotason todennuksen (NLA). Tarkista, että tili saa käyttää NLA:ta ja että Windows-palvelin tukee valittua kirjautumistapaa.";
 "rdp.error.license" = "Palvelin hylkäsi etätyöpöydän lisenssineuvottelun. Tarkista etätyöpöydän lisenssipalvelu ja käytettävissä olevat asiakaskäyttöoikeudet.";
+"rdp.error.serverEndedSession" = "Palvelin päätti RDP-istunnon yhteyden muodostamisen jälkeen. Tarkista etätilin istuntokäytäntö ja palvelimen etätyöpöytälokit.";
 
 // Network service discovery
 "discovery.scan.title" = "Etsi palvelimia";
@@ -341,6 +342,9 @@
 
 "menu.favorites" = "Suosikit";
 "menu.favorites.empty" = "Ei tallennettuja suosikkeja";
+"menu.sessions" = "Istunnot";
+"session.previous" = "Edellinen istunto";
+"session.next" = "Seuraava istunto";
 
 // Encrypted profile transfer
 "profiles.transfer" = "Profiilien tuonti ja vienti";

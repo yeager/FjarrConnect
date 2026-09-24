@@ -1,5 +1,8 @@
 Unreleased
 
+- Explain the server-initiated RDP logoff response reported by FreeRDP, separately
+  from connection and authentication failures.
+- Add localized keyboard commands to switch between session tabs and explicit VoiceOver labels for session health and recording controls.
 - Bundle FreeRDP 3.32.0 for Apple Silicon and Intel Macs.
 - New VNC profiles and quick-connect addresses default to Mac Screen Sharing and require a username. Older saved profiles with a username and no recorded mode are treated as Mac Screen Sharing; profiles without a username remain Standard VNC. Select Standard VNC in the profile editor for password-only servers.
 - Add bidirectional VNC clipboard support for text and standard DIB V5 images, with per-session isolation.

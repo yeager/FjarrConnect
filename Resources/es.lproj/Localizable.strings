@@ -266,6 +266,7 @@
 "rdp.error.activationTimeout" = "El servidor respondió, pero no inició el escritorio remoto a tiempo. Comprueba la pantalla de inicio de sesión de Windows y el servicio de Escritorio remoto, y vuelve a conectarte.";
 "rdp.error.nla" = "El servidor requiere autenticación a nivel de red (NLA). Comprueba que la cuenta pueda usar NLA y que el servidor Windows admita el método de inicio de sesión elegido.";
 "rdp.error.license" = "El servidor rechazó la negociación de licencia de Escritorio remoto. Comprueba el servicio de licencias de Escritorio remoto y las licencias de acceso de cliente disponibles.";
+"rdp.error.serverEndedSession" = "El servidor finalizó la sesión RDP después de conectarse. Comprueba la política de sesiones de la cuenta remota y los registros de Escritorio remoto del servidor.";
 
 // Network service discovery
 "discovery.scan.title" = "Buscar servidores";
@@ -341,6 +342,9 @@
 
 "menu.favorites" = "Favoritos";
 "menu.favorites.empty" = "No hay favoritos guardados";
+"menu.sessions" = "Sesiones";
+"session.previous" = "Sesión anterior";
+"session.next" = "Sesión siguiente";
 
 // Encrypted profile transfer
 "profiles.transfer" = "Importación y exportación de perfiles";
