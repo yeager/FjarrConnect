@@ -146,11 +146,23 @@ struct ProfileEditorView: View {
     private func save() {
         guard let profile = candidate else { return }
         do {
-            let shouldSavePassword = existing == nil || changePassword || (transport == .vnc && !password.isEmpty)
-            let credential: String? = (transport == .ssh || transport == .sftp) ? nil : (shouldSavePassword ? password : nil)
+            let credential = Self.loginPasswordToSave(
+                existingProfile: existing != nil,
+                changeRequested: changePassword,
+                transport: transport,
+                entered: password
+            )
             try profiles.save(profile, password: credential)
             password = ""
             dismiss()
         } catch { errorMessage = error.localizedDescription }
+    }
+
+    static func loginPasswordToSave(existingProfile: Bool, changeRequested: Bool,
+                                    transport: RemoteTransport, entered: String) -> String? {
+        guard transport != .ssh && transport != .sftp else { return nil }
+        if !existingProfile || changeRequested { return entered }
+        if transport == .vnc && !entered.isEmpty { return entered }
+        return nil
     }
 }

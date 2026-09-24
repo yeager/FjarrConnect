@@ -18,6 +18,21 @@ final class ConnectionOptionsTests: XCTestCase {
         XCTAssertFalse(standardProfile.usesMacScreenSharingAuthentication)
     }
 
+    func testProfileEditorCanReplaceOrClearSavedPasswordsWithoutClearingByDefault() {
+        XCTAssertNil(ProfileEditorView.loginPasswordToSave(
+            existingProfile: true, changeRequested: false, transport: .vnc, entered: ""))
+        XCTAssertEqual(ProfileEditorView.loginPasswordToSave(
+            existingProfile: true, changeRequested: false, transport: .vnc, entered: "new-vnc-test"),
+                       "new-vnc-test")
+        XCTAssertEqual(ProfileEditorView.loginPasswordToSave(
+            existingProfile: true, changeRequested: true, transport: .rdp, entered: ""), "")
+        XCTAssertEqual(ProfileEditorView.loginPasswordToSave(
+            existingProfile: true, changeRequested: true, transport: .rdp, entered: "new-rdp-test"),
+                       "new-rdp-test")
+        XCTAssertNil(ProfileEditorView.loginPasswordToSave(
+            existingProfile: true, changeRequested: true, transport: .ssh, entered: "ignored"))
+    }
+
     func testVNCAuthenticationModesRequireUsernameOnlyForMacScreenSharing() {
         var profile = ConnectionProfile(name: "Mac", host: "mac.local",
                                         usesMacScreenSharingAuthentication: true)
@@ -298,6 +313,9 @@ final class ConnectionOptionsTests: XCTestCase {
         XCTAssertEqual(try KeychainStore.password(for: id, purpose: .gateway), "test-gateway-value")
         try store.save(profile, password: nil, gatewayPassword: "updated-test-gateway")
         XCTAssertEqual(try KeychainStore.password(for: id), "test-login-value")
+        XCTAssertEqual(try KeychainStore.password(for: id, purpose: .gateway), "updated-test-gateway")
+        try store.save(profile, password: "")
+        XCTAssertNil(try KeychainStore.password(for: id), "An explicitly empty password removes the Keychain item")
         XCTAssertEqual(try KeychainStore.password(for: id, purpose: .gateway), "updated-test-gateway")
         try store.remove(profile)
         XCTAssertNil(try KeychainStore.password(for: id))
