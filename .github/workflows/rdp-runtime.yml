@@ -21,7 +21,7 @@ jobs:
         with:
           path: build/rdp-output/${{ matrix.arch }}
           key: rdp-macos14-xcode16.4-${{ matrix.arch }}-${{ hashFiles('scripts/build-rdp.sh', 'NativeRDP/**') }}
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v5
         id: dependencies
         with:
           path: build/rdp-${{ matrix.arch }}/install
@@ -29,7 +29,7 @@ jobs:
       - name: Build static runtime
         if: steps.runtime-cache.outputs.cache-hit != 'true'
         run: bash scripts/build-rdp.sh '${{ matrix.arch }}'
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v5
         if: always() && steps.dependencies.outputs.cache-hit != 'true'
         with:
           path: build/rdp-${{ matrix.arch }}/install
