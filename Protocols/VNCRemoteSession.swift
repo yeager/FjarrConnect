@@ -1,6 +1,37 @@
 import SwiftUI
 import RoyalVNCKit
 
+/// Keeps each VNC session's clipboard baseline private to that session. Only
+/// the foreground session may read or write the shared macOS pasteboard.
+struct VNCClipboardSessionGate {
+    private(set) var isForeground = false
+    private var isActive = false
+    private var baseline = 0
+
+    mutating func setActive(_ active: Bool, changeCount: Int) {
+        isActive = active
+        baseline = changeCount
+    }
+
+    mutating func resetBaseline(_ changeCount: Int) {
+        baseline = changeCount
+    }
+
+    mutating func accepts(isCurrentConnection: Bool, sharesClipboard: Bool,
+                          isForeground foreground: Bool, changeCount: Int) -> Bool {
+        let foreground = isActive && foreground
+        if foreground != isForeground {
+            isForeground = foreground
+            baseline = changeCount
+        }
+        return isCurrentConnection && sharesClipboard && foreground
+    }
+
+    func hasLocalClipboardChanges(_ changeCount: Int) -> Bool {
+        changeCount != baseline
+    }
+}
+
 /// VNC/RFB backend built on RoyalVNCKit (MIT). RoyalVNCKit implements the standard
 /// VNC auth and Apple Remote Desktop auth. The remote Mac must grant the account
 /// screen access and authorize its sharing agent to capture the screen.
@@ -14,9 +45,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
     private var credentialFailure: String?
     private var requestedAuthentication: VNCAuthenticationType?
     private var frameCheck: DispatchWorkItem?
-    private var active = false
-    private var clipboardForeground = false
-    private var clipboardBaseline = 0
+    private var clipboardGate = VNCClipboardSessionGate()
 
     @Published private(set) var status: SessionStatus = .idle
     @Published private(set) var notice: String?
@@ -84,7 +113,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         connection.delegate = self
         connection.clipboardDelegate = self
         self.connection = connection
-        clipboardBaseline = NSPasteboard.general.changeCount
+        clipboardGate.resetBaseline(NSPasteboard.general.changeCount)
 
         setStatus(.connecting)
         connection.connect()
@@ -128,23 +157,27 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
     }
 
     func setActive(_ active: Bool) {
-        self.active = active
-        clipboardBaseline = NSPasteboard.general.changeCount
+        clipboardGate.setActive(active, changeCount: NSPasteboard.general.changeCount)
         connection?.resetClipboardSynchronization()
     }
 
     private func acceptsClipboard(_ source: VNCConnection) -> Bool {
-        let foreground = active && NSApp.isActive && framebufferView?.window?.isKeyWindow == true
-        if foreground != clipboardForeground {
-            clipboardForeground = foreground
-            clipboardBaseline = NSPasteboard.general.changeCount
+        let appAndWindowAreForeground = NSApp.isActive && framebufferView?.window?.isKeyWindow == true
+        let wasForeground = clipboardGate.isForeground
+        let accepted = clipboardGate.accepts(
+            isCurrentConnection: connection === source,
+            sharesClipboard: profile.sharesClipboard,
+            isForeground: appAndWindowAreForeground,
+            changeCount: NSPasteboard.general.changeCount
+        )
+        if clipboardGate.isForeground != wasForeground {
             source.resetClipboardSynchronization()
         }
-        return connection === source && profile.sharesClipboard && foreground
+        return accepted
     }
 
     func connectionShouldSendClipboard(_ connection: VNCConnection) -> Bool {
-        acceptsClipboard(connection) && NSPasteboard.general.changeCount != clipboardBaseline
+        acceptsClipboard(connection) && clipboardGate.hasLocalClipboardChanges(NSPasteboard.general.changeCount)
     }
 
     func connectionShouldReceiveClipboard(_ connection: VNCConnection) -> Bool {
@@ -155,7 +188,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         guard acceptsClipboard(connection) else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
-        clipboardBaseline = NSPasteboard.general.changeCount
+        clipboardGate.resetBaseline(NSPasteboard.general.changeCount)
     }
 
     func connection(_ connection: VNCConnection, didReceiveClipboardImageData imageData: Data) {
@@ -164,7 +197,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
               let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setData(png, forType: .png)
-        clipboardBaseline = NSPasteboard.general.changeCount
+        clipboardGate.resetBaseline(NSPasteboard.general.changeCount)
     }
 
     func makeScreenView() -> AnyView {

@@ -137,6 +137,43 @@ final class VNCIntegrationTests: XCTestCase {
         try exerciseServer(requiresUsername: false, unsupportedSecurity: true)
     }
 
+    func testClipboardIsIsolatedBetweenVNCsessionsWhenChangingTabs() {
+        var first = VNCClipboardSessionGate()
+        var second = VNCClipboardSessionGate()
+        first.setActive(true, changeCount: 10)
+        second.setActive(false, changeCount: 10)
+
+        XCTAssertTrue(first.accepts(isCurrentConnection: true, sharesClipboard: true,
+                                    isForeground: true, changeCount: 10))
+        XCTAssertFalse(second.accepts(isCurrentConnection: true, sharesClipboard: true,
+                                      isForeground: false, changeCount: 10))
+
+        // A pasteboard update is visible only to the selected session.
+        XCTAssertTrue(first.hasLocalClipboardChanges(11))
+        XCTAssertFalse(second.accepts(isCurrentConnection: true, sharesClipboard: true,
+                                      isForeground: false, changeCount: 11))
+
+        // Switching tabs establishes a new baseline, so old clipboard contents
+        // are not sent to the newly selected remote host.
+        first.setActive(false, changeCount: 11)
+        second.setActive(true, changeCount: 11)
+        XCTAssertFalse(first.accepts(isCurrentConnection: true, sharesClipboard: true,
+                                     isForeground: false, changeCount: 11))
+        XCTAssertTrue(second.accepts(isCurrentConnection: true, sharesClipboard: true,
+                                     isForeground: true, changeCount: 11))
+        XCTAssertFalse(second.hasLocalClipboardChanges(11))
+        XCTAssertTrue(second.hasLocalClipboardChanges(12))
+    }
+
+    func testClipboardGateRejectsStaleConnectionAndDisabledSharing() {
+        var gate = VNCClipboardSessionGate()
+        gate.setActive(true, changeCount: 4)
+        XCTAssertFalse(gate.accepts(isCurrentConnection: false, sharesClipboard: true,
+                                    isForeground: true, changeCount: 4))
+        XCTAssertFalse(gate.accepts(isCurrentConnection: true, sharesClipboard: false,
+                                    isForeground: true, changeCount: 4))
+    }
+
     private func exerciseServer(requiresUsername: Bool, requiresPassword: Bool = false,
                                 blackInitially: Bool = false, resize: Bool = false, keyboard: Bool = false,
                                 verifyInitialFocus: Bool = false,
