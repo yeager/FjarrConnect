@@ -39,8 +39,8 @@ struct ProfileEditorView: View {
         _host = State(initialValue: profile?.host ?? "")
         _portText = State(initialValue: profile.map { String($0.port) } ?? "")
         _username = State(initialValue: profile?.username ?? "")
-        // Most VNC endpoints need only a password, but macOS Screen Sharing is
-        // the common default target for this app and always requires an account.
+        // New VNC profiles default to macOS Screen Sharing, which requires an
+        // account name. Password-only VNC remains available as an explicit mode.
         _usesMacScreenSharingAuthentication = State(initialValue: profile?.usesMacScreenSharingAuthentication ?? true)
         _group = State(initialValue: profile?.group ?? "")
         _tags = State(initialValue: profile?.normalizedTags.joined(separator: ", ") ?? "")
@@ -71,6 +71,9 @@ struct ProfileEditorView: View {
                     TextField(LocalizedStringKey(transport == .vnc
                         ? (usesMacScreenSharingAuthentication ? "field.vncUsernameRequired" : "field.vncUsername")
                         : "field.username"), text: $username)
+                        .accessibilityLabel(Text(LocalizedStringKey(transport == .vnc
+                            ? (usesMacScreenSharingAuthentication ? "field.vncUsernameRequired" : "field.vncUsername")
+                            : "field.username")))
                         .accessibilityIdentifier("profile.username")
                     if transport == .vnc {
                         Picker("vnc.authenticationMode", selection: $usesMacScreenSharingAuthentication) {

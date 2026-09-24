@@ -45,6 +45,9 @@ struct CredentialsView: View {
             TextField(LocalizedStringKey(profile.transport == .vnc
                 ? (requiresVNCUsername ? "field.vncUsernameRequired" : "field.vncUsername")
                 : "field.username"), text: $username)
+                .accessibilityLabel(Text(LocalizedStringKey(profile.transport == .vnc
+                    ? (requiresVNCUsername ? "field.vncUsernameRequired" : "field.vncUsername")
+                    : "field.username")))
                 .accessibilityIdentifier("auth.username")
             SecureField("field.password", text: $password).accessibilityIdentifier("auth.password")
             if profile.rdp?.gatewayHost != nil, let gatewayUser = profile.rdp?.gatewayUsername {

@@ -60,11 +60,12 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
     var port: UInt16
     var username: String?
     /// Distinguishes Apple Screen Sharing account authentication from standard
-    /// password-only VNC. Optional for profiles saved by older app versions.
+    /// password-only VNC. New profiles select their mode explicitly; legacy
+    /// profiles infer account authentication from a stored username.
     private var macScreenSharing: Bool?
     var usesMacScreenSharingAuthentication: Bool {
-        get { macScreenSharing ?? false }
-        set { macScreenSharing = newValue ? true : nil }
+        get { macScreenSharing ?? (transport == .vnc && username?.isEmpty == false) }
+        set { macScreenSharing = newValue }
     }
 
     /// Optional Remmina-style organisation.
@@ -119,7 +120,7 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
          host: String,
          port: UInt16? = nil,
          username: String? = nil,
-         usesMacScreenSharingAuthentication: Bool = false,
+         usesMacScreenSharingAuthentication: Bool? = nil,
          group: String? = nil,
          isFavorite: Bool = false,
          reconnectsAutomatically: Bool = false,
@@ -130,7 +131,7 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
         self.host = host
         self.port = port ?? transport.defaultPort
         self.username = username
-        self.macScreenSharing = usesMacScreenSharingAuthentication ? true : nil
+        self.macScreenSharing = usesMacScreenSharingAuthentication
         self.group = group
         self.favorite = isFavorite ? true : nil
         self.automaticReconnect = reconnectsAutomatically ? true : nil

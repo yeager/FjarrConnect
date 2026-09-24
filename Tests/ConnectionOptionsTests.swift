@@ -12,14 +12,16 @@ final class ConnectionOptionsTests: XCTestCase {
             from: JSONEncoder().encode(macProfile))
         XCTAssertTrue(restored.usesMacScreenSharingAuthentication)
 
-        let standardProfile = ConnectionProfile(name: "VNC", host: "vnc.local")
+        let standardProfile = ConnectionProfile(name: "VNC", host: "vnc.local",
+                                                usesMacScreenSharingAuthentication: false)
         XCTAssertTrue(standardProfile.isValid)
         XCTAssertFalse(standardProfile.usesMacScreenSharingAuthentication)
     }
 
     func testVNCAuthenticationModesRequireUsernameOnlyForMacScreenSharing() {
-        var profile = ConnectionProfile(name: "Mac", host: "mac.local")
-        profile.usesMacScreenSharingAuthentication = true
+        var profile = ConnectionProfile(name: "Mac", host: "mac.local",
+                                        usesMacScreenSharingAuthentication: true)
+        XCTAssertTrue(profile.usesMacScreenSharingAuthentication)
         XCTAssertFalse(profile.isValid)
         profile.username = "   "
         XCTAssertFalse(profile.isValid)
@@ -37,10 +39,44 @@ final class ConnectionOptionsTests: XCTestCase {
         XCTAssertFalse(macCredentials.allowsVNCAuthenticationModeSelection)
         XCTAssertTrue(macCredentials.requiresVNCUsername)
 
-        let standardProfile = ConnectionProfile(name: "VNC", host: "vnc.local")
+        let standardProfile = ConnectionProfile(name: "VNC", host: "vnc.local",
+                                                usesMacScreenSharingAuthentication: false)
         let standardCredentials = CredentialsView(profile: standardProfile, saved: false) { _, _, _, _ in }
         XCTAssertTrue(standardCredentials.allowsVNCAuthenticationModeSelection)
         XCTAssertFalse(standardCredentials.requiresVNCUsername)
+    }
+
+    func testLegacyVNCProfileDefaultsToMacScreenSharing() throws {
+        let profileID = UUID(uuidString: "A9351A13-2764-4FFB-9D8D-3BFC5B501344")!
+        let legacy = Data(#"{"id":"A9351A13-2764-4FFB-9D8D-3BFC5B501344","name":"Old Mac","transport":"vnc","host":"mac.local","port":5900,"username":"account"}"#.utf8)
+        let profile = try JSONDecoder().decode(ConnectionProfile.self, from: legacy)
+
+        XCTAssertEqual(profile.id, profileID)
+        XCTAssertTrue(profile.usesMacScreenSharingAuthentication)
+        XCTAssertTrue(profile.isValid)
+        let credentials = CredentialsView(profile: profile, saved: false) { _, _, _, _ in }
+        XCTAssertFalse(credentials.allowsVNCAuthenticationModeSelection)
+        XCTAssertTrue(credentials.requiresVNCUsername)
+    }
+
+    func testLegacyVNCProfileWithoutUsernameRemainsStandardVNC() throws {
+        let legacy = Data(#"{"id":"A9351A13-2764-4FFB-9D8D-3BFC5B501344","name":"Old Mac","transport":"vnc","host":"mac.local","port":5900}"#.utf8)
+        let profile = try JSONDecoder().decode(ConnectionProfile.self, from: legacy)
+
+        XCTAssertFalse(profile.usesMacScreenSharingAuthentication)
+        XCTAssertTrue(profile.isValid)
+        let credentials = CredentialsView(profile: profile, saved: false) { _, _, _, _ in }
+        XCTAssertTrue(credentials.allowsVNCAuthenticationModeSelection)
+        XCTAssertFalse(credentials.requiresVNCUsername)
+    }
+
+    func testStandardVNCCanBeExplicitWhenProfileHasAnUnusedUsername() {
+        let profile = ConnectionProfile(name: "Password only", host: "vnc.local", username: "unused",
+                                        usesMacScreenSharingAuthentication: false)
+        XCTAssertFalse(profile.usesMacScreenSharingAuthentication)
+        let credentials = CredentialsView(profile: profile, saved: false) { _, _, _, _ in }
+        XCTAssertTrue(credentials.allowsVNCAuthenticationModeSelection)
+        XCTAssertFalse(credentials.requiresVNCUsername)
     }
 
     func testGraphicalSessionDropsPreserveLocalFilesForSFTPQueue() throws {

@@ -87,6 +87,7 @@
 
 "vnc.usernameRequired" = "Serveren krever et brukernavn. Oppgi det korte brukernavnet og passordet til kontoen på den eksterne Macen, og kontroller at kontoen har tilgang under Skjermdeling.";
 "vnc.usernameRequired.signIn" = "Logg på med Mac-brukernavn …";
+"vnc.macAuthenticationRejected" = "Macens skjermdeling avviste innloggingen. Kontroller kontoens korte brukernavn og passord, og bekreft at kontoen har tilgang i innstillingene for skjermdeling.";
 "vnc.connectionFailed" = "VNC-tilkoblingen mislyktes. Kontroller adressen og porten, og bekreft deretter at Skjermdeling eller VNC-tjenesten er aktivert på den eksterne datamaskinen og at kontoen har tilgang.";
 "vnc.unsupportedSecurity" = "Serveren tilbyr en VNC-sikkerhetsmetode som FjärrConnect ikke kan bruke. RSA-AES og VeNCrypt-undertyper uten støtte støttes ikke. Bruk sertifikatverifisert VeNCrypt/TLS eller vanlig VNC-autentisering, eller velg en kompatibel sikkerhetsinnstilling på serveren.";
 

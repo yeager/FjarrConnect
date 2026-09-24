@@ -14,6 +14,28 @@ final class VNCIntegrationTests: XCTestCase {
         try exerciseServer(requiresUsername: true)
     }
 
+    func testLiveAppleVNCReachesRequiredUsernamePromptWithoutCredentials() throws {
+        guard let host = ProcessInfo.processInfo.environment["FJARRCONNECT_TEST_LIVE_MAC_VNC_HOST"],
+              ConnectionURI.validHost(host) else {
+            throw XCTSkip("Set FJARRCONNECT_TEST_LIVE_MAC_VNC_HOST in the Xcode scheme's Launch environment to opt in to a credential-free Mac VNC handshake check")
+        }
+        let profile = ConnectionProfile(name: "Live Mac VNC", host: host,
+                                        usesMacScreenSharingAuthentication: true)
+        let session = VNCRemoteSession(profile: profile, password: nil)
+        let disconnected = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in session.status.isFinished },
+            object: nil
+        )
+        defer { session.stop() }
+
+        session.start()
+        XCTAssertEqual(XCTWaiter.wait(for: [disconnected], timeout: 23), .completed,
+                       "The server should reach authentication or a bounded connection timeout")
+        XCTAssertTrue(session.serverRequiresMacAccount,
+                      "The client must parse the Mac Screen Sharing authentication challenge")
+        XCTAssertEqual(session.status.error, NSLocalizedString("vnc.usernameRequired", comment: ""))
+    }
+
     func testVNCAuthenticatesWithPasswordAndReceivesDesktop() throws {
         try exerciseServer(requiresUsername: false, requiresPassword: true)
     }
@@ -66,6 +88,18 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertTrue(message.contains("desktop.local:5901"))
         XCTAssertTrue(message.contains(NSLocalizedString("vnc.unsupportedSecurity", comment: "")))
         XCTAssertFalse(message.contains("could not decide"))
+    }
+
+    func testMacScreenSharingAuthenticationFailureExplainsAccountChecks() {
+        let message = VNCRemoteSession.connectionFailureMessage(
+            host: "desktop.local",
+            port: 5900,
+            error: VNCError.authentication(.securityHandshakingFailed(reason: nil)),
+            authentication: .appleRemoteDesktop
+        )
+        XCTAssertTrue(message.contains("desktop.local:5900"))
+        XCTAssertTrue(message.contains(NSLocalizedString("vnc.macAuthenticationRejected", comment: "")))
+        XCTAssertFalse(message.contains("securityHandshakingFailed"))
     }
 
     func testARDTimeoutExplainsThatTheMacDidNotFinishAuthentication() {

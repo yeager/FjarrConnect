@@ -211,7 +211,10 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
                 // be English or expose server-specific text. Keep the endpoint
                 // visible while giving every locale a safe, useful next step.
                 let reason = self.credentialFailure ?? connectionState.error.map { error in
-                    Self.connectionFailureMessage(host: self.profile.host, port: self.profile.port, error: error)
+                    Self.connectionFailureMessage(host: self.profile.host,
+                                                   port: self.profile.port,
+                                                   error: error,
+                                                   authentication: self.requestedAuthentication)
                 }
                 self.status = .disconnected(reason: reason)
             }
@@ -498,11 +501,17 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         }
     }
 
-    static func connectionFailureMessage(host: String, port: UInt16, error: Error? = nil) -> String {
+    static func connectionFailureMessage(host: String, port: UInt16,
+                                         error: Error? = nil,
+                                         authentication: VNCAuthenticationType? = nil) -> String {
         let explanation: String
         if let error,
            case VNCError.authentication(.clientCouldNotDecideOnSecurityType) = error {
             explanation = NSLocalizedString("vnc.unsupportedSecurity", comment: "")
+        } else if authentication == .appleRemoteDesktop,
+                  let error,
+                  case VNCError.authentication(.securityHandshakingFailed(reason: _)) = error {
+            explanation = NSLocalizedString("vnc.macAuthenticationRejected", comment: "")
         } else {
             explanation = NSLocalizedString("vnc.connectionFailed", comment: "")
         }

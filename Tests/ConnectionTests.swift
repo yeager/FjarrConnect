@@ -20,6 +20,21 @@ final class ConnectionTests: XCTestCase {
         XCTAssertFalse(profile.reconnectsAutomatically)
     }
 
+    func testLegacyPasswordOnlyVNCProfileLoadsWithoutBeingRejected() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let json = #"[{"id":"11111111-1111-1111-1111-111111111111","name":"Old VNC","transport":"vnc","host":"screen.local","port":5900}]"#
+        try Data(json.utf8).write(to: file)
+
+        let store = ProfileStore(fileURL: file)
+        let profile = try XCTUnwrap(store.profiles.first)
+        XCTAssertNil(store.errorMessage)
+        XCTAssertTrue(profile.isValid)
+        XCTAssertFalse(profile.usesMacScreenSharingAuthentication)
+    }
+
     func testAutomaticReconnectPreferencePersistsWithoutCredentials() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }

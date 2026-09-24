@@ -94,6 +94,8 @@ which requires the short username and password of an account allowed in the remo
 Screen Sharing settings. The sign-in dialog lets you choose **Standard VNC** for
 password-only servers; that mode does not require a username. If the server requires no
 authentication, choose Standard VNC and leave both credentials empty.
+Older saved VNC profiles with a username and no recorded mode are treated as Mac Screen
+Sharing. Profiles without a username remain Standard VNC for backward compatibility.
 
 VNC clipboard synchronization follows the active session. Text and standard DIB V5
 images are supported when the server advertises the RFB extended-clipboard format;

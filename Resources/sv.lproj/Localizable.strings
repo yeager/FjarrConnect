@@ -64,7 +64,7 @@
 "vnc.authenticationMode" = "Autentisering";
 "vnc.authentication.standard" = "Vanlig VNC (lösenord)";
 "vnc.authentication.mac" = "Mac-skärmdelning (användarnamn krävs)";
-"vnc.authentication.macHint" = "Ange det korta namnet för ett konto som har tillåtelse i Macens inställningar för skärmdelning.";
+"vnc.authentication.macHint" = "Standard för nya VNC-profiler. Ange det korta namnet för ett konto som har tillåtelse i Macens inställningar för skärmdelning.";
 "vnc.authentication.standardHint" = "Använd detta för VNC-servrar som bara autentiserar med lösenord.";
 "auth.vnc.hint" = "Mac-skärmdelning kräver kortnamnet och lösenordet för ett macOS-konto som har tillåtelse att dela skärmen. Vanlig VNC använder bara lösenord.";
 "profile.delete.title" = "Ta bort den sparade anslutningen?";
@@ -87,6 +87,7 @@
 
 "vnc.usernameRequired" = "Servern kräver ett användarnamn. Ange det korta användarnamnet och lösenordet för kontot på fjärr-Macen, och kontrollera att kontot är tillåtet under Skärmdelning.";
 "vnc.usernameRequired.signIn" = "Logga in med Mac-användarnamn …";
+"vnc.macAuthenticationRejected" = "Macens skärmdelning avvisade inloggningen. Kontrollera kontots korta användarnamn och lösenord samt att kontot är tillåtet i inställningarna för skärmdelning.";
 "vnc.connectionFailed" = "VNC-anslutningen misslyckades. Kontrollera adress och port, bekräfta sedan att Skärmdelning eller VNC-tjänsten är aktiverad på fjärrdatorn och att kontot har behörighet.";
 "vnc.unsupportedSecurity" = "Servern erbjuder en VNC-säkerhetsmetod som FjärrConnect inte kan använda. RSA-AES och VeNCrypt-undertyper utan stöd stöds inte. Använd certifikatautentiserad VeNCrypt/TLS eller vanlig VNC-autentisering, eller välj en kompatibel säkerhetsinställning på servern.";
 

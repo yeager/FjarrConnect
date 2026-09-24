@@ -75,6 +75,7 @@
 "vnc.ardAuthenticationTimeout" = "Compartir pantalla del Mac no respondió después de la autenticación. Comprueba que la cuenta tenga permiso en Compartir pantalla y desactiva y activa el servicio en el Mac remoto.";
 "vnc.usernameRequired" = "Este servidor requiere un nombre de usuario. Introduce el nombre corto y la contraseña de la cuenta del Mac remoto y comprueba que la cuenta tiene permiso para compartir la pantalla.";
 "vnc.usernameRequired.signIn" = "Iniciar sesión con un usuario del Mac…";
+"vnc.macAuthenticationRejected" = "Compartir pantalla de Mac rechazó el inicio de sesión. Comprueba el nombre corto de usuario y la contraseña de la cuenta, y que tenga permiso en los ajustes de Compartir pantalla.";
 "vnc.connectionFailed" = "La conexión VNC falló. Comprueba la dirección y el puerto y confirma que Compartir pantalla o el servicio VNC está activado en el equipo remoto y que la cuenta tiene permiso.";
 "vnc.unsupportedSecurity" = "El servidor ofrece un método de seguridad VNC que FjärrConnect no puede usar. RSA-AES y los subtipos VeNCrypt no compatibles no están admitidos. Usa VeNCrypt/TLS con certificado o la autenticación VNC estándar, o selecciona una configuración compatible en el servidor.";
 "rdp.error.network" = "No se pudo acceder al servidor. Comprueba que el escritorio remoto está activado y que la dirección y el puerto son accesibles.";

@@ -24,7 +24,7 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertTrue(authentication.exists)
         authentication.click()
         app.menuItems["Mac Screen Sharing (username required)"].click()
-        XCTAssertEqual(username.placeholderValue, "Username (required)")
+        XCTAssertEqual(username.label, "Username (required)")
         XCTAssertFalse(app.buttons["profile.save"].isEnabled)
         username.click(); username.typeText("macuser")
         XCTAssertTrue(app.buttons["profile.save"].isEnabled)
@@ -52,7 +52,12 @@ final class ConnectionUITests: XCTestCase {
         let username = app.textFields["profile.username"].firstMatch
         name.click(); name.typeText("Standard VNC")
         host.click(); host.typeText("vnc.local")
-        XCTAssertEqual(username.placeholderValue, "Username")
+        XCTAssertEqual(username.label, "Username (required)")
+        let authentication = app.popUpButtons["profile.vncAuthenticationMode"].firstMatch
+        XCTAssertTrue(authentication.exists)
+        authentication.click()
+        app.menuItems["Standard VNC (password)"].click()
+        XCTAssertEqual(username.label, "Username")
         XCTAssertTrue(app.buttons["profile.save"].isEnabled)
     }
 
@@ -129,7 +134,7 @@ final class ConnectionUITests: XCTestCase {
         app.buttons["auth.cancel"].click()
     }
 
-    func testMacScreenSharingCredentialsMarkUsernameAsRequired() throws {
+    func testMacScreenSharingCredentialsRequireUsernameAndLockTheMode() throws {
         continueAfterFailure = false
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -137,7 +142,7 @@ final class ConnectionUITests: XCTestCase {
         let file = directory.appendingPathComponent("profiles.json")
         let profile: [String: Any] = [
             "id": UUID().uuidString, "name": "Remote Mac", "transport": "vnc",
-            "host": "mac.invalid", "port": 5900, "macScreenSharing": true
+            "host": "mac.invalid", "port": 5900, "username": "macuser", "macScreenSharing": true
         ]
         try JSONSerialization.data(withJSONObject: [profile]).write(to: file)
         let app = XCUIApplication()
@@ -151,19 +156,11 @@ final class ConnectionUITests: XCTestCase {
         row.doubleClick()
         let username = app.textFields["auth.username"]
         XCTAssertTrue(username.waitForExistence(timeout: 5))
-        XCTAssertEqual(username.placeholderValue, "Username (required)")
+        XCTAssertEqual(username.label, "Username (required)")
+        XCTAssertFalse(app.popUpButtons["auth.vncAuthenticationMode"].exists)
+        username.click(); username.typeKey("a", modifierFlags: .command); username.typeKey(.delete, modifierFlags: [])
         XCTAssertFalse(app.buttons["auth.connect"].isEnabled)
-        let authentication = app.popUpButtons["auth.vncAuthenticationMode"]
-        XCTAssertTrue(authentication.exists)
-        authentication.click()
-        app.menuItems["Standard VNC (password)"].click()
-        XCTAssertEqual(username.placeholderValue, "Username")
-        XCTAssertTrue(app.buttons["auth.connect"].isEnabled)
-        authentication.click()
-        app.menuItems["Mac Screen Sharing (username required)"].click()
-        XCTAssertEqual(username.placeholderValue, "Username (required)")
-        XCTAssertFalse(app.buttons["auth.connect"].isEnabled)
-        username.click(); username.typeText("macuser")
+        username.typeText("macuser")
         XCTAssertTrue(app.buttons["auth.connect"].isEnabled)
         app.buttons["auth.cancel"].click()
     }
@@ -276,6 +273,10 @@ final class ConnectionUITests: XCTestCase {
         // hit point calculation for SwiftUI scroll views after interruptions.
         app.typeKey(.tab, modifierFlags: [])
         app.typeText("studio.local")
+        let username = app.textFields["profile.username"].firstMatch
+        XCTAssertTrue(username.waitForExistence(timeout: 5))
+        username.click()
+        username.typeText("studio")
         XCTAssertTrue(app.buttons["profile.save"].firstMatch.isEnabled)
         app.buttons["profile.save"].firstMatch.click()
         let favorite = app.buttons["favorite.Studio Mac"].firstMatch
