@@ -1,8 +1,16 @@
-FjärrConnect — Unreleased
+FjärrConnect 0.2.28
 
-- Keep the VNC password field visible when editing a saved profile, so Mac Screen
-  Sharing credentials can be added or replaced there. Make advanced profile options
-  expandable and accessible in the connection form.
+- Keep the VNC password field available when editing a saved profile, so credentials
+  can be added or replaced without reopening the sign-in dialog.
+- Fix expanding Advanced connection options in the profile editor.
+
+Download `FjarrConnect-0.2.28-macOS-arm64.zip` for Apple Silicon or
+`FjarrConnect-0.2.28-macOS-x86_64.zip` for Intel. Each app contains only its target
+architecture and requires macOS 14 or later. `SHA256SUMS.txt` contains both download
+checksums.
+
+The apps are ad-hoc signed, not Developer ID signed or notarized. macOS may require
+approval in System Settings → Privacy & Security on first launch.
 
 ---
 
