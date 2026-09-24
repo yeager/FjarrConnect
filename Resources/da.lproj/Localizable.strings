@@ -49,6 +49,7 @@
 "action.reconnect" = "Forbind igen";
 "action.quickConnect" = "Hurtig forbindelse";
 "action.closeSession" = "Luk session";
+"action.closeNamedSession" = "Luk sessionen %@";
 "action.copyAddress" = "Kopiér adresse";
 "action.refresh" = "Opdater tjenester i nærheden";
 "action.ok" = "OK";

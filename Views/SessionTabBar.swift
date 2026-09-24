@@ -99,6 +99,9 @@ struct SessionTabBar: NSViewRepresentable {
             selectButton.setAccessibilityLabel(profile.name)
             selectButton.setAccessibilitySelected(selected)
             selectButton.callback = select
+            let closeLabel = String(format: NSLocalizedString("action.closeNamedSession", comment: "Accessibility label for closing a named session"), profile.name)
+            closeButton.toolTip = closeLabel
+            closeButton.setAccessibilityLabel(closeLabel)
             closeButton.setAccessibilityIdentifier("session.close.\(profile.name)")
             closeButton.callback = close
             layer?.backgroundColor = (selected ? NSColor.controlAccentColor.withAlphaComponent(0.15) : .clear).cgColor

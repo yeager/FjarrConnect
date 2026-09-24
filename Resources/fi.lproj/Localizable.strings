@@ -41,6 +41,7 @@
 "action.reconnect" = "Yhdistä uudelleen";
 "action.quickConnect" = "Pikayhteys";
 "action.closeSession" = "Sulje istunto";
+"action.closeNamedSession" = "Sulje istunto %@";
 "action.copyAddress" = "Kopioi osoite";
 "action.refresh" = "Päivitä lähistön palvelut";
 "action.ok" = "OK";

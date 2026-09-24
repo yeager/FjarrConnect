@@ -41,6 +41,7 @@
 "action.reconnect" = "Reconnecter";
 "action.quickConnect" = "Connexion rapide";
 "action.closeSession" = "Fermer la session";
+"action.closeNamedSession" = "Fermer la session %@";
 "action.copyAddress" = "Copier l’adresse";
 "action.refresh" = "Actualiser les services à proximité";
 "action.ok" = "OK";

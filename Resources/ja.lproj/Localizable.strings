@@ -41,6 +41,7 @@
 "action.reconnect" = "再接続";
 "action.quickConnect" = "クイック接続";
 "action.closeSession" = "セッションを閉じる";
+"action.closeNamedSession" = "%@のセッションを閉じる";
 "action.copyAddress" = "アドレスをコピー";
 "action.refresh" = "近くのサービスを更新";
 "action.ok" = "OK";

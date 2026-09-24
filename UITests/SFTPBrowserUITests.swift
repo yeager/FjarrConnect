@@ -30,6 +30,8 @@ final class SFTPBrowserUITests: XCTestCase {
         let firstTab = app.buttons["session.select.First files"]
         let secondTab = app.buttons["session.select.Second files"]
         XCTAssertTrue(firstTab.exists); XCTAssertTrue(secondTab.exists)
+        XCTAssertEqual(app.buttons["Close session First files"].label, "Close session First files")
+        XCTAssertEqual(app.buttons["Close session Second files"].label, "Close session Second files")
         firstTab.click()
         XCTAssertTrue(firstTab.isSelected)
         XCTAssertFalse(secondTab.isSelected)

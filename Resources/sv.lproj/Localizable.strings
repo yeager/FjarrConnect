@@ -49,6 +49,7 @@
 "action.reconnect" = "Anslut igen";
 "action.quickConnect" = "Snabbanslutning";
 "action.closeSession" = "Stäng session";
+"action.closeNamedSession" = "Stäng sessionen %@";
 "action.copyAddress" = "Kopiera adress";
 "action.refresh" = "Uppdatera närliggande tjänster";
 "action.ok" = "OK";

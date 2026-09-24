@@ -49,6 +49,7 @@
 "action.reconnect" = "Reconnect";
 "action.quickConnect" = "Quick Connect";
 "action.closeSession" = "Close session";
+"action.closeNamedSession" = "Close session %@";
 "action.copyAddress" = "Copy address";
 "action.refresh" = "Refresh nearby services";
 "action.ok" = "OK";
