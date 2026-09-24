@@ -8,9 +8,9 @@ options:
 
 packages:
   RoyalVNCKit:
-    # Includes bounded RFB extended-clipboard image support stacked on royalvnc#2.
+    # Separates macOS VNC reads and writes so pending updates cannot stall keyboard input.
     url: https://github.com/yeager/royalvnc
-    revision: "5b5f350108e70dbc7beecd583fd9d2e4630827ba"
+    revision: "efdf33d766a053ea39f945fb50c1b22986bf47e2"
   SwiftTerm:
     url: https://github.com/migueldeicaza/SwiftTerm
     exactVersion: "1.10.1"
