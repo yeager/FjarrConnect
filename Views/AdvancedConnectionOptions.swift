@@ -14,7 +14,7 @@ struct AdvancedConnectionOptions: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Button {
-                withAnimation(.easeInOut(duration: 0.15)) { isExpanded.toggle() }
+                isExpanded.toggle()
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
