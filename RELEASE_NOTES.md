@@ -1,3 +1,18 @@
+FjärrConnect 0.2.27
+
+- Report an error when saving a connection diagnostics report fails, instead of
+  silently leaving the user without an exported file.
+
+Download `FjarrConnect-0.2.27-macOS-arm64.zip` for Apple Silicon or
+`FjarrConnect-0.2.27-macOS-x86_64.zip` for Intel. Each app contains only its target
+architecture and requires macOS 14 or later. `SHA256SUMS.txt` contains both download
+checksums.
+
+The apps are ad-hoc signed, not Developer ID signed or notarized. macOS may require
+approval in System Settings → Privacy & Security on first launch.
+
+---
+
 FjärrConnect 0.2.26
 
 - Add VNC image clipboard, bounded legacy Tight file transfer, and per-session
