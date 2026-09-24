@@ -22,5 +22,7 @@ set_target_properties(FjarrRDP PROPERTIES INSTALL_NAME_DIR "@rpath" BUILD_WITH_I
 # Explicit test target; the release contains only libFjarrRDP.dylib.
 add_executable(FjarrRDPProbe EXCLUDE_FROM_ALL Tests/Probe.m)
 target_compile_options(FjarrRDPProbe PRIVATE -fobjc-arc)
-target_include_directories(FjarrRDPProbe PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(FjarrRDPProbe PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
+  "${FREERDP_SOURCE_DIR}/include" "${FREERDP_SOURCE_DIR}/winpr/include"
+  "${CMAKE_CURRENT_BINARY_DIR}/freerdp/include" "${CMAKE_CURRENT_BINARY_DIR}/freerdp/winpr/include")
 target_link_libraries(FjarrRDPProbe PRIVATE FjarrRDP "-framework AppKit")
