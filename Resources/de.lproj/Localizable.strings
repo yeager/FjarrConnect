@@ -49,7 +49,7 @@
 "search.placeholder" = "Verbindungen suchen";
 "search.empty" = "Keine passenden Verbindungen";
 "field.changePassword" = "Gespeichertes Passwort ändern";
-"field.password.hint" = "Wird im Schlüsselbund deines Mac gespeichert. Leer lassen, um das gespeicherte Passwort zu entfernen.";
+"field.password.hint" = "Wird im Schlüsselbund deines Mac gespeichert. Leer lassen, um das gespeicherte Passwort zu behalten. Aktiviere „Gespeichertes Passwort ändern“ und lasse das Feld leer, um es zu entfernen.";
 "auth.title" = "Zum Verbinden anmelden";
 "auth.remember" = "Im Schlüsselbund sichern";
 "auth.hint" = "Verwende für RDP einen Account, der zum Zugriff auf den entfernten Computer berechtigt ist.";

@@ -49,7 +49,7 @@
 "search.placeholder" = "Buscar conexiones";
 "search.empty" = "No hay conexiones coincidentes";
 "field.changePassword" = "Cambiar la contraseña guardada";
-"field.password.hint" = "Se guarda en el Llavero del Mac. Déjalo vacío para eliminar la contraseña guardada.";
+"field.password.hint" = "Se guarda en el Llavero del Mac. Déjalo vacío para conservar la contraseña guardada. Activa Cambiar contraseña guardada y déjalo vacío para eliminarla.";
 "auth.title" = "Identifícate para conectarte";
 "auth.remember" = "Recordar en el Llavero";
 "auth.hint" = "Para RDP, usa una cuenta con permiso para conectarse al equipo remoto.";

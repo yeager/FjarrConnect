@@ -49,7 +49,7 @@
 "search.placeholder" = "Rechercher des connexions";
 "search.empty" = "Aucune connexion correspondante";
 "field.changePassword" = "Modifier le mot de passe enregistré";
-"field.password.hint" = "Stocké dans le trousseau de votre Mac. Laissez ce champ vide pour supprimer le mot de passe enregistré.";
+"field.password.hint" = "Stocké dans le trousseau de votre Mac. Laissez le champ vide pour conserver le mot de passe enregistré. Activez Modifier le mot de passe enregistré et laissez le champ vide pour le supprimer.";
 "auth.title" = "S’identifier pour se connecter";
 "auth.remember" = "Mémoriser dans le trousseau";
 "auth.hint" = "Pour RDP, utilisez un compte autorisé à se connecter à l’ordinateur distant.";

@@ -46,6 +46,13 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertFalse(app.buttons["profile.save"].isEnabled)
         username.click(); username.typeText("macuser")
         XCTAssertTrue(app.buttons["profile.save"].isEnabled)
+        let password = app.secureTextFields["profile.password"]
+        XCTAssertTrue(password.exists)
+        let advanced = app.descendants(matching: .any)["profile.advancedOptions"]
+        XCTAssertTrue(advanced.exists)
+        advanced.click()
+        XCTAssertTrue(app.textFields["profile.files.sshHost"].waitForExistence(timeout: 5),
+                      "The Advanced settings disclosure should reveal the SFTP host field")
         app.buttons["profile.save"].click()
         let profiles = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [[String: Any]])
         XCTAssertEqual(profiles.first?["username"] as? String, "macuser")

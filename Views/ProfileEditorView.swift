@@ -98,8 +98,9 @@ struct ProfileEditorView: View {
                         Toggle("profile.touchID", isOn: $requiresBiometricUnlock)
                         Text("profile.touchID.hint").font(.caption).foregroundStyle(.secondary)
                         if existing != nil { Toggle("field.changePassword", isOn: $changePassword) }
-                        if existing == nil || changePassword {
+                        if existing == nil || changePassword || transport == .vnc {
                             SecureField("field.password", text: $password)
+                                .accessibilityIdentifier("profile.password")
                             Text("field.password.hint").font(.caption).foregroundStyle(.secondary)
                         }
                     }
@@ -145,7 +146,8 @@ struct ProfileEditorView: View {
     private func save() {
         guard let profile = candidate else { return }
         do {
-            let credential: String? = (transport == .ssh || transport == .sftp) ? nil : (existing == nil || changePassword ? password : nil)
+            let shouldSavePassword = existing == nil || changePassword || (transport == .vnc && !password.isEmpty)
+            let credential: String? = (transport == .ssh || transport == .sftp) ? nil : (shouldSavePassword ? password : nil)
             try profiles.save(profile, password: credential)
             password = ""
             dismiss()

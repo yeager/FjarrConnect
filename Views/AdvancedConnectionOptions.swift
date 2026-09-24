@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct AdvancedConnectionOptions: View {
+    @State private var isExpanded = false
     let transport: RemoteTransport
     @Binding var ssh: SSHOptions
     @Binding var rdp: RDPOptions
@@ -11,25 +12,42 @@ struct AdvancedConnectionOptions: View {
     @Binding var wakeOnLANMac: String
 
     var body: some View {
-        DisclosureGroup("options.title") {
-            Section("session.reconnect") {
+        VStack(alignment: .leading, spacing: 12) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) { isExpanded.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.caption.weight(.semibold))
+                    Text("options.title")
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("profile.advancedOptions")
+            .accessibilityValue(isExpanded ? "expanded" : "collapsed")
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 18) {
+            optionGroup("session.reconnect") {
                 Toggle("session.reconnect.enable", isOn: $automaticReconnect)
                 Text("session.reconnect.hint").font(.caption).foregroundStyle(.secondary)
             }
-            Section("wol.title") {
+            optionGroup("wol.title") {
                 TextField("wol.mac", text: $wakeOnLANMac)
                 Text("wol.hint").font(.caption).foregroundStyle(.secondary)
             }
             if transport.isGraphical { Toggle((transport == .rdp || transport == .remoteApp) ? "options.rdpClipboard" : "options.clipboard", isOn: $clipboard) }
-            Section(transport.isGraphical ? "files.connection" : "options.ssh") {
+            optionGroup(transport.isGraphical ? "files.connection" : "options.ssh") {
                 if transport.isGraphical {
                     Text("files.connection.hint").font(.caption).foregroundStyle(.secondary)
                     TextField("field.host", text: optional($ssh.host))
+                        .accessibilityIdentifier("profile.files.sshHost")
                     TextField("options.port", value: $ssh.port, format: .number)
                     TextField("field.username", text: optional($ssh.username))
                 }
                 if transport == .ssh || transport == .sftp {
-                    Section("ssh.identity.section") {
+                    optionGroup("ssh.identity.section") {
                         HStack {
                             TextField("ssh.identity", text: optional($ssh.identityFile))
                                 .accessibilityIdentifier("profile.sshIdentityPath")
@@ -70,14 +88,14 @@ struct AdvancedConnectionOptions: View {
                 }
             }
             if transport == .ssh {
-                Section("ssh.keepAlive") {
+                optionGroup("ssh.keepAlive") {
                     Toggle("ssh.keepAlive.enable", isOn: Binding(
                         get: { ssh.usesKeepAlive },
                         set: { ssh.keepAlive = $0 }
                     ))
                     Text("ssh.keepAlive.hint").font(.caption).foregroundStyle(.secondary)
                 }
-                Section("ssh.forwards") {
+                optionGroup("ssh.forwards") {
                     Text("ssh.forwards.hint").font(.caption).foregroundStyle(.secondary)
                     ForEach($forwards) { $forward in
                         VStack {
@@ -102,7 +120,7 @@ struct AdvancedConnectionOptions: View {
             }
             if transport == .rdp || transport == .remoteApp {
                 if transport == .rdp {
-                Section("rdp.display") {
+                optionGroup("rdp.display") {
                     Toggle("rdp.dynamicResolution", isOn: Binding(
                         get: { rdp.resizesRemoteDesktop },
                         set: { rdp.dynamicResolution = $0 }
@@ -110,11 +128,11 @@ struct AdvancedConnectionOptions: View {
                     Text("rdp.dynamicResolution.hint").font(.caption).foregroundStyle(.secondary)
                 }
                 }
-                Section("rdp.devices") {
+                optionGroup("rdp.devices") {
                     Text("rdp.devices.hint").font(.caption).foregroundStyle(.secondary)
                 }
                 if transport == .rdp {
-                    Section("rdp.network") {
+                    optionGroup("rdp.network") {
                         Picker("rdp.network.profile", selection: Binding(
                             get: { rdp.selectedNetworkProfile },
                             set: { rdp.networkProfile = $0 == .automatic ? nil : $0 }
@@ -126,17 +144,17 @@ struct AdvancedConnectionOptions: View {
                         Text("rdp.network.hint").font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                if transport == .remoteApp { Section("rdp.remoteApp") {
+                if transport == .remoteApp { optionGroup("rdp.remoteApp") {
                     TextField("rdp.remoteApp.program", text: optional($rdp.remoteApp), prompt: Text("rdp.remoteApp.example"))
                     Text("rdp.remoteApp.hint").font(.caption).foregroundStyle(.secondary)
                 } }
-                Section("rdp.gateway") {
+                optionGroup("rdp.gateway") {
                     TextField("field.host", text: optional($rdp.gatewayHost))
                     TextField("rdp.gateway.port", value: $rdp.gatewayPort, format: .number)
                     TextField("rdp.gateway.username", text: optional($rdp.gatewayUsername))
                     Text("rdp.gateway.hint").font(.caption).foregroundStyle(.secondary)
                 }
-                Section("rdp.folders") {
+                optionGroup("rdp.folders") {
                     Text("rdp.folders.hint").font(.caption).foregroundStyle(.secondary)
                     ForEach(rdp.sharedFolders ?? [], id: \.self) { path in
                         HStack {
@@ -152,11 +170,22 @@ struct AdvancedConnectionOptions: View {
                     }
                 }
             }
-            Section("links.title") {
+            optionGroup("links.title") {
                 TextField("links.smb", text: optional($links.smb), prompt: Text("smb://"))
                 TextField("links.web", text: optional($links.web), prompt: Text("https://"))
             }
+                }
+            }
         }
+    }
+    @ViewBuilder
+    private func optionGroup<Content: View>(_ title: LocalizedStringKey,
+                                             @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(.headline)
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     private func optional(_ value: Binding<String?>) -> Binding<String> {
         Binding(get: { value.wrappedValue ?? "" }, set: { value.wrappedValue = $0.isEmpty ? nil : $0 })

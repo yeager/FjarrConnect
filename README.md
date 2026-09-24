@@ -98,6 +98,10 @@ which requires the short username and password of an account allowed in the remo
 Screen Sharing settings. The sign-in dialog lets you choose **Standard VNC** for
 password-only servers; that mode does not require a username. If the server requires no
 authentication, choose Standard VNC and leave both credentials empty.
+You can enter the username and password in the saved profile; passwords are kept in the
+Mac Keychain. Existing VNC profiles also show the password field so you can add or replace
+the saved password without opening the sign-in dialog. Leaving it blank keeps the saved
+password; enable **Change saved password** and leave it blank to remove it.
 Older saved VNC profiles with a username and no recorded mode are treated as Mac Screen
 Sharing. Profiles without a username remain Standard VNC for backward compatibility.
 

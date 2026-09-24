@@ -57,7 +57,7 @@
 "search.placeholder" = "Søk i tilkoblinger";
 "search.empty" = "Ingen samsvarende tilkoblinger";
 "field.changePassword" = "Endre lagret passord";
-"field.password.hint" = "Lagres i Macens nøkkelring. La feltet stå tomt for å fjerne det lagrede passordet.";
+"field.password.hint" = "Lagres i Macens nøkkelring. La feltet stå tomt for å beholde det lagrede passordet. Slå på Endre lagret passord og la feltet stå tomt for å fjerne det.";
 "auth.title" = "Logg inn for å koble til";
 "auth.remember" = "Husk i nøkkelring";
 "auth.hint" = "For RDP bruker du en konto som har tillatelse til å koble til den eksterne datamaskinen.";

@@ -57,7 +57,7 @@
 "search.placeholder" = "Search connections";
 "search.empty" = "No matching connections";
 "field.changePassword" = "Change saved password";
-"field.password.hint" = "Stored in your Mac Keychain. Leave empty to remove the saved password.";
+"field.password.hint" = "Stored in your Mac Keychain. Leave empty to keep the saved password; turn on Change saved password and leave it empty to remove it.";
 "auth.title" = "Sign in to connect";
 "auth.remember" = "Remember in Keychain";
 "auth.hint" = "For RDP, use an account allowed to connect to the remote computer.";

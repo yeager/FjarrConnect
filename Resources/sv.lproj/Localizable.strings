@@ -57,7 +57,7 @@
 "search.placeholder" = "Sök anslutningar";
 "search.empty" = "Inga matchande anslutningar";
 "field.changePassword" = "Ändra sparat lösenord";
-"field.password.hint" = "Lagras i Macens nyckelring. Lämna tomt för att ta bort det sparade lösenordet.";
+"field.password.hint" = "Lösenordet sparas i Macens nyckelring. Lämna tomt för att behålla det sparade lösenordet. Aktivera Ändra sparat lösenord och lämna fältet tomt för att ta bort det.";
 "auth.title" = "Logga in för att ansluta";
 "auth.remember" = "Kom ihåg i nyckelringen";
 "auth.hint" = "För RDP använder du ett konto som har rätt att ansluta till fjärrdatorn.";

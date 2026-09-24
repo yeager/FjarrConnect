@@ -57,7 +57,7 @@
 "search.placeholder" = "Søg forbindelser";
 "search.empty" = "Ingen matchende forbindelser";
 "field.changePassword" = "Skift gemt adgangskode";
-"field.password.hint" = "Gemmes i din Macs nøglering. Lad feltet være tomt for at fjerne den gemte adgangskode.";
+"field.password.hint" = "Gemmes i din Macs nøglering. Lad feltet være tomt for at beholde den gemte adgangskode. Slå Skift gemt adgangskode til, og lad feltet være tomt for at fjerne den.";
 "auth.title" = "Log ind for at forbinde";
 "auth.remember" = "Husk i nøglering";
 "auth.hint" = "Til RDP bruges en konto, der har tilladelse til at oprette forbindelse til den eksterne computer.";

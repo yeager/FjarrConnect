@@ -1,3 +1,11 @@
+FjärrConnect — Unreleased
+
+- Keep the VNC password field visible when editing a saved profile, so Mac Screen
+  Sharing credentials can be added or replaced there. Make advanced profile options
+  expandable and accessible in the connection form.
+
+---
+
 FjärrConnect 0.2.27
 
 - Report an error when saving a connection diagnostics report fails, instead of

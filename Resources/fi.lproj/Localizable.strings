@@ -49,7 +49,7 @@
 "search.placeholder" = "Etsi yhteyksiä";
 "search.empty" = "Vastaavia yhteyksiä ei löytynyt";
 "field.changePassword" = "Vaihda tallennettu salasana";
-"field.password.hint" = "Tallennetaan Macin Avainnippuun. Jätä tyhjäksi, jos haluat poistaa tallennetun salasanan.";
+"field.password.hint" = "Tallennetaan Macin Avainnippuun. Jätä tyhjäksi, jos haluat säilyttää tallennetun salasanan. Ota tallennetun salasanan vaihto käyttöön ja jätä kenttä tyhjäksi, jos haluat poistaa sen.";
 "auth.title" = "Kirjaudu muodostaaksesi yhteyden";
 "auth.remember" = "Muista Avainnipussa";
 "auth.hint" = "Käytä RDP-yhteyteen tiliä, jolla on oikeus muodostaa yhteys etätietokoneeseen.";
