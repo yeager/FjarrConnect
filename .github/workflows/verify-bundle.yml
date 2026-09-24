@@ -25,6 +25,10 @@ jobs:
         with:
           name: ${{ inputs.artifact-prefix }}-${{ matrix.arch }}
           path: dist
+      - uses: actions/download-artifact@v7
+        with:
+          name: rdp-${{ matrix.arch }}
+          path: build/rdp-artifacts/rdp-${{ matrix.arch }}
       - name: Verify checksum, architecture and signature
         run: |
           test "$(uname -m)" = '${{ matrix.arch }}'

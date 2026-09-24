@@ -1,4 +1,4 @@
-FjärrConnect 0.2.25
+FjärrConnect 0.2.26
 
 - Add VNC image clipboard, bounded legacy Tight file transfer, and per-session
   clipboard isolation. The Tight channel is server-dependent; SFTP remains the
@@ -29,8 +29,8 @@ a real server; refresh the listing to check the result. SFTP remains recommended
 Certificate-authenticated VeNCrypt/TLS is supported on macOS; RSA-AES and unsupported
 VeNCrypt subtypes remain unavailable. See the README for details.
 
-Download `FjarrConnect-0.2.25-macOS-arm64.zip` for Apple Silicon or
-`FjarrConnect-0.2.25-macOS-x86_64.zip` for Intel. Each app contains only its target
+Download `FjarrConnect-0.2.26-macOS-arm64.zip` for Apple Silicon or
+`FjarrConnect-0.2.26-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture and requires macOS 14 or later. `SHA256SUMS.txt` contains both download
 checksums.
 

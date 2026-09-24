@@ -51,8 +51,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: se.fjarrconnect.app
         PRODUCT_NAME: FjarrConnect
-        MARKETING_VERSION: "0.2.25"
-        CURRENT_PROJECT_VERSION: "27"
+        MARKETING_VERSION: "0.2.26"
+        CURRENT_PROJECT_VERSION: "28"
         SWIFT_VERSION: "5.0"
         ARCHS: "$(NATIVE_ARCH_ACTUAL)"
         ONLY_ACTIVE_ARCH: NO
