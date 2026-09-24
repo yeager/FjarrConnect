@@ -28,6 +28,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
     @Published private(set) var isLoadingRemoteFiles = false
     @Published private(set) var serverRequiresUsername = false
     @Published private(set) var serverRequiresMacAccount = false
+    @Published private(set) var savedCredentialsRejected = false
     @Published private(set) var remoteDirectory = "/"
     @Published private(set) var fileTransferNotice: String?
 
@@ -56,6 +57,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         guard connection == nil else { return }
         credentialFailure = nil
         requestedAuthentication = nil
+        savedCredentialsRejected = false
         notice = nil
         let settings = VNCConnection.Settings(
             isDebugLoggingEnabled: false,
@@ -206,6 +208,11 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
                 self.frameCheck?.cancel()
                 self.notice = nil
                 self.connectionDeadline?.cancel()
+                self.savedCredentialsRejected = Self.shouldOfferCredentialRetry(
+                    passwordWasProvided: self.password != nil,
+                    authentication: self.requestedAuthentication,
+                    error: connectionState.error
+                )
                 self.password = nil
                 // SDK error strings are diagnostic implementation details and may
                 // be English or expose server-specific text. Keep the endpoint
@@ -517,6 +524,14 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         }
 
         return "VNC \(host):\(port)\n" + explanation
+    }
+
+    static func shouldOfferCredentialRetry(passwordWasProvided: Bool,
+                                           authentication: VNCAuthenticationType?,
+                                           error: Error?) -> Bool {
+        guard passwordWasProvided, authentication?.requiresPassword == true, let error else { return false }
+        if case VNCError.authentication(.clientCouldNotDecideOnSecurityType) = error { return false }
+        return true
     }
 
     static func connectionTimeoutMessage(authentication: VNCAuthenticationType?) -> String {

@@ -40,6 +40,11 @@ final class VNCIntegrationTests: XCTestCase {
         try exerciseServer(requiresUsername: false, requiresPassword: true)
     }
 
+    func testRejectedVNCPasswordIsReportedForCredentialRetry() throws {
+        try exerciseServer(requiresUsername: false, requiresPassword: true,
+                           clientPassword: "wrong-test-password", expectsCredentialRejection: true)
+    }
+
     func testTightFileBrowserAppearsWhenTheServerAdvertisesDownloadChannels() throws {
         try exerciseServer(requiresUsername: false, tightFileTransfer: true)
     }
@@ -102,6 +107,21 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertFalse(message.contains("securityHandshakingFailed"))
     }
 
+    func testRejectedSavedVNCPasswordIsDetectedWithoutExposingServerText() {
+        XCTAssertTrue(VNCRemoteSession.shouldOfferCredentialRetry(
+            passwordWasProvided: true, authentication: .appleRemoteDesktop,
+            error: VNCError.authentication(.securityHandshakingFailed(reason: "private server detail"))))
+        XCTAssertFalse(VNCRemoteSession.shouldOfferCredentialRetry(
+            passwordWasProvided: true, authentication: .appleRemoteDesktop,
+            error: VNCError.authentication(.clientCouldNotDecideOnSecurityType)))
+        XCTAssertFalse(VNCRemoteSession.shouldOfferCredentialRetry(
+            passwordWasProvided: false, authentication: .appleRemoteDesktop,
+            error: VNCError.authentication(.securityHandshakingFailed(reason: nil))))
+        XCTAssertFalse(VNCRemoteSession.shouldOfferCredentialRetry(
+            passwordWasProvided: true, authentication: nil,
+            error: VNCError.authentication(.securityHandshakingFailed(reason: nil))))
+    }
+
     func testARDTimeoutExplainsThatTheMacDidNotFinishAuthentication() {
         XCTAssertEqual(
             VNCRemoteSession.connectionTimeoutMessage(authentication: .appleRemoteDesktop),
@@ -122,7 +142,8 @@ final class VNCIntegrationTests: XCTestCase {
                                 verifyInitialFocus: Bool = false,
                                 unsupportedSecurity: Bool = false, tightFileTransfer: Bool = false,
                                 tightDownloadOnly: Bool = false, uploadFile: URL? = nil,
-                                expectedUpload: Data? = nil) throws {
+                                expectedUpload: Data? = nil, clientPassword: String? = nil,
+                                expectsCredentialRejection: Bool = false) throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -166,11 +187,15 @@ final class VNCIntegrationTests: XCTestCase {
             return
         }
         let port = try XCTUnwrap(UInt16(String(contentsOf: portFile, encoding: .utf8)))
-        let session = VNCRemoteSession(profile: ConnectionProfile(name: "Local RFB", host: "127.0.0.1", port: port), password: requiresPassword ? "vnc-test" : nil)
+        let session = VNCRemoteSession(profile: ConnectionProfile(name: "Local RFB", host: "127.0.0.1", port: port),
+                                       password: clientPassword ?? (requiresPassword ? "vnc-test" : nil))
         let connected = expectation(description: "Authenticated RFB session")
         var observed = false
         let subscription = session.$status.sink { state in
-            if ((requiresUsername || unsupportedSecurity) ? state.isFinished : state == .connected) && !observed { observed = true; connected.fulfill() }
+            if ((requiresUsername || unsupportedSecurity || expectsCredentialRejection) ? state.isFinished : state == .connected) && !observed {
+                observed = true
+                connected.fulfill()
+            }
         }
         session.start()
         wait(for: [connected], timeout: 10)
@@ -180,6 +205,9 @@ final class VNCIntegrationTests: XCTestCase {
             XCTAssertTrue(session.serverRequiresMacAccount)
         } else if unsupportedSecurity {
             XCTAssertTrue(session.status.error?.contains(NSLocalizedString("vnc.unsupportedSecurity", comment: "")) == true)
+        } else if expectsCredentialRejection {
+            XCTAssertTrue(session.status.isFinished)
+            XCTAssertTrue(session.savedCredentialsRejected)
         } else {
             XCTAssertEqual(session.status, .connected)
             XCTAssertEqual(session.fileTransferAvailable, tightFileTransfer || tightDownloadOnly || uploadFile != nil,
@@ -473,7 +501,11 @@ with socket.socket() as listener:
             assert read(client, 1) == b'\x02'
             client.sendall(bytes(range(16)))
             # Fixed test-only challenge response for the dummy password vnc-test.
-            assert read(client, 16) == bytes.fromhex('6462c8f87dc31b5642d39beecb016a32')
+            response = read(client, 16)
+            if response != bytes.fromhex('6462c8f87dc31b5642d39beecb016a32'):
+                reason = b'Authentication failed'
+                client.sendall(struct.pack('!II', 1, len(reason)) + reason)
+                sys.exit(0)
         else:
             client.sendall(b'\x01\x01')
             assert read(client, 1) == b'\x01'

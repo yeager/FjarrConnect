@@ -137,6 +137,7 @@ final class SessionTab: ObservableObject, Identifiable {
     }
 
     private func scheduleReconnectIfNeeded() {
+        if (backend as? VNCRemoteSession)?.savedCredentialsRejected == true { return }
         guard !manuallyStopped, backend.profile.reconnectsAutomatically,
               reconnectWork == nil, reconnectAttempts < 3 else { return }
         reconnectAttempts += 1

@@ -1,3 +1,19 @@
+FjärrConnect 0.2.29
+
+- If a saved VNC password is rejected, open the credential prompt so it can be
+  corrected. Automatic reconnect stops after an authentication failure.
+- Verify the password field and Advanced options for existing Mac VNC profiles.
+
+Download `FjarrConnect-0.2.29-macOS-arm64.zip` for Apple Silicon or
+`FjarrConnect-0.2.29-macOS-x86_64.zip` for Intel. Each app contains only its target
+architecture and requires macOS 14 or later. `SHA256SUMS.txt` contains both download
+checksums.
+
+The apps are ad-hoc signed, not Developer ID signed or notarized. macOS may require
+approval in System Settings → Privacy & Security on first launch.
+
+---
+
 FjärrConnect 0.2.28
 
 - Keep the VNC password field available when editing a saved profile, so credentials

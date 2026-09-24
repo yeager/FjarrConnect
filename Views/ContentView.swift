@@ -62,6 +62,12 @@ struct ContentView: View {
         .onChange(of: autoHideSidebarWhileConnected) { _, _ in syncSidebarVisibility() }
         .onChange(of: connection.hasActiveSessions) { _, _ in syncSidebarVisibility() }
         .onChange(of: columnVisibility) { _, _ in syncSidebarVisibility() }
+        .onChange(of: connection.selected?.backend.status) { _, status in
+            guard status?.isFinished == true,
+                  let session = connection.selected?.backend as? VNCRemoteSession,
+                  session.savedCredentialsRejected else { return }
+            credentials = session.profile
+        }
         .toolbar {
             ToolbarItemGroup {
                 Button { quickFocused = true } label: { Image(systemName: "bolt") }

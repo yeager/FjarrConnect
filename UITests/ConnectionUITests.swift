@@ -58,6 +58,38 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertEqual(profiles.first?["macScreenSharing"] as? Bool, true)
     }
 
+    func testSavedMacProfileShowsPasswordFieldAndExpandsAdvancedOptions() throws {
+        continueAfterFailure = false
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let profile: [String: Any] = [
+            "id": UUID().uuidString, "name": "Remote Mac", "transport": "vnc",
+            "host": "mac.invalid", "port": 5900, "username": "macuser", "macScreenSharing": true
+        ]
+        try JSONSerialization.data(withJSONObject: [profile]).write(to: file)
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = file.path
+        app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        app.launch()
+        defer { app.terminate() }
+
+        let row = app.buttons["connect.Remote Mac"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 15))
+        row.rightClick()
+        app.menuItems["Edit"].click()
+        let password = app.secureTextFields["profile.password"]
+        XCTAssertTrue(password.waitForExistence(timeout: 5))
+        XCTAssertTrue(password.isHittable, "The saved Mac profile must expose an editable Keychain password field")
+        let advanced = app.buttons["profile.advancedOptions"]
+        XCTAssertTrue(advanced.waitForExistence(timeout: 5))
+        advanced.click()
+        XCTAssertEqual(advanced.value as? String, "expanded")
+        XCTAssertTrue(app.textFields["profile.files.sshHost"].waitForExistence(timeout: 5))
+    }
+
     func testStandardVNCUsernameRemainsOptional() throws {
         continueAfterFailure = false
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
