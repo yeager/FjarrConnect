@@ -16,15 +16,16 @@ It supports macOS 14 or later on Apple Silicon (arm64) and Intel (x86_64).
 
 **[GitHub repository](https://github.com/yeager/FjarrConnect)**
 
-## Version 0.2.26
+## Version 0.2.27
 
-**[Download version 0.2.26](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.26)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.26-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.26-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.27](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.27)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.27-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.27-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.26 adds VNC image clipboard and file-transfer support, stronger connection
+Version 0.2.27 reports an error when a connection diagnostics report cannot be saved.
+Version 0.2.26 added VNC image clipboard and file-transfer support, stronger connection
 diagnostics, bounded automatic reconnect, saved-session improvements and profile import/export.
 H.264 recordings remain available for embedded RDP and VNC tabs, with a red indicator while
 recording; recordings contain the remote desktop only, without audio.
@@ -32,8 +33,8 @@ recording; recordings contain the remote desktop only, without audio.
 The downloads are ad-hoc signed and not notarized. macOS may ask for approval in
 **System Settings → Privacy & Security** on first launch.
 
-The feature list below describes version 0.2.26. New changes after this release will be
-listed under **Unreleased** in [RELEASE_NOTES.md](RELEASE_NOTES.md).
+The feature list below describes version 0.2.27. See [release notes](RELEASE_NOTES.md)
+for current limitations and changes in earlier versions.
 
 ## Features
 
