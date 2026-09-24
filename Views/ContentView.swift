@@ -29,7 +29,8 @@ struct ContentView: View {
         } detail: {
             VStack(spacing: 0) {
                 if !connection.tabs.isEmpty {
-                    if !autoHideSessionTabsWhileConnected || !connection.hasActiveSessions {
+                    if AppSettings.shouldShowSessionTabs(autoHideWhileConnected: autoHideSessionTabsWhileConnected,
+                                                         hasActiveSessions: connection.hasActiveSessions) {
                         SessionTabBar(tabs: connection.tabs, selectedID: connection.selectedID,
                                       select: { connection.selectedID = $0 }, close: { connection.requestClose($0) })
                         .frame(height: 56)
@@ -118,7 +119,9 @@ struct ContentView: View {
     }
 
     private var keepsSidebarVisible: Bool {
-        showSidebar && !(autoHideSidebarWhileConnected && connection.hasActiveSessions)
+        AppSettings.shouldShowSidebar(showSidebar: showSidebar,
+                                      autoHideWhileConnected: autoHideSidebarWhileConnected,
+                                      hasActiveSessions: connection.hasActiveSessions)
     }
 
     private func syncSidebarVisibility() {

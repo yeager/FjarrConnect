@@ -14,6 +14,16 @@ enum AppSettings {
     static let recordingRetentionDays = "settings.recordingRetentionDays"
     static let keyboardLayout = "settings.keyboardLayout"
 
+    static func shouldShowSidebar(showSidebar: Bool, autoHideWhileConnected: Bool,
+                                  hasActiveSessions: Bool) -> Bool {
+        showSidebar && !(autoHideWhileConnected && hasActiveSessions)
+    }
+
+    static func shouldShowSessionTabs(autoHideWhileConnected: Bool,
+                                      hasActiveSessions: Bool) -> Bool {
+        !autoHideWhileConnected || !hasActiveSessions
+    }
+
     static var shouldAutoStartDiscovery: Bool {
         UserDefaults.standard.object(forKey: autoStartDiscovery) as? Bool ?? true
     }
