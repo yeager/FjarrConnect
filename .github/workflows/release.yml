@@ -44,7 +44,7 @@ jobs:
           VERSION=$(sed -n 's/.*MARKETING_VERSION: "\([^"]*\)"/\1/p' project.yml)
           test "$GITHUB_REF_NAME" = "v$VERSION"
       - name: Install build tools
-        run: brew install xcodegen
+        run: brew install xcodegen xcbeautify
       - name: Check resources and generate project
         run: |
           python3 scripts/check-resources.py

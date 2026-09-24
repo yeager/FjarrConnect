@@ -29,7 +29,7 @@ jobs:
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: '16.4'
-      - run: brew install xcodegen
+      - run: brew install xcodegen xcbeautify
       - run: python3 scripts/check-resources.py && xcodegen generate
       - name: Test
         run: |
@@ -81,7 +81,7 @@ jobs:
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: '16.4'
-      - run: brew install xcodegen
+      - run: brew install xcodegen xcbeautify
       - run: xcodegen generate
       - uses: actions/download-artifact@v7
         with:
