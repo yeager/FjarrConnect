@@ -16,19 +16,20 @@ It supports macOS 14 or later on Apple Silicon (arm64) and Intel (x86_64).
 
 **[GitHub repository](https://github.com/yeager/FjarrConnect)**
 
-## Version 0.2.30
+## Latest release: version 0.2.29
 
-**[Download version 0.2.30](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.30)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.30-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.30-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.29](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.29)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.29-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.29-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.30 removes a saved password when the profile editor is explicitly set to
-change the password and saved with an empty field. Version 0.2.29 asks for updated
-credentials when a saved VNC password is rejected and stops automatic retries for
-that authentication failure. Saved Mac VNC profiles expose the password field, and
-Advanced connection options expand correctly. Version 0.2.27 reports an error when
+Version 0.2.29 asks for updated credentials when a saved VNC password is rejected and
+stops automatic retries for that authentication failure. Saved Mac VNC profiles expose
+the password field, and Advanced connection options expand correctly. The current
+`main` branch also fixes removal of a saved password when the change action is selected
+and saved with an empty field; this fix is not included in the released download yet.
+Version 0.2.27 reports an error when
 saving a connection diagnostics report fails. Version 0.2.26 added VNC image clipboard
 and file-transfer support, stronger connection diagnostics, bounded automatic
 reconnect, saved-session improvements and profile import/export.
@@ -38,8 +39,8 @@ recording; recordings contain the remote desktop only, without audio.
 The downloads are ad-hoc signed and not notarized. macOS may ask for approval in
 **System Settings → Privacy & Security** on first launch.
 
-The feature list below describes version 0.2.30. See [release notes](RELEASE_NOTES.md)
-for current limitations and changes in earlier versions.
+The feature list below describes the current `main` branch. See [release notes](RELEASE_NOTES.md)
+for version-specific changes and current limitations.
 
 ## Features
 
