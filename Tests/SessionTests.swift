@@ -47,6 +47,38 @@ final class SessionTests: XCTestCase {
         manager.close(first)
         XCTAssertEqual(sessions[0].stopCount, 1)
     }
+
+    func testRemoteAppAndDesktopProfilesHaveSeparateNamedSessions() throws {
+        var sessions: [TestSession] = []
+        let manager = ConnectionManager { profile, _ in
+            let session = TestSession(profile: profile)
+            sessions.append(session)
+            return session
+        }
+        let host = "desktop.local"
+        let desktop = ConnectionProfile(name: "Desktop", transport: .rdp, host: host)
+        var app = ConnectionProfile(name: "Calculator", transport: .remoteApp, host: host)
+        app.rdp = RDPOptions(remoteApp: "||calc")
+
+        manager.connect(desktop)
+        let desktopTab = try XCTUnwrap(manager.selected)
+        manager.connect(app)
+        let appTab = try XCTUnwrap(manager.selected)
+
+        XCTAssertEqual(manager.tabs.count, 2)
+        XCTAssertEqual(desktopTab.backend.profile.name, "Desktop")
+        XCTAssertEqual(desktopTab.backend.profile.transport, .rdp)
+        XCTAssertEqual(appTab.backend.profile.name, "Calculator")
+        XCTAssertEqual(appTab.backend.profile.transport, .remoteApp)
+        XCTAssertEqual(sessions.map { $0.profile.name }, ["Desktop", "Calculator"])
+
+        manager.selectedID = desktopTab.id
+        XCTAssertEqual(manager.selected?.backend.profile.name, "Desktop")
+        manager.selectedID = appTab.id
+        XCTAssertEqual(manager.selected?.backend.profile.name, "Calculator")
+        manager.disconnectAll()
+    }
+
     func testClosingAnActiveSessionCanBeCancelledWithoutStoppingIt() throws {
         let manager = ConnectionManager { profile, _ in TestSession(profile: profile) }
         manager.connect(ConnectionProfile(name: "Connected", host: "host.local"))
