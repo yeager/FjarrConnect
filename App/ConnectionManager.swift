@@ -19,7 +19,7 @@ final class SessionTab: ObservableObject, Identifiable {
     private var manuallyStopped = false
     private var active = false
     @Published private(set) var reconnectAttempt: Int?
-    @Published private(set) var latencyMilliseconds: Int?
+    @Published private(set) var tcpConnectionMilliseconds: Int?
 
     init(backend: any RemoteSession, credentials: SessionCredentials,
          makeSession: @escaping (ConnectionProfile, SessionCredentials) -> any RemoteSession) {
@@ -52,7 +52,7 @@ final class SessionTab: ObservableObject, Identifiable {
 
     var canRecord: Bool { backend is any SessionRecordingSource }
     var health: SessionHealth {
-        SessionHealth(latencyMilliseconds: latencyMilliseconds,
+        SessionHealth(tcpConnectionMilliseconds: tcpConnectionMilliseconds,
                       packetLossPercent: nil,
                       codec: backend.negotiatedCodec)
     }
@@ -83,11 +83,11 @@ final class SessionTab: ObservableObject, Identifiable {
 
     private func startHealthMonitoring() {
         guard healthTimer == nil, backend is any SessionHealthProviding else { return }
-        sampleLatency()
+        sampleTCPConnectionTime()
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue(label: "se.fjarrconnect.health"))
         timer.schedule(deadline: .now() + 15, repeating: 15)
         timer.setEventHandler { [weak self] in
-            DispatchQueue.main.async { self?.sampleLatency() }
+            DispatchQueue.main.async { self?.sampleTCPConnectionTime() }
         }
         healthTimer = timer
         timer.resume()
@@ -96,10 +96,10 @@ final class SessionTab: ObservableObject, Identifiable {
     private func stopHealthMonitoring() {
         healthTimer?.cancel(); healthTimer = nil
         healthProbe?.cancel(); healthProbe = nil
-        latencyMilliseconds = nil
+        tcpConnectionMilliseconds = nil
     }
 
-    private func sampleLatency() {
+    private func sampleTCPConnectionTime() {
         let profile = backend.profile
         guard let port = NWEndpoint.Port(rawValue: profile.port) else { return }
         healthProbe?.cancel()
@@ -114,13 +114,13 @@ final class SessionTab: ObservableObject, Identifiable {
                 let milliseconds = Int(elapsed / 1_000_000)
                 DispatchQueue.main.async { [weak self] in
                     guard let self, self.healthProbe === probe else { return }
-                    self.latencyMilliseconds = milliseconds
+                    self.tcpConnectionMilliseconds = milliseconds
                     probe.cancel(); self.healthProbe = nil
                 }
             case .failed, .cancelled:
                 DispatchQueue.main.async { [weak self] in
                     guard let self, self.healthProbe === probe else { return }
-                    self.latencyMilliseconds = nil; self.healthProbe = nil
+                    self.tcpConnectionMilliseconds = nil; self.healthProbe = nil
                 }
             default: break
             }

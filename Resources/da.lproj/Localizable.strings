@@ -418,8 +418,8 @@
 
 /* Connection health */
 "health.title" = "Forbindelsestilstand";
-"health.latency" = "Ventetid";
-"health.latency.value" = "%d ms";
+"health.tcpConnection" = "TCP-forbindelse";
+"health.tcpConnection.value" = "%d ms";
 "health.packetLoss" = "Pakketab";
 "health.packetLoss.value" = "%.1f %%";
 "health.packetLoss.unavailable" = "Ikke tilgængelig for denne TCP-session";

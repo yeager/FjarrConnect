@@ -418,8 +418,8 @@
 
 /* Connection health */
 "health.title" = "Anslutningshälsa";
-"health.latency" = "Latens";
-"health.latency.value" = "%d ms";
+"health.tcpConnection" = "TCP-anslutning";
+"health.tcpConnection.value" = "%d ms";
 "health.packetLoss" = "Paketförlust";
 "health.packetLoss.value" = "%.1f %%";
 "health.packetLoss.unavailable" = "Inte tillgängligt för denna TCP-session";

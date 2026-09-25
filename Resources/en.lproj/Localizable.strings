@@ -418,8 +418,8 @@
 
 /* Connection health */
 "health.title" = "Connection health";
-"health.latency" = "Latency";
-"health.latency.value" = "%d ms";
+"health.tcpConnection" = "TCP connection";
+"health.tcpConnection.value" = "%d ms";
 "health.packetLoss" = "Packet loss";
 "health.packetLoss.value" = "%.1f%%";
 "health.packetLoss.unavailable" = "Unavailable for this TCP session";

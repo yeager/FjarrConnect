@@ -69,7 +69,7 @@ enum DiagnosticReport {
         #else
         let architecture = "unknown"
         #endif
-        let latency = health?.latencyMilliseconds.map(String.init) ?? "unavailable"
+        let connectionTime = health?.tcpConnectionMilliseconds.map(String.init) ?? "unavailable"
         let packetLoss = health?.packetLossPercent.map { String(format: "%.1f", locale: Locale(identifier: "en_US_POSIX"), $0) } ?? "unavailable"
         return [
             "FjarrConnect diagnostic report",
@@ -79,7 +79,7 @@ enum DiagnosticReport {
             "architecture: \(architecture)",
             "protocol: \(profile.transport.rawValue)",
             "state: \(state)",
-            "tcp-handshake-ms: \(latency)",
+            "tcp-connect-ms: \(connectionTime)",
             "packet-loss-percent: \(packetLoss)",
             "graphics-codec: \(health?.codec ?? "unavailable")",
             "endpoint: omitted",

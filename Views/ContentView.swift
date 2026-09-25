@@ -479,7 +479,12 @@ private struct SessionHealthMenu: View {
         Menu {
             Text("health.title").font(.headline)
             Divider()
-            healthRow("health.latency", value: health.latencyMilliseconds.map { String(format: NSLocalizedString("health.latency.value", comment: ""), $0) } ?? NSLocalizedString("health.unavailable", comment: ""))
+            healthRow(
+                "health.tcpConnection",
+                value: health.tcpConnectionMilliseconds.map {
+                    String(format: NSLocalizedString("health.tcpConnection.value", comment: ""), $0)
+                } ?? NSLocalizedString("health.unavailable", comment: "")
+            )
             healthRow("health.packetLoss", value: health.packetLossPercent.map { String(format: NSLocalizedString("health.packetLoss.value", comment: ""), $0) } ?? NSLocalizedString("health.packetLoss.unavailable", comment: ""))
             healthRow("health.codec", value: health.codec ?? NSLocalizedString("health.unavailable", comment: ""))
             healthRow("health.reconnect", value: reconnectAttempt.map { String(format: NSLocalizedString("health.reconnect.value", comment: ""), $0, 3) } ?? NSLocalizedString("health.reconnect.none", comment: ""))

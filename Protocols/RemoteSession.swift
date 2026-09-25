@@ -32,12 +32,12 @@ enum SessionStatus: Equatable {
 }
 
 /// Measurements that can be shown without pretending that a transport exposes
-/// information it does not provide. `latencyMilliseconds` is a TCP handshake
-/// sample to the profile endpoint, rather than an estimate of desktop-frame
-/// latency. TCP does not expose packet loss, so that value intentionally stays
+/// information it does not provide. `tcpConnectionMilliseconds` is the time needed
+/// to establish a TCP connection to the profile endpoint, rather than an estimate
+/// of desktop-frame latency. TCP does not expose packet loss, so that value stays
 /// nil until a runtime can report it.
 struct SessionHealth: Equatable {
-    var latencyMilliseconds: Int?
+    var tcpConnectionMilliseconds: Int?
     var packetLossPercent: Double?
     var codec: String?
 }

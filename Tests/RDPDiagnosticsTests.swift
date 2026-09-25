@@ -46,7 +46,7 @@ final class RDPDiagnosticsTests: XCTestCase {
         XCTAssertTrue(report.contains("state: failed"))
         XCTAssertTrue(report.contains("architecture:"))
         XCTAssertTrue(report.contains("macOS:"))
-        XCTAssertTrue(report.contains("tcp-handshake-ms: unavailable"))
+        XCTAssertTrue(report.contains("tcp-connect-ms: unavailable"))
         XCTAssertTrue(report.contains("endpoint: omitted"))
         XCTAssertFalse(report.contains("endpoint-id:"))
         XCTAssertFalse(report.contains("private.example"))
@@ -56,9 +56,9 @@ final class RDPDiagnosticsTests: XCTestCase {
 
     func testDiagnosticReportIncludesAvailableHealthWithoutEndpointData() {
         let profile = ConnectionProfile(name: "Remote", transport: .rdp, host: "192.0.2.4")
-        let health = SessionHealth(latencyMilliseconds: 18, packetLossPercent: nil, codec: "RemoteFX")
+        let health = SessionHealth(tcpConnectionMilliseconds: 18, packetLossPercent: nil, codec: "RemoteFX")
         let report = DiagnosticReport.text(profile: profile, status: .connected, health: health)
-        XCTAssertTrue(report.contains("tcp-handshake-ms: 18"))
+        XCTAssertTrue(report.contains("tcp-connect-ms: 18"))
         XCTAssertTrue(report.contains("packet-loss-percent: unavailable"))
         XCTAssertTrue(report.contains("graphics-codec: RemoteFX"))
         XCTAssertFalse(report.contains(profile.host))

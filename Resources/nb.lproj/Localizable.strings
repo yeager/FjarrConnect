@@ -418,8 +418,8 @@
 
 /* Connection health */
 "health.title" = "Tilkoblingsstatus";
-"health.latency" = "Forsinkelse";
-"health.latency.value" = "%d ms";
+"health.tcpConnection" = "TCP-tilkobling";
+"health.tcpConnection.value" = "%d ms";
 "health.packetLoss" = "Pakketap";
 "health.packetLoss.value" = "%.1f %%";
 "health.packetLoss.unavailable" = "Ikke tilgjengelig for denne TCP-økten";

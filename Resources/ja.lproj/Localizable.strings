@@ -403,8 +403,8 @@
 
 /* Connection health */
 "health.title" = "接続の状態";
-"health.latency" = "遅延";
-"health.latency.value" = "%d ms";
+"health.tcpConnection" = "TCP接続";
+"health.tcpConnection.value" = "%d ms";
 "health.packetLoss" = "パケット損失";
 "health.packetLoss.value" = "%.1f %%";
 "health.packetLoss.unavailable" = "この TCP セッションでは利用できません";

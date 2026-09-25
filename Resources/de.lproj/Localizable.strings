@@ -403,8 +403,8 @@
 
 /* Connection health */
 "health.title" = "Verbindungsstatus";
-"health.latency" = "Latenz";
-"health.latency.value" = "%d ms";
+"health.tcpConnection" = "TCP-Verbindung";
+"health.tcpConnection.value" = "%d ms";
 "health.packetLoss" = "Paketverlust";
 "health.packetLoss.value" = "%.1f %%";
 "health.packetLoss.unavailable" = "Für diese TCP-Sitzung nicht verfügbar";

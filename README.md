@@ -87,8 +87,8 @@ for version-specific changes and current limitations.
   `~/Movies/FjarrConnect`. Recording stops on disconnect or when the tab closes. SSH and
   SFTP cannot be recorded. **Settings → Advanced** includes a searchable recording library,
   export, deletion and a local retention policy.
-- **Connection health:** the active session's status menu shows a TCP-handshake
-  latency sample, the RDP graphics codec reported after negotiation, and automatic
+- **Connection health:** the active session's status menu shows the time required to establish a TCP connection to the
+  profile endpoint, the RDP graphics codec reported after negotiation, and automatic
   reconnection progress. Packet loss is explicitly unavailable for the bundled
   TCP runtimes rather than estimated or guessed.
 - **Localized interface:** English, Swedish, Danish, Norwegian Bokmål, German, Finnish, French,

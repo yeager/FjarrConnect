@@ -403,8 +403,8 @@
 
 /* Connection health */
 "health.title" = "Yhteyden tila";
-"health.latency" = "Viive";
-"health.latency.value" = "%d ms";
+"health.tcpConnection" = "TCP-yhteys";
+"health.tcpConnection.value" = "%d ms";
 "health.packetLoss" = "Pakettihäviö";
 "health.packetLoss.value" = "%.1f %%";
 "health.packetLoss.unavailable" = "Ei saatavilla tälle TCP-istunnolle";
