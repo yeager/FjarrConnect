@@ -76,6 +76,12 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
                                  input='', text=True, capture_output=True, timeout=15,
                                  env=dict(os.environ, FC_TEST_CLIPBOARD_IMAGE='1'))
     assert image_check.returncode == 0, f'RDP image clipboard round-trip failed: {image_check.stdout}\n{image_check.stderr}'
+    activation_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
+                                      input='', text=True, capture_output=True, timeout=15,
+                                      env=dict(os.environ, FC_TEST_CLIPBOARD_ACTIVATION='1'))
+    assert activation_check.returncode == 0, (
+        f'RDP clipboard activation isolation failed: {activation_check.stdout}\n{activation_check.stderr}')
+    print(f'RDP {architecture}: active-session clipboard capture and inactive-session clearing passed.')
     files_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
                                  input='', text=True, capture_output=True, timeout=15,
                                  env=dict(os.environ, FC_TEST_CLIPBOARD_FILES='1'))

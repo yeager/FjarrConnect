@@ -17,6 +17,8 @@ enum {
 // them through the shipping C API.
 @interface NSView (FCRDPClipboardProbe)
 - (void)clipboardTick;
+- (void)setSessionActive:(BOOL)active pasteboard:(NSPasteboard *)pasteboard;
+- (void)setClipboardActive:(BOOL)active pasteboard:(NSPasteboard *)pasteboard;
 - (void)captureClipboardFromPasteboard:(NSPasteboard *)pasteboard;
 - (NSArray<NSURL *> *)clipboardFileURLsFromPasteboard:(NSPasteboard *)pasteboard;
 - (NSData *)fileDescriptorDataForURLs:(NSArray<NSURL *> *)urls;
@@ -111,6 +113,35 @@ int main(int argc, const char **argv) {
             [(id)view writeClipboardDIB:dib];
             NSImage *roundTrip = [[NSImage alloc] initWithData:[pasteboard dataForType:NSPasteboardTypeTIFF]];
             return dib.length > 40 && roundTrip.size.width == 2 && roundTrip.size.height == 2 ? 0 : 8;
+        }
+        if ([NSProcessInfo.processInfo.environment[@"FC_TEST_CLIPBOARD_ACTIVATION"] isEqualToString:@"1"]) {
+            // A file copied outside FjarrConnect becomes available only to the
+            // selected RDP session; inactive sessions must clear their copy.
+            [view setValue:@YES forKey:@"clipboardAllowed"];
+            [view setValue:@2 forKey:@"connectionStatus"];
+            NSURL *file = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:
+                [NSString stringWithFormat:@"FjarrConnectClipboard-%@.txt", NSUUID.UUID.UUIDString]]];
+            if (![[@"activation fixture" dataUsingEncoding:NSUTF8StringEncoding] writeToURL:file atomically:YES]) return 12;
+            NSPasteboard *pasteboard = [NSPasteboard pasteboardWithUniqueName];
+            BOOL wrote = [pasteboard writeObjects:@[file]];
+            [(id)view setSessionActive:NO pasteboard:pasteboard];
+            BOOL inactiveCleared = [[view valueForKey:@"clipboardFiles"] count] == 0;
+            fprintf(stderr, "clipboard-activation context app=%d key=%d allowed=%d status=%d wrote=%d\n",
+                    NSApp.isActive, window.isKeyWindow,
+                    [[view valueForKey:@"clipboardAllowed"] boolValue],
+                    [[view valueForKey:@"connectionStatus"] intValue], wrote);
+            [(id)view setSessionActive:YES pasteboard:pasteboard];
+            [(id)view setClipboardActive:YES pasteboard:pasteboard];
+            BOOL activeCaptured = [[view valueForKey:@"clipboardFiles"] isEqualToArray:@[file]] &&
+                [view valueForKey:@"clipboardFileDescriptors"] != nil;
+            [(id)view setSessionActive:NO pasteboard:pasteboard];
+            BOOL inactiveClearedAgain = [[view valueForKey:@"clipboardFiles"] count] == 0 &&
+                ![[view valueForKey:@"clipboardActive"] boolValue];
+            [pasteboard releaseGlobally]; [[NSFileManager defaultManager] removeItemAtURL:file error:nil];
+            BOOL valid = wrote && inactiveCleared && activeCaptured && inactiveClearedAgain;
+            fprintf(stderr, "clipboard-activation captured=%d inactive-cleared=%d\n", activeCaptured,
+                    inactiveCleared && inactiveClearedAgain);
+            return valid ? 0 : 12;
         }
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_CLIPBOARD_FILES"] isEqualToString:@"1"]) {
             // Use a private pasteboard so a clipboard test never reads or replaces

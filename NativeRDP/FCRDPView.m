@@ -55,8 +55,7 @@ static const NSUInteger FCClipboardMaximumFiles = 32;
 #define FCClipboardMaximumNameCharacters 259
 static const uint64_t FCClipboardMaximumFileBytes = UINT32_MAX;
 static const UINT32 FCClipboardMaximumFileReadBytes = 4 * 1024 * 1024;
-// Keep the protocol path disabled until it passes an actual Windows paste test.
-// Local manifest and bounded-range tests remain available in the meantime.
+// Keep network file clipboard disabled until it passes a real Windows paste test.
 static const BOOL FCClipboardFileTransferEnabled = NO;
 #if !defined(NDEBUG)
 #define FCClipboardLog(format, ...) NSLog((@"FCRDP clipboard " format), ##__VA_ARGS__)
@@ -193,6 +192,8 @@ static NSData *FCClipboardFileContents(NSURL *url, uint64_t expectedSize, UINT32
 - (void)start;
 - (void)stop;
 - (void)setSessionActive:(BOOL)active;
+- (void)setSessionActive:(BOOL)active pasteboard:(NSPasteboard *)pasteboard;
+- (void)setClipboardActive:(BOOL)active pasteboard:(NSPasteboard *)pasteboard;
 - (void)captureClipboardFromPasteboard:(NSPasteboard *)pasteboard;
 - (void)enqueue:(FCInput)input;
 - (void)publishFrame:(rdpGdi *)gdi;
@@ -303,26 +304,31 @@ static NSData *FCClipboardFileContents(NSURL *url, uint64_t expectedSize, UINT32
     [_lock unlock];
 }
 - (void)setSessionActive:(BOOL)active {
-    if (_sessionActive && !active) [self releaseInput];
+    [self setSessionActive:active pasteboard:NSPasteboard.generalPasteboard];
+}
+- (void)setSessionActive:(BOOL)active pasteboard:(NSPasteboard *)pasteboard {
     _sessionActive = active;
-    self.clipboardActive = active && NSApp.isActive && self.window.isKeyWindow && self.clipboardAllowed;
-    // Changing tabs never uploads a clipboard copied in another session.
-    _clipboardChange = NSPasteboard.generalPasteboard.changeCount;
+    [self setClipboardActive:active && NSApp.isActive && self.window.isKeyWindow && self.clipboardAllowed
+                    pasteboard:pasteboard];
+}
+- (void)setClipboardActive:(BOOL)active pasteboard:(NSPasteboard *)pasteboard {
+    BOOL wasClipboardActive = self.clipboardActive;
+    self.clipboardActive = active;
+    _clipboardChange = pasteboard.changeCount;
     if (!active) {
         self.clipboardText = nil; self.clipboardImage = nil;
         self.clipboardFileDescriptors = nil; self.clipboardFiles = nil;
+        if (wasClipboardActive) [self releaseInput];
+    } else if (self.connectionStatus == 2) {
+        // The selected session may consume the current local clipboard when
+        // it becomes active. Inactive sessions still clear cached contents.
+        [self captureClipboardFromPasteboard:pasteboard];
     }
 }
 - (void)clipboardTick {
     BOOL active = _sessionActive && NSApp.isActive && self.window.isKeyWindow && self.clipboardAllowed;
     if (self.clipboardActive != active) {
-        self.clipboardActive = active;
-        _clipboardChange = NSPasteboard.generalPasteboard.changeCount;
-        if (!active) {
-            self.clipboardText = nil; self.clipboardImage = nil;
-            self.clipboardFileDescriptors = nil; self.clipboardFiles = nil;
-            [self releaseInput];
-        }
+        [self setClipboardActive:active pasteboard:NSPasteboard.generalPasteboard];
     }
     NSPasteboard *pasteboard = NSPasteboard.generalPasteboard;
     if (!active || self.connectionStatus != 2 || pasteboard.changeCount == _clipboardChange) return;
