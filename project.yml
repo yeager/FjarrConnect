@@ -10,7 +10,7 @@ packages:
   RoyalVNCKit:
     # Separates macOS VNC reads and writes so pending updates cannot stall keyboard input.
     url: https://github.com/yeager/royalvnc
-    revision: "e91a61f52d7a9a35d747c93ef6f60407839af141"
+    revision: "c5b43e7bb7ae9360e4960c930f239863893ed4d4"
   SwiftTerm:
     url: https://github.com/migueldeicaza/SwiftTerm
     exactVersion: "1.10.1"
