@@ -90,7 +90,9 @@
 "vnc.usernameRequired.signIn" = "Logga in med Mac-användarnamn …";
 "vnc.macAuthenticationRejected" = "Macens skärmdelning avvisade inloggningen. Kontrollera kontots korta användarnamn och lösenord samt att kontot är tillåtet i inställningarna för skärmdelning.";
 "vnc.connectionFailed" = "VNC-anslutningen misslyckades. Kontrollera adress och port, bekräfta sedan att Skärmdelning eller VNC-tjänsten är aktiverad på fjärrdatorn och att kontot har behörighet.";
-"vnc.unsupportedSecurity" = "Servern erbjuder en VNC-säkerhetsmetod som FjärrConnect inte kan använda. RSA-AES och VeNCrypt-undertyper utan stöd stöds inte. Använd certifikatautentiserad VeNCrypt/TLS eller vanlig VNC-autentisering, eller välj en kompatibel säkerhetsinställning på servern.";
+"vnc.unsupportedSecurity" = "Servern erbjuder en VNC-säkerhetsmetod som FjärrConnect inte kan använda. FjärrConnect stöder certifikatverifierad VeNCrypt X509Vnc och X509Plain samt vanlig VNC-autentisering. TLSVnc kan aktiveras separat i profilen, men verifierar inte serverns identitet. TLSPlain, RSA-AES och andra undertyper stöds inte.";
+"vnc.anonymousTLS.title" = "Tillåt TLSVnc utan serververifiering";
+"vnc.anonymousTLS.warning" = "Krypterar trafiken men verifierar inte serverns identitet. En mellanhand kan utge sig för servern. Använd X509Vnc om servern stöder det.";
 
 "rdp.error.network" = "Servern kunde inte nås. Kontrollera att Fjärrskrivbord är aktiverat och att adressen och porten är tillgängliga.";
 "rdp.error.authentication" = "Servern avvisade inloggningen. Kontrollera användarnamn, lösenord och behörighet för Fjärrskrivbord.";
@@ -437,6 +439,13 @@
 "rdp.network.balanced" = "Balanserad";
 "rdp.network.lan" = "Lokalt nätverk";
 "rdp.network.hint" = "Använder FreeRDP:s nätverksförval för denna profil.";
+"rdp.security.title" = "Säkerhet";
+"rdp.security.mode" = "Säkerhetsläge";
+"rdp.security.automatic" = "Automatiskt";
+"rdp.security.nla" = "NLA";
+"rdp.security.tls" = "TLS";
+"rdp.security.rdp" = "Äldre RDP";
+"rdp.security.hint" = "Automatiskt använder FreeRDP:s förhandling. Välj ett särskilt läge bara om servern kräver det. Äldre RDP är mindre säkert.";
 
 /* Wake-on-LAN */
 "wol.title" = "Wake-on-LAN";

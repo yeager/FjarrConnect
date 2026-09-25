@@ -119,6 +119,17 @@ struct AdvancedConnectionOptions: View {
                 }
             }
             if transport == .rdp || transport == .remoteApp {
+                optionGroup("rdp.security.title") {
+                    Picker("rdp.security.mode", selection: Binding(
+                        get: { rdp.selectedSecurityMode },
+                        set: { rdp.securityMode = $0 == .automatic ? nil : $0 }
+                    )) {
+                        ForEach(RDPOptions.SecurityMode.allCases, id: \.self) { mode in
+                            Text(LocalizedStringKey("rdp.security.\(mode.rawValue)")).tag(mode)
+                        }
+                    }
+                    Text("rdp.security.hint").font(.caption).foregroundStyle(.secondary)
+                }
                 if transport == .rdp {
                 optionGroup("rdp.display") {
                     Toggle("rdp.dynamicResolution", isOn: Binding(

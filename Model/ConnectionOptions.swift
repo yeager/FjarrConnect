@@ -98,6 +98,19 @@ struct SSHForward: Codable, Hashable, Identifiable {
 }
 
 struct RDPOptions: Codable, Hashable {
+    enum SecurityMode: String, Codable, CaseIterable {
+        case automatic, nla, tls, rdp
+
+        var freeRDPValue: String? {
+            switch self {
+            case .automatic: return nil
+            case .nla: return "nla"
+            case .tls: return "tls"
+            case .rdp: return "rdp"
+            }
+        }
+    }
+
     enum NetworkProfile: String, Codable, CaseIterable {
         case automatic, slow, balanced, lan
 
@@ -119,10 +132,13 @@ struct RDPOptions: Codable, Hashable {
     var remoteApp: String? = nil
     // Nil keeps profiles saved before this preference dynamically sized.
     var dynamicResolution: Bool?
+    /// Nil leaves FreeRDP's automatic security negotiation enabled.
+    var securityMode: SecurityMode?
     /// Nil preserves FreeRDP's automatic network selection for older profiles.
     var networkProfile: NetworkProfile?
 
     var resizesRemoteDesktop: Bool { dynamicResolution ?? true }
+    var selectedSecurityMode: SecurityMode { securityMode ?? .automatic }
     var selectedNetworkProfile: NetworkProfile { networkProfile ?? .automatic }
     var remoteAppProgram: String? {
         let program = remoteApp?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

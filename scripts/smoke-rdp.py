@@ -57,7 +57,8 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
                                     input='', text=True, capture_output=True, timeout=15,
                                     env=dict(os.environ, FC_TEST_KEYBOARD_INPUT='1'))
     assert keyboard_check.returncode == 0, (
-        f'RDP Unicode keyboard input encoding failed: {keyboard_check.stdout}\n{keyboard_check.stderr}')
+        f'RDP Unicode keyboard input encoding failed (exit {keyboard_check.returncode}): '
+        f'{keyboard_check.stdout}\n{keyboard_check.stderr}')
     print(f'RDP {architecture}: Unicode keyboard input passed (@, Swedish, Euro, CJK, supplementary scalar).')
     image_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
                                  input='', text=True, capture_output=True, timeout=15,

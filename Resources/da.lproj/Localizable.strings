@@ -90,7 +90,9 @@
 "vnc.usernameRequired.signIn" = "Log ind med et Mac-brugernavn …";
 "vnc.macAuthenticationRejected" = "Mac-skærmdeling afviste login. Kontrollér kontoens korte brugernavn og adgangskode, og bekræft, at kontoen har adgang i indstillingerne for skærmdeling.";
 "vnc.connectionFailed" = "VNC-forbindelsen mislykkedes. Kontrollér adressen og porten, og bekræft derefter at Skærmdeling eller VNC-tjenesten er aktiveret på fjerncomputeren, og at kontoen har adgang.";
-"vnc.unsupportedSecurity" = "Serveren tilbyder en VNC-sikkerhedsmetode, som FjärrConnect ikke kan bruge. RSA-AES og VeNCrypt-undertyper uden understøttelse er ikke understøttet. Brug certifikatgodkendt VeNCrypt/TLS eller standard VNC-godkendelse, eller vælg en kompatibel sikkerhedsindstilling på serveren.";
+"vnc.unsupportedSecurity" = "Serveren tilbyder en VNC-sikkerhedsmetode, som FjärrConnect ikke kan bruge. FjärrConnect understøtter certifikatverificeret VeNCrypt X509Vnc og X509Plain samt standard VNC-godkendelse. TLSVnc kan aktiveres i profilen, men verificerer ikke serverens identitet. TLSPlain, RSA-AES og andre undertyper understøttes ikke.";
+"vnc.anonymousTLS.title" = "Tillad TLSVnc uden serververifikation";
+"vnc.anonymousTLS.warning" = "Krypterer trafikken, men verificerer ikke serverens identitet. En mellemmand kan udgive sig for at være serveren. Brug X509Vnc, hvis serveren understøtter det.";
 
 "rdp.error.network" = "Serveren kunne ikke nås. Kontrollér, at Fjernskrivebord er aktiveret, og at adressen og porten er tilgængelige.";
 "rdp.error.authentication" = "Serveren afviste login. Kontrollér brugernavn, adgangskode og tilladelse til Fjernskrivebord.";
@@ -437,6 +439,13 @@
 "rdp.network.balanced" = "Balanceret";
 "rdp.network.lan" = "Lokalt netværk";
 "rdp.network.hint" = "Bruger FreeRDP-netværksforvalg for denne profil.";
+"rdp.security.title" = "Sikkerhed";
+"rdp.security.mode" = "Sikkerhedstilstand";
+"rdp.security.automatic" = "Automatisk";
+"rdp.security.nla" = "NLA";
+"rdp.security.tls" = "TLS";
+"rdp.security.rdp" = "Ældre RDP";
+"rdp.security.hint" = "Automatisk bruger FreeRDPs forhandling. Vælg kun en bestemt tilstand, hvis serveren kræver det. Ældre RDP er mindre sikkert.";
 
 /* Wake-on-LAN */
 "wol.title" = "Wake-on-LAN";

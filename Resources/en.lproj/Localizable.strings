@@ -90,7 +90,9 @@
 "vnc.usernameRequired.signIn" = "Sign in with a Mac username…";
 "vnc.macAuthenticationRejected" = "Mac Screen Sharing rejected the sign-in. Check the account’s short username and password, and confirm that the account is allowed in Screen Sharing settings.";
 "vnc.connectionFailed" = "The VNC connection failed. Check the address and port, then confirm that Screen Sharing or the VNC service is enabled on the remote computer and that the account is permitted.";
-"vnc.unsupportedSecurity" = "This server offered a VNC security method FjärrConnect cannot use. RSA-AES and unsupported VeNCrypt subtypes are not supported. Use certificate-authenticated VeNCrypt/TLS or standard VNC authentication, or choose a compatible server security setting.";
+"vnc.unsupportedSecurity" = "This server offered a VNC security method FjärrConnect cannot use. FjärrConnect supports certificate-verified VeNCrypt X509Vnc and X509Plain, plus standard VNC authentication. TLSVnc can be enabled in the profile, but does not verify server identity. TLSPlain, RSA-AES and other subtypes are unsupported.";
+"vnc.anonymousTLS.title" = "Allow TLSVnc without server verification";
+"vnc.anonymousTLS.warning" = "Encrypts traffic but does not verify the server identity. A man in the middle could impersonate the server. Use X509Vnc when the server supports it.";
 
 "rdp.error.network" = "The server could not be reached. Check that Remote Desktop is enabled and that this address and port are reachable.";
 "rdp.error.authentication" = "The server rejected the sign-in. Check the username, password and permission to use Remote Desktop.";
@@ -437,6 +439,13 @@
 "rdp.network.balanced" = "Balanced";
 "rdp.network.lan" = "LAN";
 "rdp.network.hint" = "Uses FreeRDP network presets for this profile.";
+"rdp.security.title" = "Security";
+"rdp.security.mode" = "Security mode";
+"rdp.security.automatic" = "Automatic";
+"rdp.security.nla" = "NLA";
+"rdp.security.tls" = "TLS";
+"rdp.security.rdp" = "Legacy RDP";
+"rdp.security.hint" = "Automatic uses FreeRDP negotiation. Choose a specific mode only if the server requires it. Legacy RDP is less secure.";
 
 /* Wake-on-LAN */
 "wol.title" = "Wake-on-LAN";

@@ -17,6 +17,7 @@ enum RDPArguments {
         if profile.rdp?.resizesRemoteDesktop ?? true, profile.transport == .rdp { args.append("/dynamic-resolution") }
         args.append(profile.sharesClipboard ? "+clipboard" : "-clipboard")
         if let network = profile.rdp?.selectedNetworkProfile.freeRDPValue { args.append("/network:\(network)") }
+        if let security = profile.rdp?.selectedSecurityMode.freeRDPValue { args.append("/sec:\(security)") }
         if profile.transport == .remoteApp, let remoteApp = profile.rdp?.remoteAppProgram { args.append("/app:\(remoteApp)") }
         for (index, path) in (profile.rdp?.sharedFolders ?? []).enumerated() {
             args.append("/drive:Shared\(index + 1),\(path)")

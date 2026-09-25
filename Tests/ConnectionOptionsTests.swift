@@ -68,10 +68,26 @@ final class ConnectionOptionsTests: XCTestCase {
 
         XCTAssertEqual(profile.id, profileID)
         XCTAssertTrue(profile.usesMacScreenSharingAuthentication)
+        XCTAssertFalse(profile.allowsUnverifiedVNCEncryption)
         XCTAssertTrue(profile.isValid)
         let credentials = CredentialsView(profile: profile, saved: false) { _, _, _, _ in }
         XCTAssertFalse(credentials.allowsVNCAuthenticationModeSelection)
         XCTAssertTrue(credentials.requiresVNCUsername)
+    }
+
+    func testUnverifiedVNCEncryptionIsOptInAndPersistsPerProfile() throws {
+        var profile = ConnectionProfile(name: "VNC", host: "vnc.local")
+        XCTAssertFalse(profile.allowsUnverifiedVNCEncryption)
+
+        profile.allowsUnverifiedVNCEncryption = true
+        let data = try JSONEncoder().encode(profile)
+        let restored = try JSONDecoder().decode(ConnectionProfile.self, from: data)
+        XCTAssertTrue(restored.allowsUnverifiedVNCEncryption)
+
+        profile.allowsUnverifiedVNCEncryption = false
+        XCTAssertFalse(try JSONDecoder().decode(ConnectionProfile.self,
+                                                from: JSONEncoder().encode(profile))
+            .allowsUnverifiedVNCEncryption)
     }
 
     func testLegacyVNCProfileWithoutUsernameRemainsStandardVNC() throws {
@@ -203,6 +219,39 @@ final class ConnectionOptionsTests: XCTestCase {
         XCTAssertNil(RDPArguments.input(profile: profile, password: nil, gatewayPassword: "sample\n/cert:ignore"))
         profile.rdp?.sharedFolders = ["/tmp/ambiguous,path"]
         XCTAssertFalse(profile.isValid)
+    }
+
+    func testRDPSecurityModeDefaultsToNegotiationAndSupportsFreeRDPModes() throws {
+        var profile = ConnectionProfile(name: "Desktop", transport: .rdp, host: "desktop.local")
+        profile.rdp = RDPOptions()
+        XCTAssertEqual(profile.rdp?.selectedSecurityMode, .automatic)
+        let automatic = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
+        XCTAssertFalse(automatic.contains("/sec:"))
+
+        for (mode, argument) in [
+            (RDPOptions.SecurityMode.nla, "nla"),
+            (.tls, "tls"),
+            (.rdp, "rdp")
+        ] {
+            profile.rdp?.securityMode = mode
+            let arguments = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
+            XCTAssertTrue(arguments.contains("/sec:\(argument)\n"))
+        }
+    }
+
+    func testRDPSecurityModePersistsAndLegacyProfilesDefaultToAutomatic() throws {
+        var profile = ConnectionProfile(name: "Desktop", transport: .rdp, host: "desktop.local")
+        profile.rdp = RDPOptions()
+        XCTAssertEqual(profile.rdp?.selectedSecurityMode, .automatic)
+
+        profile.rdp?.securityMode = .tls
+        let restored = try JSONDecoder().decode(ConnectionProfile.self,
+                                                from: JSONEncoder().encode(profile))
+        XCTAssertEqual(restored.rdp?.selectedSecurityMode, .tls)
+
+        let legacy = Data(#"{"id":"A9351A13-2764-4FFB-9D8D-3BFC5B501344","name":"Old RDP","transport":"rdp","host":"desktop.local","port":3389,"rdp":{"networkProfile":"automatic"}}"#.utf8)
+        let older = try JSONDecoder().decode(ConnectionProfile.self, from: legacy)
+        XCTAssertEqual(older.rdp?.selectedSecurityMode, .automatic)
     }
 
     func testRDPDynamicResolutionDefaultsToEnabledAndCanBeDisabled() throws {

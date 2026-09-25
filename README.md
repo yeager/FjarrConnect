@@ -96,7 +96,7 @@ for version-specific changes and current limitations.
 |---|---|---|
 | VNC / Mac Screen Sharing | Embedded desktop through [RoyalVNCKit](https://github.com/royalapplications/royalvnc), with keyboard, mouse, text and image clipboard | VNC password or remote Mac username/password; optional Keychain storage |
 | SSH | Embedded [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) terminal running macOS `/usr/bin/ssh`, with optional encrypted keep-alives during idle periods | Your SSH configuration, keys and ssh-agent; passwords and new host-key confirmation in the terminal |
-| RDP | Embedded [FreeRDP](https://github.com/FreeRDP/FreeRDP) desktop or RemoteApp, keyboard/mouse, resizing, text and image clipboard, shared folders and RD Gateway over HTTPS | Username/password; localized certificate verification and separate gateway credentials |
+| RDP | Embedded [FreeRDP](https://github.com/FreeRDP/FreeRDP) desktop or RemoteApp, keyboard/mouse, resizing, text and image clipboard, shared folders and RD Gateway over HTTPS | FreeRDP security negotiation; optional per-profile mode and localized certificate verification |
 | SFTP | Built-in file panel using the authenticated OpenSSH connection | Keys/agent or interactive password and host-key prompts |
 
 New VNC profiles and VNC quick-connect addresses default to **Mac Screen Sharing**,
@@ -258,12 +258,27 @@ An RDP profile can also select **Automatic**, **Slow**, **Balanced**, or **LAN**
 behavior. Automatic leaves FreeRDP's network detection unchanged; the other choices
 use FreeRDP's tested network presets and apply only to that desktop profile.
 
+The advanced **Security mode** choice can leave FreeRDP's negotiation automatic or
+force NLA, TLS, or Standard RDP security for a profile. Automatic is recommended:
+FreeRDP negotiates a security mode accepted by the server. Standard RDP security is
+a legacy mode and should only be forced for older servers. TLS cipher suites are
+negotiated by the bundled OpenSSL runtime. The build does not include Azure AD,
+Kerberos, or smart-card security, and the embedded client disables RDSTLS; RD
+Gateway over HTTPS remains available separately.
+
 RDP currently presents one desktop surface per tab. Multi-monitor layouts and USB
 redirection are not exposed: MacFreeRDP cannot currently render multiple remote
 screens as an in-app feature. RoyalVNCKit’s VNC authentication covers None, VNC
-password, certificate-authenticated VeNCrypt/TLS, Apple Remote Desktop and UltraVNC
-MS-Logon II. VeNCrypt uses macOS certificate-chain and hostname validation; unsupported
-VeNCrypt subtypes and RSA-AES are not supported.
+password, certificate-verified VeNCrypt `X509Vnc` and `X509Plain`, Apple Remote
+Desktop and UltraVNC MS-Logon II. `X509Vnc` protects VNC password authentication
+inside TLS; `X509Plain` sends the server username and password inside that same
+verified TLS channel. macOS validates the certificate chain and server hostname
+before credentials are sent. The server certificate must be trusted by macOS and
+match the profile host. TigerVNC's common default, `TLSVnc`, is available through
+an explicit per-profile opt-in. It encrypts traffic but does not verify
+server identity, so a man in the middle could impersonate the server. Prefer
+`X509Vnc` when the server supports it. `TLSPlain`, RSA-AES and other VeNCrypt
+subtypes remain unsupported.
 Use SFTP or a configured SMB share for files instead of a VNC-specific file protocol.
 
 ## Private SSH command logs

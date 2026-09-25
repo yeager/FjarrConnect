@@ -78,7 +78,9 @@
 "vnc.usernameRequired.signIn" = "Kirjaudu Macin käyttäjätunnuksella …";
 "vnc.macAuthenticationRejected" = "Macin näytönjako hylkäsi kirjautumisen. Tarkista tilin lyhyt käyttäjätunnus ja salasana sekä tilin käyttöoikeus näytönjaon asetuksissa.";
 "vnc.connectionFailed" = "VNC-yhteys epäonnistui. Tarkista osoite ja portti ja vahvista sitten, että Näytönjako tai VNC-palvelu on käytössä etätietokoneessa ja että tilillä on käyttöoikeus.";
-"vnc.unsupportedSecurity" = "Palvelin tarjoaa VNC-suojausmenetelmän, jota FjärrConnect ei voi käyttää. RSA-AES- ja tukemattomia VeNCrypt-alatyyppejä ei tueta. Käytä varmenteella todennettua VeNCrypt/TLS:ää tai tavallista VNC-todennusta tai valitse palvelimesta yhteensopiva suojausasetus.";
+"vnc.unsupportedSecurity" = "Palvelin tarjoaa VNC-suojausmenetelmän, jota FjärrConnect ei voi käyttää. FjärrConnect tukee varmenteella todennettua VeNCrypt X509Vnc- ja X509Plain-tilaa sekä tavallista VNC-todennusta. TLSVnc voidaan sallia profiilissa, mutta se ei varmista palvelimen henkilöllisyyttä. TLSPlain, RSA-AES ja muut alatyypit eivät ole tuettuja.";
+"vnc.anonymousTLS.title" = "Salli TLSVnc ilman palvelimen tunnistusta";
+"vnc.anonymousTLS.warning" = "Salaa liikenteen, mutta ei varmista palvelimen henkilöllisyyttä. Välissä oleva hyökkääjä voi esiintyä palvelimena. Käytä X509Vnc:tä, jos palvelin tukee sitä.";
 "rdp.error.network" = "Palvelimeen ei saatu yhteyttä. Tarkista, että etätyöpöytä on käytössä ja osoite ja portti ovat saavutettavissa.";
 "rdp.error.authentication" = "Palvelin hylkäsi kirjautumisen. Tarkista käyttäjätunnus, salasana ja etätyöpöydän käyttöoikeus.";
 "rdp.error.certificate" = "Suojattu yhteys epäonnistui. Tarkista palvelimen varmenne ja TLS-asetukset.";
@@ -422,6 +424,13 @@
 "rdp.network.balanced" = "Tasapainoinen";
 "rdp.network.lan" = "Lähiverkko";
 "rdp.network.hint" = "Käyttää tämän profiilin FreeRDP-verkon esiasetuksia.";
+"rdp.security.title" = "Suojaus";
+"rdp.security.mode" = "Suojaustila";
+"rdp.security.automatic" = "Automaattinen";
+"rdp.security.nla" = "NLA";
+"rdp.security.tls" = "TLS";
+"rdp.security.rdp" = "Vanha RDP";
+"rdp.security.hint" = "Automaattinen käyttää FreeRDP-neuvottelua. Valitse tietty tila vain, jos palvelin sitä edellyttää. Vanha RDP on vähemmän turvallinen.";
 
 /* Wake-on-LAN */
 "wol.title" = "Wake-on-LAN";

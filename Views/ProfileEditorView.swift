@@ -10,6 +10,7 @@ struct ProfileEditorView: View {
     @State private var portText: String
     @State private var username: String
     @State private var usesMacScreenSharingAuthentication: Bool
+    @State private var allowsUnverifiedVNCEncryption: Bool
     @State private var password = ""
     @State private var changePassword = false
     @State private var group: String
@@ -42,6 +43,7 @@ struct ProfileEditorView: View {
         // New VNC profiles default to macOS Screen Sharing, which requires an
         // account name. Password-only VNC remains available as an explicit mode.
         _usesMacScreenSharingAuthentication = State(initialValue: profile?.usesMacScreenSharingAuthentication ?? true)
+        _allowsUnverifiedVNCEncryption = State(initialValue: profile?.allowsUnverifiedVNCEncryption ?? false)
         _group = State(initialValue: profile?.group ?? "")
         _tags = State(initialValue: profile?.normalizedTags.joined(separator: ", ") ?? "")
         _logsSSHCommands = State(initialValue: profile?.logsSSHCommands ?? false)
@@ -86,6 +88,12 @@ struct ProfileEditorView: View {
                             : "vnc.authentication.standardHint"))
                             .font(.caption).foregroundStyle(.secondary)
                         Text("auth.vnc.hint").font(.caption).foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Toggle("vnc.anonymousTLS.title", isOn: $allowsUnverifiedVNCEncryption)
+                                .accessibilityIdentifier("profile.vncAnonymousTLS")
+                            Text("vnc.anonymousTLS.warning")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
                     }
                     if transport == .ssh || transport == .sftp {
                         Text("ssh.authentication").font(.caption).foregroundStyle(.secondary)
@@ -132,6 +140,7 @@ struct ProfileEditorView: View {
                                        reconnectsAutomatically: automaticReconnect,
                                        logsSSHCommands: transport == .ssh && logsSSHCommands)
         result.ssh = ssh
+        result.allowsUnverifiedVNCEncryption = transport == .vnc && allowsUnverifiedVNCEncryption
         result.ssh?.forwards = forwards.isEmpty ? nil : forwards
         result.rdp = rdp
         result.links = links

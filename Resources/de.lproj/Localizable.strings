@@ -78,7 +78,9 @@
 "vnc.usernameRequired.signIn" = "Mit Mac-Benutzernamen anmelden …";
 "vnc.macAuthenticationRejected" = "Die Mac-Bildschirmfreigabe hat die Anmeldung abgelehnt. Prüfe den Kurznamen und das Passwort des Accounts sowie dessen Berechtigung in den Bildschirmfreigabe-Einstellungen.";
 "vnc.connectionFailed" = "Die VNC-Verbindung ist fehlgeschlagen. Prüfe Adresse und Port und bestätige dann, dass Bildschirmfreigabe oder der VNC-Dienst auf dem entfernten Computer aktiviert ist und der Account berechtigt ist.";
-"vnc.unsupportedSecurity" = "Der Server bietet eine VNC-Sicherheitsmethode an, die FjärrConnect nicht verwenden kann. RSA-AES und nicht unterstützte VeNCrypt-Untertypen werden nicht unterstützt. Verwende zertifikatsgeprüftes VeNCrypt/TLS oder die Standard-VNC-Authentifizierung oder wähle eine kompatible Sicherheitseinstellung auf dem Server.";
+"vnc.unsupportedSecurity" = "Der Server bietet eine VNC-Sicherheitsmethode an, die FjärrConnect nicht verwenden kann. FjärrConnect unterstützt zertifikatsgeprüftes VeNCrypt X509Vnc und X509Plain sowie die Standard-VNC-Authentifizierung. TLSVnc kann im Profil aktiviert werden, prüft aber nicht die Serveridentität. TLSPlain, RSA-AES und andere Untertypen werden nicht unterstützt.";
+"vnc.anonymousTLS.title" = "TLSVnc ohne Serverprüfung erlauben";
+"vnc.anonymousTLS.warning" = "Verschlüsselt den Datenverkehr, prüft aber nicht die Serveridentität. Ein Mittelsmann könnte sich als Server ausgeben. Verwenden Sie X509Vnc, wenn der Server dies unterstützt.";
 "rdp.error.network" = "Der Server ist nicht erreichbar. Prüfe, ob Remotedesktop aktiviert ist und Adresse sowie Port erreichbar sind.";
 "rdp.error.authentication" = "Der Server hat die Anmeldung abgelehnt. Prüfe Benutzername, Passwort und die Berechtigung für Remotedesktop.";
 "rdp.error.certificate" = "Die sichere Verbindung ist fehlgeschlagen. Prüfe das Serverzertifikat und die TLS-Einstellungen.";
@@ -422,6 +424,13 @@
 "rdp.network.balanced" = "Ausgeglichen";
 "rdp.network.lan" = "Lokales Netzwerk";
 "rdp.network.hint" = "Verwendet FreeRDP-Netzwerkvorgaben für dieses Profil.";
+"rdp.security.title" = "Sicherheit";
+"rdp.security.mode" = "Sicherheitsmodus";
+"rdp.security.automatic" = "Automatisch";
+"rdp.security.nla" = "NLA";
+"rdp.security.tls" = "TLS";
+"rdp.security.rdp" = "Älteres RDP";
+"rdp.security.hint" = "Automatisch verwendet die FreeRDP-Aushandlung. Wählen Sie einen festen Modus nur, wenn der Server ihn verlangt. Älteres RDP ist weniger sicher.";
 
 /* Wake-on-LAN */
 "wol.title" = "Wake-on-LAN";

@@ -56,7 +56,9 @@ int main(int argc, const char **argv) {
         NSData *translations = [NSData dataWithContentsOfFile:[NSString stringWithUTF8String:argv[1]]];
         NSString *json = [[NSString alloc] initWithData:translations encoding:NSUTF8StringEncoding];
         NSView *view = (__bridge_transfer NSView *)fc_rdp_create(arguments.UTF8String, json.UTF8String);
-        if (!view || fc_rdp_abi() != 2) return 3;
+        if (!view) { fputs("fc_rdp_create returned NULL\n", stderr); return 3; }
+        const uint32_t abi = fc_rdp_abi();
+        if (abi != 2) { fprintf(stderr, "Unexpected RDP ABI: %u\n", abi); return 3; }
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_FAILURE_CATEGORIES"] isEqualToString:@"1"]) {
             const struct { const char *name; UINT32 error; int category; } cases[] = {
                 {"network", FREERDP_ERROR_CONNECT_FAILED, 1},

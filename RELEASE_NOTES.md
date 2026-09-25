@@ -1,3 +1,14 @@
+Unreleased
+
+- Accept certificate-verified VeNCrypt `X509Plain` servers. Username and password
+  are sent only after macOS validates the server certificate and hostname.
+- Support TigerVNC `TLSVnc` through an explicit per-profile opt-in. It encrypts
+  the session without verifying server identity; prefer `X509Vnc` where available.
+- Add per-profile FreeRDP security selection for automatic, NLA, TLS, and legacy
+  Standard RDP security. Automatic negotiation remains the default.
+
+---
+
 FjärrConnect 0.2.30
 
 - Make the documented “Change saved password” action remove the stored password
