@@ -79,6 +79,16 @@ final class SessionTests: XCTestCase {
         manager.disconnectAll()
     }
 
+    func testRemoteAppTabTitleNamesItsSessionType() {
+        let desktop = ConnectionProfile(name: "Desktop", transport: .rdp, host: "host.local")
+        let remoteApp = ConnectionProfile(name: "Calculator", transport: .remoteApp, host: "host.local")
+
+        XCTAssertEqual(desktop.sessionTabTitle, "Desktop")
+        XCTAssertEqual(remoteApp.sessionTabTitle,
+                       "Calculator — \(NSLocalizedString("transport.remoteApp", comment: ""))")
+        XCTAssertNotEqual(RemoteTransport.rdp.symbol, RemoteTransport.remoteApp.symbol)
+    }
+
     func testClosingAnActiveSessionCanBeCancelledWithoutStoppingIt() throws {
         let manager = ConnectionManager { profile, _ in TestSession(profile: profile) }
         manager.connect(ConnectionProfile(name: "Connected", host: "host.local"))

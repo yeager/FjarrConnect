@@ -1,5 +1,7 @@
 Unreleased
 
+- Mark RemoteApp tabs and accessibility names so application sessions are distinct
+  from full RDP desktops.
 - Accept certificate-verified VeNCrypt `X509Plain` servers. Username and password
   are sent only after macOS validates the server certificate and hostname.
 - Keep VeNCrypt `TLSVnc` unavailable because macOS CFNetwork rejects its anonymous

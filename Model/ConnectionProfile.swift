@@ -137,6 +137,11 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
         self.sshCommandLogging = logsSSHCommands ? true : nil
     }
 
+    var sessionTabTitle: String {
+        guard transport == .remoteApp else { return name }
+        return "\(name) — \(NSLocalizedString(transport.displayNameKey, comment: ""))"
+    }
+
     /// A Remmina-style URI, e.g. `vnc://admin@studio.local:5900`.
     var uri: String {
         var components = URLComponents()

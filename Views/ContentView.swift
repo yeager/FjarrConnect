@@ -504,6 +504,12 @@ private struct SessionHealthMenu: View {
 
 extension RemoteTransport {
     var symbol: String {
-        switch self { case .vnc: return "display"; case .rdp, .remoteApp: return "pc"; case .ssh: return "terminal"; case .sftp: return "folder" }
+        switch self {
+        case .vnc: return "display"
+        case .rdp: return "pc"
+        case .remoteApp: return "macwindow"
+        case .ssh: return "terminal"
+        case .sftp: return "folder"
+        }
     }
 }

@@ -247,8 +247,9 @@ Audio and microphone redirection are unavailable until verified in a real macOS 
 session. FjärrConnect does not expose their profile controls or send those arguments.
 Printer and smart-card redirection are unavailable in the bundled runtime and are
 not shown. **RemoteApp** is a separate session type: enter the
-server-published alias, such as `||wordpad`, and it opens in its own FjärrConnect tab
-without dynamic desktop resizing. Shared folders remain the supported file flow.
+server-published alias, such as `||wordpad`. Its tab is marked “RemoteApp” and
+uses a distinct icon; it opens in its own FjärrConnect session without dynamic
+desktop resizing. Shared folders remain the supported file flow.
 Clipboard file transfer is intentionally not enabled until it has been tested against
 supported Windows versions.
 

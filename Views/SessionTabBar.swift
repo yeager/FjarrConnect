@@ -92,14 +92,18 @@ struct SessionTabBar: NSViewRepresentable {
         required init?(coder: NSCoder) { nil }
 
         func update(profile: ConnectionProfile, selected: Bool, select: @escaping () -> Void, close: @escaping () -> Void) {
-            selectButton.title = profile.name
+            let tabTitle = profile.sessionTabTitle
+            selectButton.title = tabTitle
             selectButton.image = NSImage(systemSymbolName: profile.transport.symbol, accessibilityDescription: nil)
-            selectButton.toolTip = profile.name
+            selectButton.toolTip = tabTitle
             selectButton.setAccessibilityIdentifier("session.select.\(profile.name)")
-            selectButton.setAccessibilityLabel(profile.name)
+            selectButton.setAccessibilityLabel(tabTitle)
             selectButton.setAccessibilitySelected(selected)
             selectButton.callback = select
-            let closeLabel = String(format: NSLocalizedString("action.closeNamedSession", comment: "Accessibility label for closing a named session"), profile.name)
+            let closeLabel = String(
+                format: NSLocalizedString("action.closeNamedSession", comment: "Accessibility label for closing a named session"),
+                tabTitle
+            )
             closeButton.toolTip = closeLabel
             closeButton.setAccessibilityLabel(closeLabel)
             closeButton.setAccessibilityIdentifier("session.close.\(profile.name)")
