@@ -1,7 +1,7 @@
 import XCTest
 import Combine
 import SwiftUI
-import RoyalVNCKit
+@testable import RoyalVNCKit
 @testable import FjarrConnect
 
 /// A local RFB server exercises the actual RoyalVNCKit handshake and session lifecycle.
@@ -35,6 +35,117 @@ final class VNCIntegrationTests: XCTestCase {
                       "The client must parse the Mac Screen Sharing authentication challenge")
         XCTAssertEqual(session.status.error, NSLocalizedString("vnc.usernameRequired", comment: ""))
     }
+
+#if canImport(CFNetwork)
+    func testLiveVeNCryptCompletesVerifiedTLSBeforeSendingCredentials() async throws {
+        guard let host = ProcessInfo.processInfo.environment["FJARRCONNECT_TEST_LIVE_VENCRYPT_HOST"],
+              ConnectionURI.validHost(host) else {
+            throw XCTSkip("Set FJARRCONNECT_TEST_LIVE_VENCRYPT_HOST to opt in to a credential-free VeNCrypt/TLS check")
+        }
+        let port = UInt16(ProcessInfo.processInfo.environment["FJARRCONNECT_TEST_LIVE_VENCRYPT_PORT"] ?? "5900") ?? 5900
+        let connection = CFStreamNetworkConnection(settings: NetworkConnectionSettings(
+            connectionTimeout: 8, host: host, port: port
+        ))
+        defer { connection.cancel() }
+
+        let ready = expectation(description: "VNC TCP stream ready")
+        connection.setStatusUpdateHandler { status in
+            if case .ready = status { ready.fulfill() }
+        }
+        connection.start(queue: DispatchQueue(label: "FjarrConnect.LiveVeNCryptTest"))
+        await fulfillment(of: [ready], timeout: 8)
+        guard connection.isReady else {
+            XCTFail("The server did not accept a TCP connection within 8 seconds")
+            return
+        }
+
+        let greeting = try await connection.read(minimumLength: 12, maximumLength: 12)
+        let greetingText = String(decoding: greeting, as: UTF8.self)
+        guard greetingText.hasPrefix("RFB 003.") else {
+            XCTFail("The server sent an invalid RFB version greeting")
+            return
+        }
+        guard let serverMinor = Int(greetingText.dropFirst(8).prefix(3)) else {
+            XCTFail("The server sent an invalid RFB version")
+            return
+        }
+        let negotiatedMinor = min(serverMinor, 8)
+        try await connection.write(data: Data(String(format: "RFB 003.%03d\n", negotiatedMinor).utf8))
+
+        if serverMinor < 7 {
+            let securityType = try await connection.readUInt32()
+            if securityType == 0 {
+                let reasonLength = Int(try await connection.readUInt32())
+                guard (1...4096).contains(reasonLength) else {
+                    XCTFail("The server refused the RFB handshake without a valid reason string")
+                    return
+                }
+                let reason = try await connection.read(minimumLength: reasonLength,
+                                                       maximumLength: reasonLength)
+                XCTFail("The server refused the RFB handshake: \(String(decoding: reason, as: UTF8.self))")
+                return
+            }
+            guard securityType == 19 else {
+                XCTFail("RFB 3.3 server selected security type \(securityType), expected VeNCrypt (19)")
+                return
+            }
+        } else {
+            let securityTypeCount = Int(try await connection.readUInt8())
+            guard securityTypeCount > 0 else {
+                XCTFail("The server did not offer an RFB security type")
+                return
+            }
+            let securityTypes = try await connection.read(minimumLength: securityTypeCount,
+                                                          maximumLength: securityTypeCount)
+            guard securityTypes.contains(19) else {
+                XCTFail("The server did not offer VeNCrypt")
+                return
+            }
+            try await connection.write(value: 19)
+        }
+
+        let version = try await connection.read(minimumLength: 2, maximumLength: 2)
+        guard version == Data([0, 2]) else {
+            XCTFail("The server must offer VeNCrypt 0.2")
+            return
+        }
+        try await connection.write(data: Data([0, 2]))
+        let versionAcknowledgement = try await connection.readUInt8()
+        guard versionAcknowledgement == 0 else {
+            XCTFail("The server rejected VeNCrypt 0.2")
+            return
+        }
+
+        let subtypeCount = Int(try await connection.readUInt8())
+        guard subtypeCount > 0 else {
+            XCTFail("VeNCrypt must offer at least one subtype")
+            return
+        }
+        let subtypeBytes = try await connection.read(minimumLength: subtypeCount * 4,
+                                                     maximumLength: subtypeCount * 4)
+        let subtypes = stride(from: 0, to: subtypeBytes.count, by: 4).map { offset in
+            subtypeBytes[offset..<(offset + 4)].reduce(UInt32(0)) { ($0 << 8) | UInt32($1) }
+        }
+        guard subtypes.contains(261) else {
+            XCTFail("The server must offer certificate-validated X509Vnc")
+            return
+        }
+        try await connection.write(value: 0)
+        try await connection.write(data: Data([0, 0, 1, 5]))
+        let subtypeAcknowledgement = try await connection.readUInt8()
+        guard subtypeAcknowledgement == 1 else {
+            XCTFail("The server rejected X509Vnc")
+            return
+        }
+
+        try await connection.upgradeToTLS(serverName: host)
+
+        // Reading the VNC challenge forces CFStream to complete and validate the
+        // TLS handshake. Stop here: the test never sends a password response.
+        let challenge = try await connection.read(minimumLength: 16, maximumLength: 16)
+        XCTAssertEqual(challenge.count, 16, "The server should begin VNC authentication inside TLS")
+    }
+#endif
 
     func testVNCAuthenticatesWithPasswordAndReceivesDesktop() throws {
         try exerciseServer(requiresUsername: false, requiresPassword: true)
@@ -367,7 +478,7 @@ final class VNCIntegrationTests: XCTestCase {
             return (down == 1, keysym)
         }
         XCTAssertEqual(events.map { $0.1 }, [
-            0xFFE9, 0x32, 0x32, 0xFFE9,
+            0xFFE9, 0x40, 0x40, 0xFFE9,
             0x79, 0x79,
             0xE9, 0xE9,
             0xE5, 0xE4, 0xF6, 0xE5, 0xE4, 0xF6,
