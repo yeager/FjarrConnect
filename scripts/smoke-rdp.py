@@ -120,12 +120,18 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
     fingerprint = subprocess.check_output(['openssl', 'x509', '-in', str(certificate),
                                           '-noout', '-fingerprint', '-sha256'], text=True).strip().split('=', 1)[1]
     tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    # Match the suite observed from the Windows RDP host. Restricting this
+    # fixture makes the bundled FreeRDP/OpenSSL handshake prove support for
+    # AES-256-GCM and SHA-384 rather than merely linking their symbols.
+    tls.maximum_version = ssl.TLSVersion.TLSv1_2
+    tls.set_ciphers('ECDHE-RSA-AES256-GCM-SHA384')
     tls.load_cert_chain(certificate, key)
     for language in ['en', 'sv', 'da', 'nb', 'de', 'fi', 'fr', 'es', 'ja']:
         strings = translations(language)
         locale_file = directory / 'translations.json'
         locale_file.write_text(json.dumps(strings, ensure_ascii=False))
         received = []
+        negotiated_ciphers = []
         failures = []
         with socket.socket() as listener:
             listener.bind(('127.0.0.1', 0))
@@ -144,6 +150,8 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
                         connection.sendall(bytes.fromhex('030000130ed000000000000200080001000000'))
                         try:
                             with tls.wrap_socket(connection, server_side=True) as secure:
+                                negotiated = secure.cipher()
+                                negotiated_ciphers.append(negotiated[0] if negotiated else None)
                                 secure.recv(4096)
                         except (ssl.SSLError, ConnectionResetError):
                             pass  # Rejecting the untrusted certificate closes TLS.
@@ -162,7 +170,10 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
             worker.join(timeout=16)
             assert not worker.is_alive() and not failures, f'{language}: TLS fixture failed: {failures}'
             assert received, f'{language}: library did not start RDP negotiation'
+            assert negotiated_ciphers == ['ECDHE-RSA-AES256-GCM-SHA384'], (
+                f'{language}: bundled FreeRDP did not negotiate the required AES-256-GCM/SHA-384 suite: '
+                f'{negotiated_ciphers}')
             assert result.returncode == 0 and 'certificate=1 rejected=1 status=3' in result.stdout, (
                 f'{language}: certificate rejection failed: {result.stdout}\n{result.stderr[-1500:]}')
             print(f'{language}: embedded NSView connected, displayed the localized certificate dialog and rejected it.')
-print('Packaged RDP library: certificate rejection passed in all nine languages.')
+print('Packaged RDP library: TLS 1.2 AES-256-GCM/SHA-384 negotiation and certificate rejection passed in all nine languages.')
