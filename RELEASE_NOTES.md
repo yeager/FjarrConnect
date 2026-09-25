@@ -2,8 +2,8 @@ Unreleased
 
 - Accept certificate-verified VeNCrypt `X509Plain` servers. Username and password
   are sent only after macOS validates the server certificate and hostname.
-- Support TigerVNC `TLSVnc` through an explicit per-profile opt-in. It encrypts
-  the session without verifying server identity; prefer `X509Vnc` where available.
+- Keep VeNCrypt `TLSVnc` unavailable because macOS CFNetwork rejects its anonymous
+  Diffie–Hellman TLS handshake.
 - Add per-profile FreeRDP security selection for automatic, NLA, TLS, and legacy
   Standard RDP security. Automatic negotiation remains the default.
 

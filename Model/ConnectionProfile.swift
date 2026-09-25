@@ -67,14 +67,6 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
         get { macScreenSharing ?? (transport == .vnc && username?.isEmpty == false) }
         set { macScreenSharing = newValue }
     }
-    /// Opt-in for VeNCrypt TLSVnc, which encrypts the stream but cannot verify
-    /// the server identity. Optional so older saved profiles remain valid.
-    private var unverifiedVNCEncryption: Bool?
-    var allowsUnverifiedVNCEncryption: Bool {
-        get { unverifiedVNCEncryption ?? false }
-        set { unverifiedVNCEncryption = newValue ? true : nil }
-    }
-
     /// Optional Remmina-style organisation.
     var group: String?
     /// User-defined labels used for filtering and quick access.

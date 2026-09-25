@@ -78,9 +78,7 @@
 "vnc.usernameRequired.signIn" = "Kirjaudu Macin käyttäjätunnuksella …";
 "vnc.macAuthenticationRejected" = "Macin näytönjako hylkäsi kirjautumisen. Tarkista tilin lyhyt käyttäjätunnus ja salasana sekä tilin käyttöoikeus näytönjaon asetuksissa.";
 "vnc.connectionFailed" = "VNC-yhteys epäonnistui. Tarkista osoite ja portti ja vahvista sitten, että Näytönjako tai VNC-palvelu on käytössä etätietokoneessa ja että tilillä on käyttöoikeus.";
-"vnc.unsupportedSecurity" = "Palvelin tarjoaa VNC-suojausmenetelmän, jota FjärrConnect ei voi käyttää. FjärrConnect tukee varmenteella todennettua VeNCrypt X509Vnc- ja X509Plain-tilaa sekä tavallista VNC-todennusta. TLSVnc voidaan sallia profiilissa, mutta se ei varmista palvelimen henkilöllisyyttä. TLSPlain, RSA-AES ja muut alatyypit eivät ole tuettuja.";
-"vnc.anonymousTLS.title" = "Salli TLSVnc ilman palvelimen tunnistusta";
-"vnc.anonymousTLS.warning" = "Salaa liikenteen, mutta ei varmista palvelimen henkilöllisyyttä. Välissä oleva hyökkääjä voi esiintyä palvelimena. Käytä X509Vnc:tä, jos palvelin tukee sitä.";
+"vnc.unsupportedSecurity" = "Palvelin tarjoaa VNC-suojausmenetelmän, jota FjärrConnect ei voi käyttää. FjärrConnect tukee varmenteella todennettua VeNCrypt X509Vnc- ja X509Plain-tilaa sekä tavallista VNC-todennusta.";
 "rdp.error.network" = "Palvelimeen ei saatu yhteyttä. Tarkista, että etätyöpöytä on käytössä ja osoite ja portti ovat saavutettavissa.";
 "rdp.error.authentication" = "Palvelin hylkäsi kirjautumisen. Tarkista käyttäjätunnus, salasana ja etätyöpöydän käyttöoikeus.";
 "rdp.error.certificate" = "Suojattu yhteys epäonnistui. Tarkista palvelimen varmenne ja TLS-asetukset.";

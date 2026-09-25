@@ -102,7 +102,6 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         )
 
         let connection = VNCConnection(settings: settings, logger: logger)
-        connection.allowsUnverifiedVeNCryptTLSVNC = profile.allowsUnverifiedVNCEncryption
         // VeNCrypt and ARD authentication remain preferred by RoyalVNCKit. Tight
         // is selected only when neither stronger mode is offered, so its
         // advertised file-transfer extension can be discovered when available.

@@ -68,26 +68,10 @@ final class ConnectionOptionsTests: XCTestCase {
 
         XCTAssertEqual(profile.id, profileID)
         XCTAssertTrue(profile.usesMacScreenSharingAuthentication)
-        XCTAssertFalse(profile.allowsUnverifiedVNCEncryption)
         XCTAssertTrue(profile.isValid)
         let credentials = CredentialsView(profile: profile, saved: false) { _, _, _, _ in }
         XCTAssertFalse(credentials.allowsVNCAuthenticationModeSelection)
         XCTAssertTrue(credentials.requiresVNCUsername)
-    }
-
-    func testUnverifiedVNCEncryptionIsOptInAndPersistsPerProfile() throws {
-        var profile = ConnectionProfile(name: "VNC", host: "vnc.local")
-        XCTAssertFalse(profile.allowsUnverifiedVNCEncryption)
-
-        profile.allowsUnverifiedVNCEncryption = true
-        let data = try JSONEncoder().encode(profile)
-        let restored = try JSONDecoder().decode(ConnectionProfile.self, from: data)
-        XCTAssertTrue(restored.allowsUnverifiedVNCEncryption)
-
-        profile.allowsUnverifiedVNCEncryption = false
-        XCTAssertFalse(try JSONDecoder().decode(ConnectionProfile.self,
-                                                from: JSONEncoder().encode(profile))
-            .allowsUnverifiedVNCEncryption)
     }
 
     func testLegacyVNCProfileWithoutUsernameRemainsStandardVNC() throws {

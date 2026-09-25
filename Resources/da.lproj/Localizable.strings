@@ -90,9 +90,7 @@
 "vnc.usernameRequired.signIn" = "Log ind med et Mac-brugernavn …";
 "vnc.macAuthenticationRejected" = "Mac-skærmdeling afviste login. Kontrollér kontoens korte brugernavn og adgangskode, og bekræft, at kontoen har adgang i indstillingerne for skærmdeling.";
 "vnc.connectionFailed" = "VNC-forbindelsen mislykkedes. Kontrollér adressen og porten, og bekræft derefter at Skærmdeling eller VNC-tjenesten er aktiveret på fjerncomputeren, og at kontoen har adgang.";
-"vnc.unsupportedSecurity" = "Serveren tilbyder en VNC-sikkerhedsmetode, som FjärrConnect ikke kan bruge. FjärrConnect understøtter certifikatverificeret VeNCrypt X509Vnc og X509Plain samt standard VNC-godkendelse. TLSVnc kan aktiveres i profilen, men verificerer ikke serverens identitet. TLSPlain, RSA-AES og andre undertyper understøttes ikke.";
-"vnc.anonymousTLS.title" = "Tillad TLSVnc uden serververifikation";
-"vnc.anonymousTLS.warning" = "Krypterer trafikken, men verificerer ikke serverens identitet. En mellemmand kan udgive sig for at være serveren. Brug X509Vnc, hvis serveren understøtter det.";
+"vnc.unsupportedSecurity" = "Serveren tilbyder en VNC-sikkerhedsmetode, som FjärrConnect ikke kan bruge. FjärrConnect understøtter certifikatverificeret VeNCrypt X509Vnc og X509Plain samt standard VNC-godkendelse.";
 
 "rdp.error.network" = "Serveren kunne ikke nås. Kontrollér, at Fjernskrivebord er aktiveret, og at adressen og porten er tilgængelige.";
 "rdp.error.authentication" = "Serveren afviste login. Kontrollér brugernavn, adgangskode og tilladelse til Fjernskrivebord.";

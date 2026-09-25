@@ -78,9 +78,7 @@
 "vnc.usernameRequired.signIn" = "Iniciar sesión con un usuario del Mac…";
 "vnc.macAuthenticationRejected" = "Compartir pantalla de Mac rechazó el inicio de sesión. Comprueba el nombre corto de usuario y la contraseña de la cuenta, y que tenga permiso en los ajustes de Compartir pantalla.";
 "vnc.connectionFailed" = "La conexión VNC falló. Comprueba la dirección y el puerto y confirma que Compartir pantalla o el servicio VNC está activado en el equipo remoto y que la cuenta tiene permiso.";
-"vnc.unsupportedSecurity" = "El servidor ofrece un método de seguridad VNC que FjärrConnect no puede usar. FjärrConnect admite VeNCrypt X509Vnc y X509Plain con verificación del certificado, además de la autenticación VNC estándar. TLSVnc se puede activar en el perfil, pero no verifica la identidad del servidor. TLSPlain, RSA-AES y otros subtipos no son compatibles.";
-"vnc.anonymousTLS.title" = "Permitir TLSVnc sin verificar el servidor";
-"vnc.anonymousTLS.warning" = "Cifra el tráfico, pero no verifica la identidad del servidor. Un intermediario podría suplantar al servidor. Usa X509Vnc si el servidor lo admite.";
+"vnc.unsupportedSecurity" = "El servidor ofrece un método de seguridad VNC que FjärrConnect no puede usar. FjärrConnect admite VeNCrypt X509Vnc y X509Plain con verificación del certificado, además de la autenticación VNC estándar.";
 "rdp.error.network" = "No se pudo acceder al servidor. Comprueba que el escritorio remoto está activado y que la dirección y el puerto son accesibles.";
 "rdp.error.authentication" = "El servidor rechazó la identificación. Comprueba el nombre de usuario, la contraseña y el permiso para usar el escritorio remoto.";
 "rdp.error.certificate" = "Falló la conexión segura. Comprueba el certificado del servidor y los ajustes de TLS.";

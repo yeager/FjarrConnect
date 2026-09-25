@@ -78,9 +78,7 @@
 "vnc.usernameRequired.signIn" = "Macのユーザ名でサインイン…";
 "vnc.macAuthenticationRejected" = "Macの画面共有がサインインを拒否しました。アカウントの短いユーザ名とパスワード、および画面共有設定で許可されていることを確認してください。";
 "vnc.connectionFailed" = "VNC接続に失敗しました。アドレスとポートを確認し、接続先のコンピュータで画面共有またはVNCサービスが有効であり、アカウントにアクセス権があることを確認してください。";
-"vnc.unsupportedSecurity" = "サーバーが FjärrConnect で使用できない VNC セキュリティ方式を提示しました。FjärrConnect は証明書を検証する VeNCrypt X509Vnc と X509Plain、および標準 VNC 認証に対応しています。TLSVnc はプロファイルで有効にできますが、サーバーの身元は検証しません。TLSPlain、RSA-AES とその他のサブタイプには対応していません。";
-"vnc.anonymousTLS.title" = "サーバー検証なしで TLSVnc を許可";
-"vnc.anonymousTLS.warning" = "通信を暗号化しますが、サーバーの身元は検証しません。中間者がサーバーになりすます可能性があります。サーバーが対応している場合は X509Vnc を使用してください。";
+"vnc.unsupportedSecurity" = "サーバーが FjärrConnect で使用できない VNC セキュリティ方式を提示しました。FjärrConnect は証明書を検証する VeNCrypt X509Vnc と X509Plain、および標準 VNC 認証に対応しています。";
 "rdp.error.network" = "サーバに接続できませんでした。リモートデスクトップが有効で、このアドレスとポートに接続できることを確認してください。";
 "rdp.error.authentication" = "サーバがサインインを拒否しました。ユーザ名、パスワード、リモートデスクトップのアクセス権を確認してください。";
 "rdp.error.certificate" = "安全な接続を確立できませんでした。サーバ証明書とTLS設定を確認してください。";

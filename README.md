@@ -269,16 +269,16 @@ Gateway over HTTPS remains available separately.
 RDP currently presents one desktop surface per tab. Multi-monitor layouts and USB
 redirection are not exposed: MacFreeRDP cannot currently render multiple remote
 screens as an in-app feature. RoyalVNCKit’s VNC authentication covers None, VNC
-password, certificate-verified VeNCrypt `X509Vnc` and `X509Plain`, Apple Remote
-Desktop and UltraVNC MS-Logon II. `X509Vnc` protects VNC password authentication
+password, Apple Remote Desktop challenge-response (Diffie–Hellman and AES-128),
+UltraVNC MS-Logon II, and certificate-verified VeNCrypt `X509Vnc` and `X509Plain`.
+`X509Vnc` protects VNC password authentication
 inside TLS; `X509Plain` sends the server username and password inside that same
 verified TLS channel. macOS validates the certificate chain and server hostname
 before credentials are sent. The server certificate must be trusted by macOS and
-match the profile host. TigerVNC's common default, `TLSVnc`, is available through
-an explicit per-profile opt-in. It encrypts traffic but does not verify
-server identity, so a man in the middle could impersonate the server. Prefer
-`X509Vnc` when the server supports it. `TLSPlain`, RSA-AES and other VeNCrypt
-subtypes remain unsupported.
+match the profile host. VeNCrypt `TLSVnc` is not supported: macOS CFNetwork rejects
+its anonymous Diffie–Hellman TLS handshake. `TLSPlain`, RSA-AES and other VeNCrypt
+subtypes remain unsupported. macOS negotiates TLS cipher suites for VeNCrypt; the
+app does not let profiles override them.
 Use SFTP or a configured SMB share for files instead of a VNC-specific file protocol.
 
 ## Private SSH command logs
