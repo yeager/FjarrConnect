@@ -44,7 +44,9 @@ for version-specific changes and current limitations.
 
 ## Features
 
-- **Favorites:** star saved connections to pin them above the list.
+- **Organize connections:** group and tag profiles, pin favorites, and reopen recent
+  connections. Search matches names, hosts, groups, tags and protocols. Favorites are
+  also available from the **Favorites** menu.
 - **Saved connections:** create, edit and delete profiles with a name, host, port,
   protocol, username and optional group. Single-click to select a saved profile;
   **double-click to connect**, including favorites. Right-click for connection and editing actions.
@@ -67,11 +69,16 @@ for version-specific changes and current limitations.
 - **Files:** open an SFTP tab from a connection’s context menu. Browse, upload and
   download files or folders, rename items, create folders and delete files or empty
   folders. Transfers show progress and can be cancelled.
-- **Advanced options:** select an SSH identity, jump host and local/remote/SOCKS
-  forwards; configure an RDP gateway and explicitly shared folders; and opt in to
-  at most three reconnection attempts for a dropped session in the same tab. Add a
-  host MAC address to send a Wake-on-LAN magic packet from the profile’s context menu.
-  Wake-on-LAN depends on the host, network adapter and local network configuration.
+- **SSH profiles:** choose a private key, jump host and local/remote/SOCKS forwards,
+  and optionally run a start command after login. Keys stay in your OpenSSH setup.
+- **Advanced options:** configure an RDP gateway and explicitly shared folders, or
+  opt in to at most three reconnection attempts for a dropped session in the same tab.
+  Add a host MAC address to send a Wake-on-LAN magic packet from the profile’s context
+  menu. Wake-on-LAN depends on the host, network adapter and local network configuration.
+- **Profile transfer and protection:** import Microsoft `.rdp` and INI-style `.vnc`
+  profiles, or export and import profiles in a password-encrypted file. Passwords are
+  excluded. VNC, RDP and RemoteApp profiles can require Touch ID before saved Keychain
+  credentials are read.
 - **Host links:** open a configured SMB share in Finder or an HTTPS administration
   page in your browser. These use the system apps’ authentication.
 - **SSH command log:** enable separately for each saved SSH connection. Stores command
