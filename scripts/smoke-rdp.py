@@ -22,6 +22,18 @@ assert library.is_file(), library
 architectures = subprocess.check_output(['lipo', '-archs', str(library)], text=True).split()
 assert len(architectures) == 1, f'Expected one runtime architecture, found {architectures}'
 architecture = architectures[0]
+linked_symbols = subprocess.check_output(['nm', '-a', str(library)], text=True)
+required_crypto_symbols = {
+    '_SSL_CTX_new', '_TLS_client_method', '_EVP_aes_128_gcm', '_EVP_sha256'
+}
+missing_crypto_symbols = sorted(
+    symbol for symbol in required_crypto_symbols
+    if not re.search(rf'\s{re.escape(symbol)}$', linked_symbols, re.MULTILINE)
+)
+assert not missing_crypto_symbols, (
+    f'{architecture} FreeRDP runtime is missing statically linked OpenSSL symbols: '
+    f'{", ".join(missing_crypto_symbols)}')
+print(f'RDP {architecture}: static OpenSSL TLS, AES-GCM, and SHA-256 symbols are linked.')
 artifact_headers = ROOT / f'build/rdp-artifacts/rdp-{architecture}/SmokeHeaders'
 if (artifact_headers / 'freerdp/include/freerdp/error.h').is_file():
     freerdp = artifact_headers / 'freerdp'
