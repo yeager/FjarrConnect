@@ -24,7 +24,8 @@ assert len(architectures) == 1, f'Expected one runtime architecture, found {arch
 architecture = architectures[0]
 linked_symbols = subprocess.check_output(['nm', '-a', str(library)], text=True)
 required_crypto_symbols = {
-    '_SSL_CTX_new', '_TLS_client_method', '_EVP_aes_128_gcm', '_EVP_sha256'
+    '_SSL_CTX_new', '_TLS_client_method', '_EVP_aes_128_gcm', '_EVP_aes_256_gcm',
+    '_EVP_sha256', '_EVP_sha384'
 }
 missing_crypto_symbols = sorted(
     symbol for symbol in required_crypto_symbols
@@ -33,7 +34,7 @@ missing_crypto_symbols = sorted(
 assert not missing_crypto_symbols, (
     f'{architecture} FreeRDP runtime is missing statically linked OpenSSL symbols: '
     f'{", ".join(missing_crypto_symbols)}')
-print(f'RDP {architecture}: static OpenSSL TLS, AES-GCM, and SHA-256 symbols are linked.')
+print(f'RDP {architecture}: static OpenSSL TLS, AES-128/256-GCM, and SHA-256/384 symbols are linked.')
 artifact_headers = ROOT / f'build/rdp-artifacts/rdp-{architecture}/SmokeHeaders'
 if (artifact_headers / 'freerdp/include/freerdp/error.h').is_file():
     freerdp = artifact_headers / 'freerdp'
@@ -46,6 +47,22 @@ else:
 assert (freerdp / 'include/freerdp/error.h').is_file(), f'Pinned FreeRDP headers not found: {freerdp}'
 assert (freerdp_build / 'freerdp/winpr/include/winpr/config.h').is_file(), (
     f'Generated FreeRDP headers not found: {freerdp_build}')
+version_header = freerdp_build / 'freerdp/include/freerdp/version.h'
+if not version_header.is_file():  # Build artifacts from older CI runs omitted this generated header.
+    version_header = freerdp / 'include/freerdp/version.h'
+assert version_header.is_file(), f'FreeRDP version header not found: {version_header}'
+version = re.search(r'^#define FREERDP_VERSION "([^"]+)"', version_header.read_text(), re.MULTILINE)
+assert version and version.group(1) == '3.32.0', (
+    f'{architecture} runtime was built from unexpected FreeRDP version: '
+    f'{version.group(1) if version else "unknown"}')
+openssl_header = freerdp_build / 'openssl/include/openssl/opensslv.h'
+if openssl_header.is_file():
+    openssl_version = re.search(r'^#\s*define OPENSSL_VERSION_TEXT "OpenSSL ([^" ]+)',
+                                openssl_header.read_text(), re.MULTILINE)
+    assert openssl_version, f'Bundled OpenSSL version not found in {openssl_header}'
+    print(f'RDP {architecture}: FreeRDP {version.group(1)} with OpenSSL {openssl_version.group(1)}.')
+else:
+    print(f'RDP {architecture}: FreeRDP {version.group(1)}; OpenSSL version header unavailable in this artifact.')
 
 
 def translations(language):

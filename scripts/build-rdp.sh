@@ -62,10 +62,11 @@ done
 # those include trees in the artifact so clean release jobs can run the same
 # test without rebuilding or cloning FreeRDP themselves.
 SMOKE_HEADERS="$ROOT/build/rdp-output/$RDP_ARCH/SmokeHeaders"
-for include in freerdp freerdp/winpr build/freerdp build/freerdp/winpr; do
+for include in freerdp freerdp/winpr build/freerdp build/freerdp/winpr build/openssl; do
   mkdir -p "$SMOKE_HEADERS/$include/include"
 done
 cp -R "$STAGE/FreeRDP/include/." "$SMOKE_HEADERS/freerdp/include/"
 cp -R "$STAGE/FreeRDP/winpr/include/." "$SMOKE_HEADERS/freerdp/winpr/include/"
 cp -R "$STAGE/FreeRDP-build/freerdp/include/." "$SMOKE_HEADERS/build/freerdp/include/"
 cp -R "$STAGE/FreeRDP-build/freerdp/winpr/include/." "$SMOKE_HEADERS/build/freerdp/winpr/include/"
+cp -R "$PREFIX/include/openssl/." "$SMOKE_HEADERS/build/openssl/include/"
