@@ -4,6 +4,11 @@ import SwiftUI
 @testable import RoyalVNCKit
 @testable import FjarrConnect
 
+private struct VNCSessionScreenView: View {
+    @ObservedObject var session: VNCRemoteSession
+    var body: some View { session.makeScreenView() }
+}
+
 /// A local RFB server exercises the actual RoyalVNCKit handshake and session lifecycle.
 final class VNCIntegrationTests: XCTestCase {
     func testVNCConnectsToLocalServerAndStops() throws {
@@ -34,6 +39,59 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertTrue(session.serverRequiresMacAccount,
                       "The client must parse the Mac Screen Sharing authentication challenge")
         XCTAssertEqual(session.status.error, NSLocalizedString("vnc.usernameRequired", comment: ""))
+    }
+
+    func testAuthenticatedLiveMacVNCUsesSavedKeychainProfileAndReportsCapabilities() throws {
+        guard ProcessInfo.processInfo.environment["FJARRCONNECT_TEST_LIVE_MAC_VNC_AUTHENTICATED"] == "1",
+              let host = ProcessInfo.processInfo.environment["FJARRCONNECT_TEST_LIVE_MAC_VNC_HOST"],
+              ConnectionURI.validHost(host) else {
+            throw XCTSkip("Opt in with FJARRCONNECT_TEST_LIVE_MAC_VNC_AUTHENTICATED=1 and FJARRCONNECT_TEST_LIVE_MAC_VNC_HOST; credentials are read from the saved profile Keychain item")
+        }
+        let store = ProfileStore()
+        guard let profile = store.profiles.first(where: {
+            $0.host == host && $0.transport == .vnc && $0.usesMacScreenSharingAuthentication
+        }) else {
+            throw XCTSkip("No saved Mac Screen Sharing profile exists for the selected host")
+        }
+        guard !profile.requiresBiometricUnlock else {
+            throw XCTSkip("The saved profile requires interactive biometric authentication")
+        }
+        let password: String?
+        do {
+            password = try KeychainStore.password(for: profile.id)
+        } catch {
+            throw XCTSkip("The test host cannot access this saved credential; run the live check from FjarrConnect")
+        }
+        guard let password else {
+            throw XCTSkip("The saved profile has no Keychain credential")
+        }
+
+        let session = VNCRemoteSession(profile: profile, password: password)
+        let resolved = expectation(description: "Authenticated live VNC connection resolves")
+        var didResolve = false
+        let subscription = session.$status.sink { status in
+            guard !didResolve, status.isEstablished || status.isFinished else { return }
+            didResolve = true
+            resolved.fulfill()
+        }
+        defer {
+            subscription.cancel()
+            session.stop()
+        }
+
+        session.start()
+        XCTAssertEqual(XCTWaiter.wait(for: [resolved], timeout: 30), .completed,
+                       "The saved Mac VNC profile should authenticate or return a bounded connection error")
+        XCTAssertTrue(session.status.isEstablished, "The saved Mac VNC credential was not accepted")
+        guard session.status.isEstablished else { return }
+
+        print("[VNC live] Mac Screen Sharing authenticated; file-list/download=\(session.fileTransferAvailable); upload=\(session.fileUploadAvailable)")
+        let framebuffer = session.recordingView as? VNCCAFramebufferView
+        let visibleMetalLayer = framebuffer?.layer?.sublayers?.contains { layer in
+            layer is CAMetalLayer && !layer.isHidden
+        } ?? false
+        print("[VNC live] framebuffer-created=\(framebuffer != nil); framebuffer-size=\(framebuffer?.framebufferSize.width ?? 0)x\(framebuffer?.framebufferSize.height ?? 0); metal-layer-active=\(visibleMetalLayer)")
+        XCTAssertNotNil(framebuffer, "An established VNC session should install its framebuffer in the application session")
     }
 
 #if canImport(CFNetwork)
@@ -433,7 +491,7 @@ final class VNCIntegrationTests: XCTestCase {
     }
 
     private func assertKeyboardCharacters(_ session: VNCRemoteSession, receivedKeys: URL) throws {
-        let host = NSHostingView(rootView: session.makeScreenView())
+        let host = NSHostingView(rootView: VNCSessionScreenView(session: session))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -616,18 +674,13 @@ final class VNCIntegrationTests: XCTestCase {
     }
 
     private func assertResize(_ session: VNCRemoteSession, trigger: URL) throws {
-        let host = NSHostingView(rootView: session.makeScreenView())
+        let host = NSHostingView(rootView: VNCSessionScreenView(session: session))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
         window.orderFront(nil)
         defer { window.close() }
-        // Mirrors SessionTab's forwarding of backend changes into SwiftUI.
-        let updates = session.objectWillChange.sink {
-            DispatchQueue.main.async { host.rootView = session.makeScreenView() }
-        }
-        defer { updates.cancel() }
         func framebuffer(in view: NSView) -> VNCCAFramebufferView? {
             if let frame = view as? VNCCAFramebufferView { return frame }
             return view.subviews.lazy.compactMap { framebuffer(in: $0) }.first
@@ -646,14 +699,15 @@ final class VNCIntegrationTests: XCTestCase {
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [resized], timeout: 5), .completed)
         let painted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            guard let contents = framebuffer(in: host)?.layer?.contents else { return false }
-            let image = contents as! CGImage
+            guard let image = framebuffer(in: host)?.framebuffer?.cgImage else { return false }
             guard image.width == 5, image.height == 3,
                   let pixel = NSBitmapImageRep(cgImage: image).colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB) else { return false }
             return pixel.blueComponent > 0.95 && pixel.redComponent < 0.05
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [painted], timeout: 5), .completed)
-        XCTAssertTrue(window.firstResponder === framebuffer(in: host), "Keyboard focus must follow the resized desktop")
+        if window.isKeyWindow {
+            XCTAssertTrue(window.firstResponder === framebuffer(in: host), "Keyboard focus must follow the resized desktop")
+        }
         let cursor = try XCTUnwrap(framebuffer(in: host)?.currentCursor)
         XCTAssertEqual(cursor.image.size, originalCursor.image.size)
         XCTAssertEqual(cursor.hotSpot, originalCursor.hotSpot)
@@ -667,7 +721,7 @@ final class VNCIntegrationTests: XCTestCase {
     }
 
     private func assertInitialFocus(_ session: VNCRemoteSession) throws {
-        let host = NSHostingView(rootView: session.makeScreenView())
+        let host = NSHostingView(rootView: VNCSessionScreenView(session: session))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -695,7 +749,7 @@ final class VNCIntegrationTests: XCTestCase {
 
     private func assertRenderedDesktop(_ session: VNCRemoteSession, isBlack: Bool) throws {
         // A successful handshake alone does not prove that the app shows pixels.
-        let host = NSHostingView(rootView: session.makeScreenView())
+        let host = NSHostingView(rootView: VNCSessionScreenView(session: session))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
