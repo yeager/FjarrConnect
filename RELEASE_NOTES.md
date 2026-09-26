@@ -1,4 +1,4 @@
-Unreleased
+FjärrConnect 0.2.30
 
 - Check GitHub Releases for a newer stable version at app launch. Automatic checks
   can be disabled completely in Settings; when enabled, checks open the release
@@ -18,6 +18,14 @@ Unreleased
   Standard RDP security. Automatic negotiation remains the default.
 - Make the documented “Change saved password” action remove the stored password
   when saved with an empty field; leaving the action off still preserves it.
+
+Download `FjarrConnect-0.2.30-macOS-arm64.zip` for Apple Silicon or
+`FjarrConnect-0.2.30-macOS-x86_64.zip` for Intel. Each app contains only its target
+architecture and requires macOS 14 or later. `SHA256SUMS.txt` contains both download
+checksums.
+
+The apps are ad-hoc signed, not Developer ID signed or notarized. macOS may require
+approval in System Settings → Privacy & Security on first launch.
 
 ---
 
