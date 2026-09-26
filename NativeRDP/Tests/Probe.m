@@ -2,6 +2,7 @@
 #import <AppKit/AppKit.h>
 #import <objc/runtime.h>
 #import "FCRDPView.h"
+#import "FCKeyboardSequences.h"
 #include <freerdp/error.h>
 #include <fcntl.h>
 #include <string.h>
@@ -25,6 +26,7 @@ enum {
 - (NSData *)clipboardFileContentsForURL:(NSURL *)url expectedSize:(uint64_t)expectedSize
                                   flags:(uint32_t)flags offset:(uint64_t)offset requestedLength:(uint32_t)requestedLength;
 - (NSData *)unicodeInputDataForText:(NSString *)text;
+- (DWORD)scancode:(unsigned short)key;
 - (NSData *)DIBFromPasteboard:(NSPasteboard *)pasteboard;
 - (void)receiveClipboardDIB:(NSData *)dib;
 - (void)writeClipboardDIB:(NSData *)dib;
@@ -60,7 +62,25 @@ int main(int argc, const char **argv) {
         NSView *view = (__bridge_transfer NSView *)fc_rdp_create(arguments.UTF8String, json.UTF8String);
         if (!view) { fputs("fc_rdp_create returned NULL\n", stderr); return 3; }
         const uint32_t abi = fc_rdp_abi();
-        if (abi != 2) { fprintf(stderr, "Unexpected RDP ABI: %u\n", abi); return 3; }
+        if (abi != 3) { fprintf(stderr, "Unexpected RDP ABI: %u\n", abi); return 3; }
+        if ([NSProcessInfo.processInfo.environment[@"FC_TEST_RDP_SAS"] isEqualToString:@"1"]) {
+            const uint32_t control = [(id)view scancode:59];
+            const uint32_t alt = [(id)view scancode:58];
+            const uint32_t rawEnd = [(id)view scancode:119];
+            const uint32_t end = FCMakeExtendedScanCode(rawEnd);
+            FCKeyboardStroke strokes[6];
+            if (control != 0x1D || alt != 0x38 || end != 0x14F ||
+                FCMakeSecureAttentionSequence(control, alt, end, strokes) != 6 ||
+                strokes[0].scancode != control || !strokes[0].down ||
+                strokes[1].scancode != alt || !strokes[1].down ||
+                strokes[2].scancode != end || !strokes[2].down ||
+                strokes[3].scancode != end || strokes[3].down ||
+                strokes[4].scancode != alt || strokes[4].down ||
+                strokes[5].scancode != control || strokes[5].down) return 18;
+            printf("Ctrl+Alt+End scan codes resolved and released in order: %u,%u,%u (raw End %u).\n",
+                   control, alt, end, rawEnd);
+            return 0;
+        }
         NSWindow *window = nil;
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_FAILURE_CATEGORIES"] isEqualToString:@"1"]) {
             const struct { const char *name; UINT32 error; int category; } cases[] = {

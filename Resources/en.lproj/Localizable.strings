@@ -146,6 +146,7 @@
 "rdp.cert.trust" = "Trust and connect";
 
 "rdp.gateway.message" = "Message from the RDP gateway";
+"rdp.secureAttention" = "Send Ctrl+Alt+End to Windows";
 "rdp.display" = "Display";
 "rdp.dynamicResolution" = "Adapt remote desktop to window size";
 "rdp.dynamicResolution.hint" = "Turn this off for servers that disconnect or reject a display resize.";

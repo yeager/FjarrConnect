@@ -89,6 +89,16 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
         f'RDP Unicode keyboard input encoding failed (exit {keyboard_check.returncode}): '
         f'{keyboard_check.stdout}\n{keyboard_check.stderr}')
     print(f'RDP {architecture}: Unicode keyboard input passed (@, Swedish, Euro, CJK, supplementary scalar).')
+    secure_attention_check = subprocess.run(
+        [str(probe), str(empty_translations), str(directory / 'desktop.png')],
+        input='', text=True, capture_output=True, timeout=15,
+        env=dict(os.environ, FC_TEST_RDP_SAS='1'))
+    assert secure_attention_check.returncode == 0, (
+        f'RDP Ctrl+Alt+End sequence failed (exit {secure_attention_check.returncode}): '
+        f'{secure_attention_check.stdout}\n{secure_attention_check.stderr}')
+    assert 'scan codes resolved and released in order: 29,56,335 (raw End 335).' in secure_attention_check.stdout, (
+        f'RDP extended End scan code was unexpected: {secure_attention_check.stdout}')
+    print(f'RDP {architecture}: {secure_attention_check.stdout.strip()}')
     image_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
                                  input='', text=True, capture_output=True, timeout=15,
                                  env=dict(os.environ, FC_TEST_CLIPBOARD_IMAGE='1'))

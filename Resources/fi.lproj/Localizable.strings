@@ -131,6 +131,7 @@
 "rdp.cert.trust" = "Luota ja yhdistä";
 
 "rdp.gateway.message" = "Viesti RDP-yhdyskäytävältä";
+"rdp.secureAttention" = "Lähetä Ctrl+Alt+End Windowsiin";
 "rdp.display" = "Näyttö";
 "rdp.dynamicResolution" = "Sovita etätyöpöytä ikkunan kokoon";
 "rdp.dynamicResolution.hint" = "Poista tämä käytöstä palvelimilla, jotka katkaisevat yhteyden tai hylkäävät näytön koon muutoksen.";

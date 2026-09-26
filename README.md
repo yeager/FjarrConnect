@@ -139,6 +139,8 @@ the selection is sent to Windows when a new RDP session starts. You can select o
 of those layouts manually. VNC does not negotiate a
 keyboard layout and uses the active macOS input source. Combinations such as
 Option+2 still depend on the layout configured on the remote Mac.
+In an active RDP session, use the keyboard button in the session toolbar to send
+Ctrl+Alt+End to Windows, including its sign-in screen.
 
 SSH passwords are entered directly in the terminal and are **not** saved by
 FjärrConnect. SSH private keys remain managed by OpenSSH and your ssh-agent.

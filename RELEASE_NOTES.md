@@ -1,5 +1,6 @@
 Unreleased
 
+- Add a session-toolbar action that sends Ctrl+Alt+End to an active Windows RDP session.
 - Mark RemoteApp tabs and accessibility names so application sessions are distinct
   from full RDP desktops.
 - Accept certificate-verified VeNCrypt `X509Plain` servers. Username and password

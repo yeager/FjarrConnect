@@ -362,6 +362,15 @@ private struct SessionDetailView: View {
                 Spacer()
                 Text(tab.backend.status.label).font(.callout).foregroundStyle(.secondary)
                 SessionHealthMenu(health: tab.health, reconnectAttempt: tab.reconnectAttempt)
+                if let rdp = tab.backend as? RDPRemoteSession {
+                    Button { rdp.sendSecureAttentionSequence() } label: {
+                        Image(systemName: "keyboard")
+                    }
+                    .help("rdp.secureAttention")
+                    .accessibilityLabel(Text("rdp.secureAttention"))
+                    .accessibilityIdentifier("session.rdp.secureAttention")
+                    .disabled(tab.backend.status != .connected)
+                }
                 if let attempt = tab.reconnectAttempt {
                     Text(String(format: NSLocalizedString("session.reconnect.status", comment: ""), attempt, 3))
                         .font(.caption).foregroundStyle(.secondary)

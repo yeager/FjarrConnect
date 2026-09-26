@@ -131,6 +131,7 @@
 "rdp.cert.trust" = "Faire confiance et se connecter";
 
 "rdp.gateway.message" = "Message de la passerelle RDP";
+"rdp.secureAttention" = "Envoyer Ctrl+Alt+Fin à Windows";
 "rdp.display" = "Affichage";
 "rdp.dynamicResolution" = "Adapter le bureau distant à la taille de la fenêtre";
 "rdp.dynamicResolution.hint" = "Désactivez cette option pour les serveurs qui se déconnectent ou refusent un redimensionnement.";

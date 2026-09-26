@@ -131,6 +131,7 @@
 "rdp.cert.trust" = "信頼して接続";
 
 "rdp.gateway.message" = "RDPゲートウェイからのメッセージ";
+"rdp.secureAttention" = "Windows に Ctrl+Alt+End を送信";
 "rdp.display" = "表示";
 "rdp.dynamicResolution" = "リモートデスクトップをウインドウの大きさに合わせる";
 "rdp.dynamicResolution.hint" = "画面サイズの変更を拒否したり切断したりするサーバーでは、この設定をオフにしてください。";

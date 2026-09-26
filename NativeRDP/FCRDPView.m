@@ -2,6 +2,7 @@
 #import <AppKit/AppKit.h>
 #import <Carbon/Carbon.h>
 #import "FCRDPView.h"
+#import "FCKeyboardSequences.h"
 #include <freerdp/config.h>
 #include <freerdp/client.h>
 #include <freerdp/client/cmdline.h>
@@ -192,6 +193,7 @@ static NSData *FCClipboardFileContents(NSURL *url, uint64_t expectedSize, UINT32
 - (void)start;
 - (void)stop;
 - (void)setSessionActive:(BOOL)active;
+- (void)sendSecureAttentionSequence;
 - (void)setSessionActive:(BOOL)active pasteboard:(NSPasteboard *)pasteboard;
 - (void)setClipboardActive:(BOOL)active pasteboard:(NSPasteboard *)pasteboard;
 - (void)captureClipboardFromPasteboard:(NSPasteboard *)pasteboard;
@@ -606,6 +608,18 @@ static NSData *FCClipboardFileContents(NSURL *url, uint64_t expectedSize, UINT32
         freerdp_input_send_keyboard_event_ex(input, FALSE, FALSE, control);
     }];
 }
+- (void)sendSecureAttentionSequence {
+    [self releaseInput];
+    DWORD control = [self scancode:59], alt = [self scancode:58];
+    DWORD end = FCMakeExtendedScanCode([self scancode:119]);
+    [self enqueue:^(FCContext *ctx) {
+        FCKeyboardStroke strokes[6];
+        size_t count = FCMakeSecureAttentionSequence(control, alt, end, strokes);
+        rdpInput *input = ctx->common.context.input;
+        for (size_t index = 0; index < count; index++)
+            freerdp_input_send_keyboard_event_ex(input, strokes[index].down, FALSE, strokes[index].scancode);
+    }];
+}
 // Standard macOS Edit menu shortcuts operate on the remote application.
 - (void)copy:(id)sender { [self sendControlShortcut:8]; }
 - (void)cut:(id)sender { [self sendControlShortcut:7]; }
@@ -963,7 +977,7 @@ static void FCPostDisconnect(freerdp *instance) {
     PubSub_UnsubscribeChannelDisconnected(instance->context->pubSub, FCChannelDisconnected);
     gdi_free(instance);
 }
-uint32_t fc_rdp_abi(void) { return 2; }
+uint32_t fc_rdp_abi(void) { return 3; }
 void *fc_rdp_create(const char *arguments, const char *translations) {
     if (!arguments || !translations || !NSThread.isMainThread) return NULL;
     NSData *json = [NSData dataWithBytes:translations length:strlen(translations)];
@@ -975,6 +989,7 @@ void *fc_rdp_create(const char *arguments, const char *translations) {
 void fc_rdp_start(void *view) { [(__bridge FCRDPView *)view start]; }
 void fc_rdp_stop(void *view) { [(__bridge FCRDPView *)view stop]; }
 void fc_rdp_set_active(void *view, int active) { [(__bridge FCRDPView *)view setSessionActive:active != 0]; }
+void fc_rdp_secure_attention(void *view) { [(__bridge FCRDPView *)view sendSecureAttentionSequence]; }
 int fc_rdp_status(void *view) { return ((__bridge FCRDPView *)view).connectionStatus; }
 uint32_t fc_rdp_error(void *view) { return ((__bridge FCRDPView *)view).errorCode; }
 const char *fc_rdp_codec(void *view) {

@@ -9,6 +9,7 @@ FC_EXPORT void *fc_rdp_create(const char *arguments, const char *translations);
 FC_EXPORT void fc_rdp_start(void *view);
 FC_EXPORT void fc_rdp_stop(void *view);
 FC_EXPORT void fc_rdp_set_active(void *view, int active);
+FC_EXPORT void fc_rdp_secure_attention(void *view);
 FC_EXPORT int fc_rdp_status(void *view);
 FC_EXPORT uint32_t fc_rdp_error(void *view);
 FC_EXPORT int fc_rdp_failure(void *view);

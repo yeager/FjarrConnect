@@ -80,6 +80,10 @@ final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource, S
         self.active = active
         if let pointer { runtime?.activate(pointer, active ? 1 : 0) }
     }
+    func sendSecureAttentionSequence() {
+        guard status == .connected, let pointer else { return }
+        runtime?.secureAttention(pointer)
+    }
     func stop() {
         timer?.invalidate(); timer = nil
         if let pointer { runtime?.stop(pointer) }

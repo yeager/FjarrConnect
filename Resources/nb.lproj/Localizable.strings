@@ -146,6 +146,7 @@
 "rdp.cert.trust" = "Stol på og koble til";
 
 "rdp.gateway.message" = "Melding fra RDP-gatewayen";
+"rdp.secureAttention" = "Send Ctrl+Alt+End til Windows";
 "rdp.display" = "Skjerm";
 "rdp.dynamicResolution" = "Tilpass eksternt skrivebord til vindusstørrelsen";
 "rdp.dynamicResolution.hint" = "Slå av dette for servere som kobler fra eller avviser endret skjermstørrelse.";
