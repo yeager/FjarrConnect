@@ -38,13 +38,17 @@ enum RemoteTransport: String, Codable, CaseIterable, Identifiable {
     var isGraphical: Bool { self == .vnc || self == .rdp || self == .remoteApp }
 }
 
-/// File drops on a remote desktop are routed through the profile's SFTP target.
-/// Reject the entire payload when it contains a non-local URL so no item is
-/// silently omitted from the transfer queue.
+/// Validate desktop file drops and choose the advertised VNC upload channel only
+/// when the active session can safely accept the complete batch; otherwise use SFTP.
+/// Reject non-local URLs as a group so no item is silently omitted.
 enum SessionFileDropPolicy {
     static func acceptedURLs(_ urls: [URL], for transport: RemoteTransport) -> [URL]? {
         guard transport.isGraphical, !urls.isEmpty, urls.allSatisfy(\.isFileURL) else { return nil }
         return urls
+    }
+
+    static func usesVNCUpload(for transport: RemoteTransport, uploadAvailable: Bool) -> Bool {
+        transport == .vnc && uploadAvailable
     }
 }
 

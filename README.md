@@ -202,18 +202,19 @@ For files, choose **Files (SFTP)** from a host’s context menu. VNC/RDP profile
 specify a separate SSH address, port, username and starting directory under
 Advanced options. The destination must run an SSH server with SFTP enabled.
 Authentication stays in an embedded terminal; the file panel opens after it succeeds.
-Drop files on an RDP or VNC desktop to open the SFTP upload flow for that host; the
-dropped files are carried into the SFTP upload queue. The destination must have an
-SSH server with SFTP enabled. When a VNC
-server advertises the legacy Tight file-transfer channel, the session also offers a
-separate file browser with download and capability-gated upload; files are limited to
-256 MiB. Upload data is sent without a server acknowledgement, so refresh the listing
-to check whether it arrived. Upload and download are covered by local protocol fixtures,
-but upload has not been verified against a real VNC server; SFTP remains the recommended
-file flow. Most VNC servers do not advertise these channels. This is a VNC file-transfer
-protocol, not clipboard file copying. RDP file clipboard transfer remains disabled
-pending a real Windows integration test. Uploads can also be started by dropping
-files onto the SFTP panel. Existing files require confirmation before replacement.
+Drop files on an RDP desktop to open the SFTP upload flow for that host. On VNC, the
+drop confirmation uses Tight upload when the server advertises that channel and a
+current remote folder listing is available; otherwise it opens SFTP. This lets the app
+check for filename conflicts before sending. Multiple Tight uploads run in sequence. The SFTP destination must have
+an SSH server with SFTP enabled. The VNC file browser also offers download and
+capability-gated upload; Tight files are limited to 256 MiB. Upload data is sent without
+a server acknowledgement, so refresh the listing to check whether it arrived. Upload and
+download are covered by local protocol fixtures, but Tight upload has not been verified
+against a real VNC server; SFTP remains the recommended file flow. Most VNC servers do
+not advertise these channels. Tight transfer is a VNC file-transfer protocol, not
+clipboard file copying. RDP file clipboard transfer remains disabled pending a real
+Windows integration test. Uploads can also be started by dropping files onto the SFTP
+panel. Existing files require confirmation before replacement.
 Folders are transferred recursively without merging
 into existing folders; symbolic links and special files are rejected. Transfers use
 private staging files, and originals are preserved on failure. Cancelling a transfer

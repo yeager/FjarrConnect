@@ -172,6 +172,16 @@ final class VNCIntegrationTests: XCTestCase {
         try exerciseServer(requiresUsername: false, uploadFile: source, expectedUpload: payload)
     }
 
+    func testTightUploadSendsDroppedFilesSequentially() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let sources = [directory.appendingPathComponent("first.txt"), directory.appendingPathComponent("second.bin")]
+        let payloads = [Data("first-file".utf8), Data((0..<90_000).map { UInt8($0 % 239) })]
+        for (source, payload) in zip(sources, payloads) { try payload.write(to: source, options: .atomic) }
+        try exerciseServer(requiresUsername: false, uploadFiles: sources, expectedUploads: payloads)
+    }
+
     func testBlackDesktopHintClearsWhenServerStartsSendingContent() throws {
         try exerciseServer(requiresUsername: false, blackInitially: true)
     }
@@ -290,7 +300,8 @@ final class VNCIntegrationTests: XCTestCase {
                                 verifyInitialFocus: Bool = false,
                                 unsupportedSecurity: Bool = false, tightFileTransfer: Bool = false,
                                 tightDownloadOnly: Bool = false, uploadFile: URL? = nil,
-                                expectedUpload: Data? = nil, clientPassword: String? = nil,
+                                expectedUpload: Data? = nil, uploadFiles: [URL]? = nil,
+                                expectedUploads: [Data]? = nil, clientPassword: String? = nil,
                                 expectsCredentialRejection: Bool = false) throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -302,7 +313,8 @@ final class VNCIntegrationTests: XCTestCase {
         if requiresUsername { mode = "username" }
         else if unsupportedSecurity { mode = "unsupported" }
         else if requiresPassword { mode = "password" }
-        else if uploadFile != nil { mode = "tight-upload" }
+        else if (uploadFiles?.count ?? 0) > 1 { mode = "tight-upload-multiple" }
+        else if uploadFile != nil || uploadFiles?.isEmpty == false { mode = "tight-upload" }
         else if tightFileTransfer { mode = "tight-files" }
         else if tightDownloadOnly { mode = "tight-download" }
         else if blackInitially { mode = "black" }
@@ -358,11 +370,18 @@ final class VNCIntegrationTests: XCTestCase {
             XCTAssertTrue(session.savedCredentialsRejected)
         } else {
             XCTAssertEqual(session.status, .connected)
-            XCTAssertEqual(session.fileTransferAvailable, tightFileTransfer || tightDownloadOnly || uploadFile != nil,
+            let hasUploads = uploadFile != nil || uploadFiles?.isEmpty == false
+            XCTAssertEqual(session.fileTransferAvailable, tightFileTransfer || tightDownloadOnly || hasUploads,
                             "A server advertising file-list and download messages should expose the read-only file browser.")
-            XCTAssertEqual(session.fileUploadAvailable, tightFileTransfer || uploadFile != nil,
+            XCTAssertEqual(session.fileUploadAvailable, tightFileTransfer || hasUploads,
                             "Upload must be available only when the server advertises upload messages.")
             if let uploadFile {
+                XCTAssertFalse(session.canUploadLocalFiles([uploadFile]), "Do not upload before checking remote-name conflicts.")
+                session.browseRemoteFiles("/")
+                let listingLoaded = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                    session.hasCurrentRemoteFileListing
+                }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [listingLoaded], timeout: 5), .completed)
                 session.uploadLocalFile(uploadFile)
                 let uploadSent = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                     session.fileTransferNotice == NSLocalizedString("vnc.files.uploadSent", comment: "")
@@ -373,6 +392,24 @@ final class VNCIntegrationTests: XCTestCase {
                     (try? Data(contentsOf: uploadedFile)) == expectedUpload
                 }, object: nil)
                 XCTAssertEqual(XCTWaiter.wait(for: [received], timeout: 5), .completed)
+            }
+            if let uploadFiles, let expectedUploads {
+                XCTAssertFalse(session.canUploadLocalFiles(uploadFiles), "Do not upload before checking remote-name conflicts.")
+                session.browseRemoteFiles("/")
+                let listingLoaded = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                    session.listedRemoteDirectory == "/" && !session.isLoadingRemoteFiles
+                }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [listingLoaded], timeout: 5), .completed)
+                XCTAssertTrue(session.canUploadLocalFiles(uploadFiles))
+                XCTAssertFalse(session.canUploadLocalFiles([uploadFiles[0].deletingLastPathComponent()]))
+                session.uploadLocalFiles(uploadFiles)
+                let received = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                    !session.isUploadingFile && zip(uploadFiles, expectedUploads).allSatisfy { source, payload in
+                        let receivedURL = URL(fileURLWithPath: portFile.path + ".uploaded." + source.lastPathComponent)
+                        return (try? Data(contentsOf: receivedURL)) == payload
+                    }
+                }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [received], timeout: 10), .completed)
             }
             try assertRenderedDesktop(session, isBlack: blackInitially)
             if resize { try assertResize(session, trigger: URL(fileURLWithPath: portFile.path + ".resize")) }
@@ -725,7 +762,7 @@ with socket.socket() as listener:
             client.sendall(b'\x01\x7f')
             assert client.recv(1) == b''
             sys.exit(0)
-        if sys.argv[2] in ('tight-files', 'tight-download', 'tight-upload'):
+        if sys.argv[2] in ('tight-files', 'tight-download', 'tight-upload', 'tight-upload-multiple'):
             client.sendall(b'\x01\x10')
             assert read(client, 1) == b'\x10'
             client.sendall(struct.pack('!II', 0, 0))
@@ -746,12 +783,12 @@ with socket.socket() as listener:
         read(client, 1)
         name = b'FjarrConnect local test'
         client.sendall(struct.pack('!HHBBBBHHHBBBxxxI', 2, 2, 32, 24, 0, 1, 255, 255, 255, 16, 8, 0, len(name)) + name)
-        if sys.argv[2] in ('tight-files', 'tight-download', 'tight-upload'):
+        if sys.argv[2] in ('tight-files', 'tight-download', 'tight-upload', 'tight-upload-multiple'):
             def capability(code, vendor, signature):
                 return struct.pack('!I', code) + vendor.encode('ascii') + signature.encode('ascii')
             messages = [capability(130, 'TGHT', 'FTS_LSDT'), capability(131, 'TGHT', 'FTS_DNDT')]
             clients = [capability(130, 'TGHT', 'FTC_LSRQ'), capability(131, 'TGHT', 'FTC_DNRQ')]
-            if sys.argv[2] in ('tight-files', 'tight-upload'):
+            if sys.argv[2] in ('tight-files', 'tight-upload', 'tight-upload-multiple'):
                 clients += [capability(132, 'TGHT', 'FTC_UPRQ'), capability(133, 'TGHT', 'FTC_UPDT')]
             client.sendall(struct.pack('!HHHH', len(messages), len(clients), 0, 0) + b''.join(messages + clients))
         first_frame = None
@@ -792,18 +829,29 @@ with socket.socket() as listener:
                 elif kind == 6:
                     count = struct.unpack('!xxxI', read(client, 7))[0]
                     read(client, count)
+                elif kind == 130:
+                    read(client, 1)  # flags
+                    name_size = struct.unpack('!H', read(client, 2))[0]
+                    read(client, name_size)
+                    client.sendall(b'\x82\x00\x00\x00\x00\x00\x00\x00')
                 elif kind == 132:
                     header = read(client, 7)
                     name_size = struct.unpack('!H', header[1:3])[0]
                     upload_name = read(client, name_size).decode('utf-8')
-                    assert upload_name == '/fjarrconnect-upload-fixture.txt'
+                    if sys.argv[2] == 'tight-upload-multiple':
+                        assert upload_name in ('/first.txt', '/second.bin')
+                    else:
+                        assert upload_name == '/fjarrconnect-upload-fixture.txt'
+                    upload_data = b''
                 elif kind == 133:
                     header = read(client, 5)
                     real_size, encoded_size = struct.unpack('!HH', header[1:5])
                     assert real_size == encoded_size
                     if real_size == 0:
                         read(client, 4)  # modification time at end of upload
-                        with open(sys.argv[3], 'wb') as uploaded:
+                        destination = (sys.argv[3] + '.' + upload_name.rsplit('/', 1)[-1]
+                                       if sys.argv[2] == 'tight-upload-multiple' else sys.argv[3])
+                        with open(destination, 'wb') as uploaded:
                             uploaded.write(upload_data)
                     else:
                         upload_data += read(client, encoded_size)

@@ -34,7 +34,7 @@ struct VNCFileTransferView: View {
                         Label("vnc.files.upload", systemImage: "square.and.arrow.up")
                     }
                 }
-                .disabled(!session.fileUploadAvailable || session.isUploadingFile)
+                .disabled(!session.fileUploadAvailable || !session.hasCurrentRemoteFileListing || session.isUploadingFile)
                 .help(LocalizedStringKey(session.fileUploadAvailable ? "vnc.files.uploadHint" : "vnc.files.uploadUnavailable"))
                 Button("vnc.files.download", action: download)
                     .disabled(session.isLoadingRemoteFiles || selectedFile == nil || selectedFile?.isDirectory == true)

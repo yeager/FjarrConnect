@@ -103,6 +103,13 @@ final class ConnectionOptionsTests: XCTestCase {
         }
     }
 
+    func testDroppedFilesUseTightOnlyWhenVNCAdvertisesUploads() {
+        XCTAssertTrue(SessionFileDropPolicy.usesVNCUpload(for: .vnc, uploadAvailable: true))
+        XCTAssertFalse(SessionFileDropPolicy.usesVNCUpload(for: .vnc, uploadAvailable: false))
+        XCTAssertFalse(SessionFileDropPolicy.usesVNCUpload(for: .rdp, uploadAvailable: true))
+        XCTAssertFalse(SessionFileDropPolicy.usesVNCUpload(for: .remoteApp, uploadAvailable: true))
+    }
+
     func testNonGraphicalOrNonLocalDropPayloadsAreRejectedAsAWhole() throws {
         let local = URL(fileURLWithPath: "/tmp/upload.txt")
         let remote = try XCTUnwrap(URL(string: "https://example.invalid/upload.txt"))

@@ -352,6 +352,7 @@ private struct SessionDetailView: View {
     @State private var showingVNCFileTransfer = false
     @State private var diagnosticSaveFailed = false
     @State private var pendingFileURLs: [URL] = []
+    @State private var useVNCUploadForDrop = false
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -453,6 +454,14 @@ private struct SessionDetailView: View {
                             urls, for: tab.backend.profile.transport
                         ) else { return false }
                         pendingFileURLs = acceptedURLs
+                        if let vnc = tab.backend as? VNCRemoteSession {
+                            useVNCUploadForDrop = SessionFileDropPolicy.usesVNCUpload(
+                                for: tab.backend.profile.transport,
+                                uploadAvailable: vnc.canUploadLocalFiles(acceptedURLs)
+                            )
+                        } else {
+                            useVNCUploadForDrop = false
+                        }
                         showingFileTransferSuggestion = true
                         return true
                     }
@@ -465,13 +474,20 @@ private struct SessionDetailView: View {
             }
         }
         .confirmationDialog("files.drop.title", isPresented: $showingFileTransferSuggestion, titleVisibility: .visible) {
-            Button("files.upload") {
+            Button(useVNCUploadForDrop ? "vnc.files.upload" : "files.upload") {
                 let urls = pendingFileURLs
                 pendingFileURLs = []
-                openFiles(urls)
+                if useVNCUploadForDrop, let vnc = tab.backend as? VNCRemoteSession,
+                   vnc.canUploadLocalFiles(urls) {
+                    vnc.uploadLocalFiles(urls)
+                } else {
+                    openFiles(urls)
+                }
             }
             Button("action.cancel", role: .cancel) { pendingFileURLs = [] }
-        } message: { Text("files.drop.hint") }
+        } message: {
+            Text(useVNCUploadForDrop ? "vnc.files.uploadHint" : "files.drop.hint")
+        }
         .alert("error.title", isPresented: $diagnosticSaveFailed) {
             Button("action.ok", role: .cancel) { diagnosticSaveFailed = false }
         } message: {

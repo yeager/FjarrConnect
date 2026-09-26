@@ -5,6 +5,8 @@ Unreleased
   page without downloading or installing the update.
 - Send Backspace, Return and Tab correctly to VNC servers when macOS resolves their
   characters as non-printable controls.
+- Route dropped files to an advertised VNC Tight upload channel when available; keep
+  SFTP as the drop fallback for servers without that channel and for RDP.
 - Add a session-toolbar action that sends Ctrl+Alt+End to an active Windows RDP session.
 - Mark RemoteApp tabs and accessibility names so application sessions are distinct
   from full RDP desktops.
