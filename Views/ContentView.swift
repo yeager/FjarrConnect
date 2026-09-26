@@ -353,6 +353,7 @@ private struct SessionDetailView: View {
     @State private var diagnosticSaveFailed = false
     @State private var pendingFileURLs: [URL] = []
     @State private var useVNCUploadForDrop = false
+    @State private var waitingForVNCFileListing = false
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -455,17 +456,26 @@ private struct SessionDetailView: View {
                         ) else { return false }
                         pendingFileURLs = acceptedURLs
                         if let vnc = tab.backend as? VNCRemoteSession {
-                            useVNCUploadForDrop = SessionFileDropPolicy.usesVNCUpload(
-                                for: tab.backend.profile.transport,
-                                uploadAvailable: vnc.canUploadLocalFiles(acceptedURLs)
-                            )
+                            if vnc.fileUploadAvailable && !vnc.hasCurrentRemoteFileListing {
+                                waitingForVNCFileListing = true
+                                vnc.browseRemoteFiles(vnc.remoteDirectory)
+                                if vnc.isLoadingRemoteFiles { return true }
+                                waitingForVNCFileListing = false
+                            }
+                            presentFileDropConfirmation(acceptedURLs, vnc: vnc)
                         } else {
                             useVNCUploadForDrop = false
+                            showingFileTransferSuggestion = true
                         }
-                        showingFileTransferSuggestion = true
                         return true
                     }
             }
+        }
+        .onChange(of: (tab.backend as? VNCRemoteSession)?.isLoadingRemoteFiles ?? false) { _, isLoading in
+            guard !isLoading, waitingForVNCFileListing,
+                  let vnc = tab.backend as? VNCRemoteSession else { return }
+            waitingForVNCFileListing = false
+            presentFileDropConfirmation(pendingFileURLs, vnc: vnc)
         }
         .sheet(isPresented: $showingCommandLog) { SSHCommandLogView(profile: tab.backend.profile) }
         .sheet(isPresented: $showingVNCFileTransfer) {
@@ -493,6 +503,16 @@ private struct SessionDetailView: View {
         } message: {
             Text("diagnostics.saveFailed")
         }
+    }
+
+    private func presentFileDropConfirmation(_ urls: [URL], vnc: VNCRemoteSession?) {
+        useVNCUploadForDrop = vnc.map {
+            SessionFileDropPolicy.usesVNCUpload(
+                for: tab.backend.profile.transport,
+                uploadAvailable: $0.canUploadLocalFiles(urls)
+            )
+        } ?? false
+        showingFileTransferSuggestion = true
     }
 }
 
