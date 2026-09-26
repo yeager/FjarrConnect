@@ -26,6 +26,12 @@ final class AppSettingsTests: XCTestCase {
                                                           hasActiveSessions: true))
     }
 
+    func testAutomaticUpdateChecksCanBeDisabledAndDefaultToEnabled() {
+        XCTAssertFalse(AppSettings.shouldCheckForUpdatesAutomatically(storedPreference: false))
+        XCTAssertTrue(AppSettings.shouldCheckForUpdatesAutomatically(storedPreference: true))
+        XCTAssertTrue(AppSettings.shouldCheckForUpdatesAutomatically(storedPreference: nil))
+    }
+
     func testReleaseVersionComparisonHandlesTagsAndMissingPatchComponents() {
         XCTAssertEqual(ReleaseVersion.isNewer("v1.2.0", than: "1.1.9"), true)
         XCTAssertEqual(ReleaseVersion.isNewer("1.2", than: "v1.2.0"), false)

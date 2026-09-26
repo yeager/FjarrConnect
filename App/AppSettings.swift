@@ -26,6 +26,10 @@ enum AppSettings {
         !autoHideWhileConnected || !hasActiveSessions
     }
 
+    static func shouldCheckForUpdatesAutomatically(storedPreference: Bool?) -> Bool {
+        storedPreference ?? true
+    }
+
     static var shouldAutoStartDiscovery: Bool {
         UserDefaults.standard.object(forKey: autoStartDiscovery) as? Bool ?? true
     }
@@ -60,7 +64,8 @@ final class ReleaseUpdateChecker: ObservableObject {
 #if DEBUG
         guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
 #endif
-        guard UserDefaults.standard.object(forKey: Self.automaticChecksKey) as? Bool ?? true else { return }
+        let storedPreference = UserDefaults.standard.object(forKey: Self.automaticChecksKey) as? Bool
+        guard AppSettings.shouldCheckForUpdatesAutomatically(storedPreference: storedPreference) else { return }
         Task { await checkNow() }
     }
 
