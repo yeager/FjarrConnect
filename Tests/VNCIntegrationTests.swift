@@ -440,6 +440,64 @@ final class VNCIntegrationTests: XCTestCase {
                                         characters: "", charactersIgnoringModifiers: "",
                                         isARepeat: false, keyCode: 58)!
         view.flagsChanged(with: optionUp)
+        let shiftDown = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
+                                         modifierFlags: [.leftShift], timestamp: 0,
+                                         windowNumber: window.windowNumber, context: nil,
+                                         characters: "", charactersIgnoringModifiers: "",
+                                         isARepeat: false, keyCode: 56)!
+        view.flagsChanged(with: shiftDown)
+        let shiftedAtDown = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                             modifierFlags: [.leftShift], timestamp: 0,
+                                             windowNumber: window.windowNumber, context: nil,
+                                             characters: "@", charactersIgnoringModifiers: "2",
+                                             isARepeat: false, keyCode: 19)!
+        let shiftedAtUp = NSEvent.keyEvent(with: .keyUp, location: .zero,
+                                           modifierFlags: [.leftShift], timestamp: 0,
+                                           windowNumber: window.windowNumber, context: nil,
+                                           characters: "@", charactersIgnoringModifiers: "2",
+                                           isARepeat: false, keyCode: 19)!
+        view.keyDown(with: shiftedAtDown)
+        view.keyUp(with: shiftedAtUp)
+        let shiftUp = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
+                                       modifierFlags: [], timestamp: 0,
+                                       windowNumber: window.windowNumber, context: nil,
+                                       characters: "", charactersIgnoringModifiers: "",
+                                       isARepeat: false, keyCode: 56)!
+        view.flagsChanged(with: shiftUp)
+        // The remote Mac must receive the resolved character, not an
+        // Option+physical-key sequence which depends on its own layout.
+        let atKeyDown = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                         modifierFlags: [], timestamp: 0,
+                                         windowNumber: window.windowNumber, context: nil,
+                                         characters: "@", charactersIgnoringModifiers: "2",
+                                         isARepeat: false, keyCode: 19)!
+        let atKeyUp = NSEvent.keyEvent(with: .keyUp, location: .zero,
+                                       modifierFlags: [], timestamp: 0,
+                                       windowNumber: window.windowNumber, context: nil,
+                                       characters: "@", charactersIgnoringModifiers: "2",
+                                       isARepeat: false, keyCode: 19)!
+        view.keyDown(with: atKeyDown)
+        view.keyUp(with: atKeyUp)
+
+        let optionDownBeforeFocusLoss = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
+                                                          modifierFlags: [.leftOption], timestamp: 0,
+                                                          windowNumber: window.windowNumber, context: nil,
+                                                          characters: "", charactersIgnoringModifiers: "",
+                                                          isARepeat: false, keyCode: 58)!
+        view.flagsChanged(with: optionDownBeforeFocusLoss)
+        let atDownBeforeFocusLoss = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                                      modifierFlags: [.leftOption], timestamp: 0,
+                                                      windowNumber: window.windowNumber, context: nil,
+                                                      characters: "@", charactersIgnoringModifiers: "2",
+                                                      isARepeat: false, keyCode: 19)!
+        view.keyDown(with: atDownBeforeFocusLoss)
+        XCTAssertTrue(view.resignFirstResponder())
+        let lateAtKeyUp = NSEvent.keyEvent(with: .keyUp, location: .zero,
+                                           modifierFlags: [.leftOption], timestamp: 0,
+                                           windowNumber: window.windowNumber, context: nil,
+                                           characters: "@", charactersIgnoringModifiers: "2",
+                                           isARepeat: false, keyCode: 19)!
+        view.keyUp(with: lateAtKeyUp)
 
         func sendCharacter(_ character: String, keyCode: UInt16) {
             let down = NSEvent.keyEvent(with: .keyDown, location: .zero,
@@ -464,9 +522,28 @@ final class VNCIntegrationTests: XCTestCase {
         sendCharacter("åäö", keyCode: 0xFFFE)
         sendCharacter("€日🙂", keyCode: 0xFFFD)
 
+        func sendControlKey(_ keyCode: UInt16, characters: String) {
+            let down = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                        modifierFlags: [], timestamp: 0,
+                                        windowNumber: window.windowNumber, context: nil,
+                                        characters: characters, charactersIgnoringModifiers: characters,
+                                        isARepeat: false, keyCode: keyCode)!
+            let up = NSEvent.keyEvent(with: .keyUp, location: .zero,
+                                      modifierFlags: [], timestamp: 0,
+                                      windowNumber: window.windowNumber, context: nil,
+                                      characters: characters, charactersIgnoringModifiers: characters,
+                                      isARepeat: false, keyCode: keyCode)!
+            view.keyDown(with: down)
+            view.keyUp(with: up)
+        }
+
+        sendControlKey(51, characters: "\u{7f}") // Backspace
+        sendControlKey(36, characters: "\r")     // Return
+        sendControlKey(48, characters: "\t")     // Tab
+
         let sent = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
-            return contents.split(separator: "\n").count >= 20
+            return contents.split(separator: "\n").count >= 41
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [sent], timeout: 5), .completed)
         let contents = try String(contentsOf: receivedKeys, encoding: .utf8)
@@ -478,18 +555,26 @@ final class VNCIntegrationTests: XCTestCase {
             return (down == 1, keysym)
         }
         XCTAssertEqual(events.map { $0.1 }, [
-            0xFFE9, 0x40, 0x40, 0xFFE9,
+            0xFFE9, 0xFFE9, 0x40, 0x40, 0xFFE9, 0xFFE9,
+            0xFFE1, 0xFFE1, 0x40, 0x40, 0xFFE1, 0xFFE1,
+            0x40, 0x40,
+            0xFFE9, 0xFFE9, 0x40, 0x40, 0xFFE9,
             0x79, 0x79,
             0xE9, 0xE9,
             0xE5, 0xE4, 0xF6, 0xE5, 0xE4, 0xF6,
             0x010020AC, 0x010065E5, 0x0101F642,
-            0x010020AC, 0x010065E5, 0x0101F642
+            0x010020AC, 0x010065E5, 0x0101F642,
+            0xFF08, 0xFF08, 0xFF0D, 0xFF0D, 0xFF09, 0xFF09
         ])
         XCTAssertEqual(events.map { $0.0 }, [
-            true, true, false, false,
+            true, false, true, false, true, false,
+            true, false, true, false, true, false,
+            true, false,
+            true, false, true, false, false,
             true, false, true, false,
             true, true, true, false, false, false,
-            true, true, true, false, false, false
+            true, true, true, false, false, false,
+            true, false, true, false, true, false
         ])
     }
 

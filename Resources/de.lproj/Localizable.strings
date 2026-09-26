@@ -458,3 +458,13 @@
 "vnc.files.downloadFailed" = "Die Datei konnte nicht heruntergeladen werden oder überschreitet 256 MiB.";
 "vnc.files.downloading" = "Wird heruntergeladen …";
 "vnc.files.downloadComplete" = "Download abgeschlossen.";
+
+"updates.title" = "Softwareupdates";
+"updates.automatic" = "Automatisch nach Updates suchen";
+"updates.automatic.hint" = "Beim Start wird nach der neuesten stabilen GitHub-Version gesucht. Manuell suchen ist weiterhin möglich, wenn dies deaktiviert ist.";
+"updates.checkNow" = "Jetzt suchen";
+"updates.checking" = "Suche nach Updates…";
+"updates.available" = "Version %@ ist verfügbar.";
+"updates.upToDate" = "Du verwendest die neueste Version.";
+"updates.failed" = "Updates konnten nicht gesucht werden.";
+"updates.openRelease" = "Release öffnen";

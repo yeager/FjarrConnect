@@ -458,3 +458,13 @@
 "vnc.files.downloadFailed" = "No se pudo descargar el archivo o supera 256 MiB.";
 "vnc.files.downloading" = "Descargando…";
 "vnc.files.downloadComplete" = "Descarga completada.";
+
+"updates.title" = "Actualizaciones de software";
+"updates.automatic" = "Buscar actualizaciones automáticamente";
+"updates.automatic.hint" = "Busca la última versión estable de GitHub al iniciar la app. Puedes buscar manualmente aunque esté desactivado.";
+"updates.checkNow" = "Buscar ahora";
+"updates.checking" = "Buscando actualizaciones…";
+"updates.available" = "La versión %@ está disponible.";
+"updates.upToDate" = "Tienes la versión más reciente.";
+"updates.failed" = "No se pudieron buscar actualizaciones.";
+"updates.openRelease" = "Abrir versión";

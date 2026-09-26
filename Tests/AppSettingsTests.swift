@@ -25,4 +25,11 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertFalse(AppSettings.shouldShowSessionTabs(autoHideWhileConnected: true,
                                                           hasActiveSessions: true))
     }
+
+    func testReleaseVersionComparisonHandlesTagsAndMissingPatchComponents() {
+        XCTAssertEqual(ReleaseVersion.isNewer("v1.2.0", than: "1.1.9"), true)
+        XCTAssertEqual(ReleaseVersion.isNewer("1.2", than: "v1.2.0"), false)
+        XCTAssertEqual(ReleaseVersion.isNewer("1.10.0", than: "1.9.9"), true)
+        XCTAssertNil(ReleaseVersion.isNewer("nightly", than: "1.0.0"))
+    }
 }

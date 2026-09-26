@@ -473,3 +473,13 @@
 "vnc.files.downloadFailed" = "Filen kunde inte hämtas eller överskred gränsen på 256 MiB.";
 "vnc.files.downloading" = "Hämtar…";
 "vnc.files.downloadComplete" = "Hämtningen är klar.";
+
+"updates.title" = "Programuppdateringar";
+"updates.automatic" = "Sök automatiskt efter uppdateringar";
+"updates.automatic.hint" = "Söker efter den senaste stabila GitHub-versionen när appen startar. Du kan fortfarande söka manuellt när detta är avstängt.";
+"updates.checkNow" = "Sök nu";
+"updates.checking" = "Söker efter uppdateringar…";
+"updates.available" = "Version %@ finns tillgänglig.";
+"updates.upToDate" = "Du har den senaste versionen.";
+"updates.failed" = "Det gick inte att söka efter uppdateringar.";
+"updates.openRelease" = "Öppna versionen";

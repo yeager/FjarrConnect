@@ -458,3 +458,13 @@
 "vnc.files.downloadFailed" = "ファイルをダウンロードできないか、256 MiB の上限を超えています。";
 "vnc.files.downloading" = "ダウンロード中…";
 "vnc.files.downloadComplete" = "ダウンロードが完了しました。";
+
+"updates.title" = "ソフトウェアアップデート";
+"updates.automatic" = "アップデートを自動で確認";
+"updates.automatic.hint" = "アプリ起動時にGitHubの最新安定版を確認します。無効にしても手動で確認できます。";
+"updates.checkNow" = "今すぐ確認";
+"updates.checking" = "アップデートを確認中…";
+"updates.available" = "バージョン %@ を利用できます。";
+"updates.upToDate" = "最新バージョンを使用しています。";
+"updates.failed" = "アップデートを確認できませんでした。";
+"updates.openRelease" = "リリースを開く";

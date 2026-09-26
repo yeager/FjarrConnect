@@ -473,3 +473,13 @@
 "vnc.files.downloadFailed" = "Filen kunne ikke lastes ned eller overskred grensen på 256 MiB.";
 "vnc.files.downloading" = "Laster ned…";
 "vnc.files.downloadComplete" = "Nedlastingen er fullført.";
+
+"updates.title" = "Programvareoppdateringer";
+"updates.automatic" = "Se automatisk etter oppdateringer";
+"updates.automatic.hint" = "Ser etter den nyeste stabile GitHub-utgivelsen når appen starter. Du kan fortsatt søke manuelt når dette er av.";
+"updates.checkNow" = "Søk nå";
+"updates.checking" = "Ser etter oppdateringer…";
+"updates.available" = "Versjon %@ er tilgjengelig.";
+"updates.upToDate" = "Du har den nyeste versjonen.";
+"updates.failed" = "Kunne ikke se etter oppdateringer.";
+"updates.openRelease" = "Åpne utgivelsen";

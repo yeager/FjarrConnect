@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @EnvironmentObject private var profiles: ProfileStore
+    @EnvironmentObject private var releaseUpdates: ReleaseUpdateChecker
     @AppStorage(AppSettings.showSidebar) private var showSidebar = true
     @AppStorage(AppSettings.useLargeControls) private var useLargeControls = false
     @AppStorage(AppSettings.autoStartDiscovery) private var autoStartDiscovery = true
@@ -14,6 +15,7 @@ struct SettingsView: View {
     @AppStorage(AppSettings.scanConcurrency) private var scanConcurrency = 32
     @AppStorage(AppSettings.recordingRetentionDays) private var recordingRetentionDays = 30
     @AppStorage(AppSettings.keyboardLayout) private var keyboardLayout = RDPKeyboardLayout.automatic.rawValue
+    @AppStorage(AppSettings.automaticUpdateChecks) private var automaticUpdateChecks = true
     @State private var transfer: ProfileTransfer?
     @State private var transferMessage: String?
     @State private var showingRecordings = false
@@ -30,6 +32,17 @@ struct SettingsView: View {
                 Section("settings.connections") {
                     Toggle("settings.autoStartDiscovery", isOn: $autoStartDiscovery)
                     Toggle("settings.confirmClosingSessions", isOn: $confirmClosingSessions)
+                }
+                Section("updates.title") {
+                    Toggle("updates.automatic", isOn: $automaticUpdateChecks)
+                    Text("updates.automatic.hint")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Button("updates.checkNow") {
+                        Task { await releaseUpdates.checkNow() }
+                    }
+                    .disabled(releaseUpdates.status == .checking)
+                    updateStatus
                 }
                 Section("settings.keyboard") {
                     Picker("settings.keyboardLayout", selection: $keyboardLayout) {
@@ -102,6 +115,33 @@ struct SettingsView: View {
         panel.nameFieldStringValue = "FjarrConnect-profiles.fjarrconnect.json"
         guard panel.runModal() == .OK, let url = panel.url else { return }
         transfer = .export(url)
+    }
+
+    @ViewBuilder
+    private var updateStatus: some View {
+        switch releaseUpdates.status {
+        case .idle:
+            EmptyView()
+        case .checking:
+            Label("updates.checking", systemImage: "arrow.clockwise")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        case .available(let version, let releaseURL):
+            VStack(alignment: .leading, spacing: 4) {
+                Text(String(format: NSLocalizedString("updates.available", comment: ""), version))
+                    .font(.caption)
+                Link("updates.openRelease", destination: releaseURL)
+                    .font(.caption)
+            }
+        case .upToDate:
+            Text("updates.upToDate")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        case .failed:
+            Text("updates.failed")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private func chooseImport() {

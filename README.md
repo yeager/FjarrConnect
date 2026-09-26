@@ -56,7 +56,10 @@ for version-specific changes and current limitations.
   is hidden.
 - **App settings:** choose whether the left sidebar is shown, whether the sidebar and
   session-tab bar hide automatically while connected, use larger controls, startup
-  discovery, close confirmation, network-scan limits, and the RDP keyboard layout.
+  discovery, close confirmation, network-scan limits, the RDP keyboard layout and
+  automatic checks for new stable GitHub releases. Update checks can be disabled;
+  manual checks remain available. FjärrConnect opens the release page and does not
+  download or install updates itself.
 - **Search:** find saved connections by name, host, group or protocol, and filter
   discovered Macs by name.
 - **Quick connect:** press **⌘K**, enter an address, then press Return.

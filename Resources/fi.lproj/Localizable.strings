@@ -458,3 +458,13 @@
 "vnc.files.downloadFailed" = "Tiedoston lataus epäonnistui tai koko ylitti 256 MiB.";
 "vnc.files.downloading" = "Ladataan…";
 "vnc.files.downloadComplete" = "Lataus valmis.";
+
+"updates.title" = "Ohjelmistopäivitykset";
+"updates.automatic" = "Tarkista päivitykset automaattisesti";
+"updates.automatic.hint" = "Tarkistaa uusimman vakaan GitHub-julkaisun sovelluksen käynnistyessä. Voit tarkistaa päivitykset manuaalisesti, vaikka tämä olisi pois käytöstä.";
+"updates.checkNow" = "Tarkista nyt";
+"updates.checking" = "Tarkistetaan päivityksiä…";
+"updates.available" = "Versio %@ on saatavilla.";
+"updates.upToDate" = "Käytössäsi on uusin versio.";
+"updates.failed" = "Päivitysten tarkistus epäonnistui.";
+"updates.openRelease" = "Avaa julkaisu";

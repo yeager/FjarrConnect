@@ -458,3 +458,13 @@
 "vnc.files.downloadFailed" = "Impossible de télécharger le fichier ou sa taille dépasse 256 Mio.";
 "vnc.files.downloading" = "Téléchargement…";
 "vnc.files.downloadComplete" = "Téléchargement terminé.";
+
+"updates.title" = "Mises à jour du logiciel";
+"updates.automatic" = "Rechercher automatiquement les mises à jour";
+"updates.automatic.hint" = "Recherche la dernière version stable sur GitHub au démarrage. La recherche manuelle reste disponible si cette option est désactivée.";
+"updates.checkNow" = "Rechercher maintenant";
+"updates.checking" = "Recherche des mises à jour…";
+"updates.available" = "La version %@ est disponible.";
+"updates.upToDate" = "Vous disposez de la dernière version.";
+"updates.failed" = "Impossible de rechercher les mises à jour.";
+"updates.openRelease" = "Ouvrir la version";

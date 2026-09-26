@@ -7,6 +7,7 @@ struct FjarrConnectApp: App {
     @StateObject private var profiles = FjarrConnectApp.makeProfileStore()
     @StateObject private var discovery = BonjourBrowser()
     @StateObject private var connection = FjarrConnectApp.makeConnectionManager()
+    @StateObject private var releaseUpdates = ReleaseUpdateChecker.shared
 
     private static func makeConnectionManager() -> ConnectionManager {
         #if DEBUG
@@ -38,10 +39,12 @@ struct FjarrConnectApp: App {
                 .environmentObject(profiles)
                 .environmentObject(discovery)
                 .environmentObject(connection)
+                .environmentObject(releaseUpdates)
                 .frame(minWidth: 900, minHeight: 560)
                 .background(WindowCloseConfirmation(shouldClose: connection.confirmClosingAll).allowsHitTesting(false))
                 .onAppear {
                     appDelegate.shouldTerminate = connection.confirmClosingAll
+                    releaseUpdates.checkOnLaunchIfEnabled()
                     #if DEBUG
                     if ProcessInfo.processInfo.environment["FJARRCONNECT_DISABLE_DISCOVERY"] == "1" ||
                         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { return }
@@ -59,6 +62,7 @@ struct FjarrConnectApp: App {
         Settings {
             SettingsView()
                 .environmentObject(profiles)
+                .environmentObject(releaseUpdates)
         }
 
         .commands {
