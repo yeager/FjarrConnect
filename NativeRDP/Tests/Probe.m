@@ -61,6 +61,7 @@ int main(int argc, const char **argv) {
         if (!view) { fputs("fc_rdp_create returned NULL\n", stderr); return 3; }
         const uint32_t abi = fc_rdp_abi();
         if (abi != 2) { fprintf(stderr, "Unexpected RDP ABI: %u\n", abi); return 3; }
+        NSWindow *window = nil;
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_FAILURE_CATEGORIES"] isEqualToString:@"1"]) {
             const struct { const char *name; UINT32 error; int category; } cases[] = {
                 {"network", FREERDP_ERROR_CONNECT_FAILED, 1},
@@ -93,9 +94,6 @@ int main(int argc, const char **argv) {
                 [[(id)view unicodeInputDataForText:@""] length] == 0;
             return valid ? 0 : 10;
         }
-        NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(80, 80, 1100, 750) styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskResizable backing:NSBackingStoreBuffered defer:NO];
-        window.title = @"FjärrConnect — embedded RDP integration test";
-        window.contentView = view; [window makeKeyAndOrderFront:nil]; [NSApp activateIgnoringOtherApps:YES];
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_CLIPBOARD_IMAGE"] isEqualToString:@"1"]) {
             // Exercise the native CLIPRDR image path without a server: AppKit image
             // -> CF_DIB -> AppKit image. This catches architecture-specific bitmap
@@ -115,6 +113,9 @@ int main(int argc, const char **argv) {
             return dib.length > 40 && roundTrip.size.width == 2 && roundTrip.size.height == 2 ? 0 : 8;
         }
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_CLIPBOARD_ACTIVATION"] isEqualToString:@"1"]) {
+            window = [[NSWindow alloc] initWithContentRect:NSMakeRect(80, 80, 1100, 750) styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskResizable backing:NSBackingStoreBuffered defer:NO];
+            window.title = @"FjärrConnect — clipboard activation test";
+            window.contentView = view; [window makeKeyAndOrderFront:nil]; [NSApp activateIgnoringOtherApps:YES];
             // A file copied outside FjarrConnect becomes available only to the
             // selected RDP session; inactive sessions must clear their copy.
             [view setValue:@YES forKey:@"clipboardAllowed"];
@@ -231,6 +232,11 @@ int main(int argc, const char **argv) {
             [pasteboard releaseGlobally];
             [files removeItemAtURL:directory error:nil];
             return valid ? 0 : 9;
+        }
+        if (!window) {
+            window = [[NSWindow alloc] initWithContentRect:NSMakeRect(80, 80, 1100, 750) styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskResizable backing:NSBackingStoreBuffered defer:NO];
+            window.title = @"FjärrConnect — embedded RDP integration test";
+            window.contentView = view; [window makeKeyAndOrderFront:nil]; [NSApp activateIgnoringOtherApps:YES];
         }
         [window makeFirstResponder:view]; fc_rdp_set_active((__bridge void *)view, 1); fc_rdp_start((__bridge void *)view);
         NSTimeInterval stableSeconds = MAX(6, MIN(120, [NSProcessInfo.processInfo.environment[@"FC_TEST_STABLE_SECONDS"] doubleValue]));
