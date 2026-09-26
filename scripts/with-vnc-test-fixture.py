@@ -2,10 +2,30 @@
 """Run tests with loopback VNC discovery and real OpenSSH file-browser fixtures."""
 import contextlib
 import importlib.util
+import os
 import socketserver
 import subprocess
 import sys
 import threading
+from pathlib import Path
+
+
+def test_environment():
+    """Expose XCTest.framework on Xcode versions that no longer provide its legacy rpath."""
+    environment = os.environ.copy()
+    try:
+        developer_dir = Path(subprocess.check_output(["xcode-select", "-p"], text=True).strip())
+    except (OSError, subprocess.CalledProcessError):
+        return environment
+
+    frameworks = developer_dir / "Platforms/MacOSX.platform/Developer/Library/Frameworks"
+    if not (frameworks / "XCTest.framework").is_dir():
+        return environment
+
+    existing = environment.get("DYLD_FRAMEWORK_PATH", "").split(os.pathsep)
+    paths = dict.fromkeys([str(frameworks), *(path for path in existing if path)])
+    environment["DYLD_FRAMEWORK_PATH"] = os.pathsep.join(paths)
+    return environment
 
 
 class Banner(socketserver.BaseRequestHandler):
@@ -24,7 +44,6 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.exit("Usage: with-vnc-test-fixture.py command [arguments ...]")
     # A collision fails immediately instead of testing against an unknown service.
-    from pathlib import Path
     spec = importlib.util.spec_from_file_location('sftp_ui_fixture', Path(__file__).with_name('sftp-ui-fixture.py'))
     sftp = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(sftp)
@@ -32,7 +51,7 @@ if __name__ == "__main__":
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         try:
-            result = subprocess.call(sys.argv[1:])
+            result = subprocess.call(sys.argv[1:], env=test_environment())
         finally:
             server.shutdown()
             thread.join()
