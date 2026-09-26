@@ -26,7 +26,7 @@ enum AppSettings {
         !autoHideWhileConnected || !hasActiveSessions
     }
 
-    static func shouldCheckForUpdatesAutomatically(storedPreference: Bool?) -> Bool {
+    static func shouldCheckForUpdates(storedPreference: Bool?) -> Bool {
         storedPreference ?? true
     }
 
@@ -55,6 +55,8 @@ final class ReleaseUpdateChecker: ObservableObject {
 
     @Published private(set) var status: ReleaseUpdateStatus = .idle
     private var didCheckOnLaunch = false
+    private var activeCheckID: UUID?
+    private var activeRequest: Task<(Data, URLResponse), Error>?
 
     private init() {}
 
@@ -65,11 +67,16 @@ final class ReleaseUpdateChecker: ObservableObject {
         guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
 #endif
         let storedPreference = UserDefaults.standard.object(forKey: Self.automaticChecksKey) as? Bool
-        guard AppSettings.shouldCheckForUpdatesAutomatically(storedPreference: storedPreference) else { return }
+        guard AppSettings.shouldCheckForUpdates(storedPreference: storedPreference) else { return }
         Task { await checkNow() }
     }
 
     func checkNow() async {
+        let storedPreference = UserDefaults.standard.object(forKey: Self.automaticChecksKey) as? Bool
+        guard AppSettings.shouldCheckForUpdates(storedPreference: storedPreference) else {
+            disableChecks()
+            return
+        }
         status = .checking
         guard let endpoint = URL(string: "https://api.github.com/repos/yeager/FjarrConnect/releases/latest") else {
             status = .failed
@@ -81,8 +88,19 @@ final class ReleaseUpdateChecker: ObservableObject {
         request.setValue("FjarrConnect", forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 15
 
+        let checkID = UUID()
+        activeCheckID = checkID
+        let task = Task { try await URLSession.shared.data(for: request) }
+        activeRequest = task
+        defer {
+            if activeCheckID == checkID {
+                activeCheckID = nil
+                activeRequest = nil
+            }
+        }
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await task.value
+            guard activeCheckID == checkID else { return }
             guard (response as? HTTPURLResponse)?.statusCode == 200 else {
                 status = .failed
                 return
@@ -99,8 +117,16 @@ final class ReleaseUpdateChecker: ObservableObject {
             }
             status = isNewer ? .available(version: release.tagName, releaseURL: releaseURL) : .upToDate
         } catch {
+            guard activeCheckID == checkID else { return }
             status = .failed
         }
+    }
+
+    func disableChecks() {
+        activeCheckID = nil
+        activeRequest?.cancel()
+        activeRequest = nil
+        status = .idle
     }
 
     private struct GitHubRelease: Decodable {

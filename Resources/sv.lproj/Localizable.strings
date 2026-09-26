@@ -475,8 +475,8 @@
 "vnc.files.downloadComplete" = "Hämtningen är klar.";
 
 "updates.title" = "Programuppdateringar";
-"updates.automatic" = "Sök automatiskt efter uppdateringar";
-"updates.automatic.hint" = "Söker efter den senaste stabila GitHub-versionen när appen startar. Du kan fortfarande söka manuellt när detta är avstängt.";
+"updates.enabled" = "Sök efter uppdateringar";
+"updates.enabled.hint" = "När det här är av söker appen inte efter uppdateringar, vare sig automatiskt eller manuellt.";
 "updates.checkNow" = "Sök nu";
 "updates.checking" = "Söker efter uppdateringar…";
 "updates.available" = "Version %@ finns tillgänglig.";

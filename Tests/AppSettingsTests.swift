@@ -26,10 +26,26 @@ final class AppSettingsTests: XCTestCase {
                                                           hasActiveSessions: true))
     }
 
-    func testAutomaticUpdateChecksCanBeDisabledAndDefaultToEnabled() {
-        XCTAssertFalse(AppSettings.shouldCheckForUpdatesAutomatically(storedPreference: false))
-        XCTAssertTrue(AppSettings.shouldCheckForUpdatesAutomatically(storedPreference: true))
-        XCTAssertTrue(AppSettings.shouldCheckForUpdatesAutomatically(storedPreference: nil))
+    func testUpdateChecksCanBeDisabledAndDefaultToEnabled() {
+        XCTAssertFalse(AppSettings.shouldCheckForUpdates(storedPreference: false))
+        XCTAssertTrue(AppSettings.shouldCheckForUpdates(storedPreference: true))
+        XCTAssertTrue(AppSettings.shouldCheckForUpdates(storedPreference: nil))
+    }
+
+    @MainActor
+    func testDisabledPreferenceSkipsManualUpdateCheck() async {
+        let defaults = UserDefaults.standard
+        let key = ReleaseUpdateChecker.automaticChecksKey
+        let previousValue = defaults.object(forKey: key)
+        defaults.set(false, forKey: key)
+        defer {
+            if let previousValue { defaults.set(previousValue, forKey: key) }
+            else { defaults.removeObject(forKey: key) }
+        }
+
+        await ReleaseUpdateChecker.shared.checkNow()
+
+        XCTAssertEqual(ReleaseUpdateChecker.shared.status, .idle)
     }
 
     func testReleaseVersionComparisonHandlesTagsAndMissingPatchComponents() {

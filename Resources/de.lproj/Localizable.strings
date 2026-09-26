@@ -460,8 +460,8 @@
 "vnc.files.downloadComplete" = "Download abgeschlossen.";
 
 "updates.title" = "Softwareupdates";
-"updates.automatic" = "Automatisch nach Updates suchen";
-"updates.automatic.hint" = "Beim Start wird nach der neuesten stabilen GitHub-Version gesucht. Manuell suchen ist weiterhin möglich, wenn dies deaktiviert ist.";
+"updates.enabled" = "Nach Updates suchen";
+"updates.enabled.hint" = "Wenn diese Option deaktiviert ist, sucht die App weder automatisch noch manuell nach Updates.";
 "updates.checkNow" = "Jetzt suchen";
 "updates.checking" = "Suche nach Updates…";
 "updates.available" = "Version %@ ist verfügbar.";

@@ -460,8 +460,8 @@
 "vnc.files.downloadComplete" = "Lataus valmis.";
 
 "updates.title" = "Ohjelmistopäivitykset";
-"updates.automatic" = "Tarkista päivitykset automaattisesti";
-"updates.automatic.hint" = "Tarkistaa uusimman vakaan GitHub-julkaisun sovelluksen käynnistyessä. Voit tarkistaa päivitykset manuaalisesti, vaikka tämä olisi pois käytöstä.";
+"updates.enabled" = "Tarkista päivitykset";
+"updates.enabled.hint" = "Kun tämä on pois käytöstä, sovellus ei tarkista päivityksiä automaattisesti eikä manuaalisesti.";
 "updates.checkNow" = "Tarkista nyt";
 "updates.checking" = "Tarkistetaan päivityksiä…";
 "updates.available" = "Versio %@ on saatavilla.";

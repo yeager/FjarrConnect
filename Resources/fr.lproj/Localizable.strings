@@ -460,8 +460,8 @@
 "vnc.files.downloadComplete" = "Téléchargement terminé.";
 
 "updates.title" = "Mises à jour du logiciel";
-"updates.automatic" = "Rechercher automatiquement les mises à jour";
-"updates.automatic.hint" = "Recherche la dernière version stable sur GitHub au démarrage. La recherche manuelle reste disponible si cette option est désactivée.";
+"updates.enabled" = "Rechercher les mises à jour";
+"updates.enabled.hint" = "Lorsque cette option est désactivée, l’app ne recherche aucune mise à jour, automatiquement ou manuellement.";
 "updates.checkNow" = "Rechercher maintenant";
 "updates.checking" = "Recherche des mises à jour…";
 "updates.available" = "La version %@ est disponible.";

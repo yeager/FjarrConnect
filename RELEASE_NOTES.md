@@ -1,7 +1,7 @@
 Unreleased
 
 - Check GitHub Releases for a newer stable version at app launch. Automatic checks
-  can be disabled in Settings; manual checks remain available and open the release
+  can be disabled completely in Settings; when enabled, checks open the release
   page without downloading or installing the update.
 - Send Backspace, Return and Tab correctly to VNC servers when macOS resolves their
   characters as non-printable controls.

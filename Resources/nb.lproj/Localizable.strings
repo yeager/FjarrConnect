@@ -475,8 +475,8 @@
 "vnc.files.downloadComplete" = "Nedlastingen er fullført.";
 
 "updates.title" = "Programvareoppdateringer";
-"updates.automatic" = "Se automatisk etter oppdateringer";
-"updates.automatic.hint" = "Ser etter den nyeste stabile GitHub-utgivelsen når appen starter. Du kan fortsatt søke manuelt når dette er av.";
+"updates.enabled" = "Se etter oppdateringer";
+"updates.enabled.hint" = "Når dette er av, søker appen ikke etter oppdateringer, verken automatisk eller manuelt.";
 "updates.checkNow" = "Søk nå";
 "updates.checking" = "Ser etter oppdateringer…";
 "updates.available" = "Versjon %@ er tilgjengelig.";

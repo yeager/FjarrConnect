@@ -475,8 +475,8 @@
 "vnc.files.downloadComplete" = "Download complete.";
 
 "updates.title" = "Software updates";
-"updates.automatic" = "Check for updates automatically";
-"updates.automatic.hint" = "Checks for the latest stable GitHub release when the app starts. You can still check manually when this is off.";
+"updates.enabled" = "Check for updates";
+"updates.enabled.hint" = "When off, the app will not check for updates automatically or manually.";
 "updates.checkNow" = "Check now";
 "updates.checking" = "Checking for updates…";
 "updates.available" = "Version %@ is available.";

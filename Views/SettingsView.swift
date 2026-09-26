@@ -34,15 +34,20 @@ struct SettingsView: View {
                     Toggle("settings.confirmClosingSessions", isOn: $confirmClosingSessions)
                 }
                 Section("updates.title") {
-                    Toggle("updates.automatic", isOn: $automaticUpdateChecks)
-                    Text("updates.automatic.hint")
+                    Toggle("updates.enabled", isOn: $automaticUpdateChecks)
+                    Text("updates.enabled.hint")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Button("updates.checkNow") {
-                        Task { await releaseUpdates.checkNow() }
+                    if automaticUpdateChecks {
+                        Button("updates.checkNow") {
+                            Task { await releaseUpdates.checkNow() }
+                        }
+                        .disabled(releaseUpdates.status == .checking)
+                        updateStatus
                     }
-                    .disabled(releaseUpdates.status == .checking)
-                    updateStatus
+                }
+                .onChange(of: automaticUpdateChecks) { _, isEnabled in
+                    if !isEnabled { releaseUpdates.disableChecks() }
                 }
                 Section("settings.keyboard") {
                     Picker("settings.keyboardLayout", selection: $keyboardLayout) {
