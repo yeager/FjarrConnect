@@ -65,8 +65,10 @@ final class ConnectionUITests: XCTestCase {
         defer { app.terminate() }
 
         let quickConnect = app.textFields["sidebar.quickConnect"]
+        let welcome = app.staticTexts["welcome.title"]
         XCTAssertTrue(quickConnect.waitForExistence(timeout: 15))
         XCTAssertTrue(quickConnect.isHittable)
+        XCTAssertTrue(welcome.waitForExistence(timeout: 5))
 
         // macOS uses the bundle name without the UI's diacritic in the app menu.
         let appMenu = app.menuBars.menuBarItems["FjarrConnect"]
@@ -76,12 +78,18 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertTrue(about.waitForExistence(timeout: 5))
         about.click()
 
+        XCTAssertTrue(app.staticTexts["Based on open source software"].waitForExistence(timeout: 5),
+                      "The About panel should open after choosing its menu item")
         XCTAssertTrue(quickConnect.waitForExistence(timeout: 5),
                       "Opening About must not replace or close the main window")
         XCTAssertGreaterThan(quickConnect.frame.width, 0,
                              "The sidebar must retain a visible frame behind the About panel")
         XCTAssertTrue(quickConnect.isHittable,
                       "The main window sidebar should remain available after opening About")
+        XCTAssertTrue(welcome.exists,
+                      "The main window content should remain present behind the About panel")
+        XCTAssertGreaterThan(welcome.frame.width, 0,
+                             "The main window content should retain a visible layout behind About")
     }
 
     func testQuickConnectStaysVisibleWhenSidebarListScrollsAndIsShownAgain() throws {
