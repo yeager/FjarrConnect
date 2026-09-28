@@ -43,8 +43,9 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertTrue(quickConnect.isHittable,
                       "Quick Connect should stay above the scrolling list of saved connections")
 
-        let hideSidebar = app.buttons["Hide Sidebar"]
-        XCTAssertTrue(hideSidebar.waitForExistence(timeout: 5))
+        let hideSidebarButtons = app.buttons.matching(identifier: "Hide Sidebar")
+        XCTAssertTrue(hideSidebarButtons.firstMatch.waitForExistence(timeout: 5))
+        let hideSidebar = try XCTUnwrap(hideSidebarButtons.allElementsBoundByIndex.first(where: \.isHittable))
         hideSidebar.click()
         let showSidebar = app.buttons["Show Sidebar"]
         XCTAssertTrue(showSidebar.waitForExistence(timeout: 5))
