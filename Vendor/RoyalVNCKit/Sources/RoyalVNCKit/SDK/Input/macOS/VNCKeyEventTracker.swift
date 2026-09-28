@@ -11,10 +11,15 @@ import CoreGraphics
 struct VNCKeyEventTracker {
     private var pressedKeys: [CGKeyCode: [VNCKeyCode]] = [:]
 
-    mutating func keyDown(for keyCode: CGKeyCode, characters: String?) -> [VNCKeyCode] {
+    mutating func keyDown(for keyCode: CGKeyCode, characters: String?, isRepeat: Bool = false) -> [VNCKeyCode] {
         if let pressed = pressedKeys[keyCode] {
             return pressed
         }
+
+        // AppKit can deliver a repeat after the physical key-up, especially
+        // while events are delayed by a busy remote session. It is not a new
+        // press and must not leave a remote key held without a matching key-up.
+        guard !isRepeat else { return [] }
 
         let keys = VNCKeyCode.keyCodesFrom(cgKeyCode: keyCode, characters: characters)
         if !keys.isEmpty {

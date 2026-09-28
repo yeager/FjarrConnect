@@ -810,6 +810,12 @@ final class VNCIntegrationTests: XCTestCase {
                                           characters: "-", charactersIgnoringModifiers: "-",
                                           isARepeat: false, keyCode: 27)!
         view.keyUp(with: lateDashUp)
+        let staleDashRepeat = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                               modifierFlags: [], timestamp: 0,
+                                               windowNumber: window.windowNumber, context: nil,
+                                               characters: "-", charactersIgnoringModifiers: "-",
+                                               isARepeat: true, keyCode: 27)!
+        view.keyDown(with: staleDashRepeat)
 
         // Returning to the VNC tab must start with a clean key state. A fresh
         // press after focus returns should still be delivered as a normal pair.

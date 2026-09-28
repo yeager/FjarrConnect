@@ -17,6 +17,15 @@ final class VNCKeyboardLayoutTests: XCTestCase {
         XCTAssertTrue(tracker.keyUp(for: CGKeyCode(19)).isEmpty)
     }
 
+    func testLateAutorepeatAfterKeyUpDoesNotStartANewPress() {
+        var tracker = VNCKeyEventTracker()
+
+        XCTAssertEqual(tracker.keyDown(for: CGKeyCode(27), characters: "-"), [.init(0x2D)])
+        XCTAssertEqual(tracker.keyUp(for: CGKeyCode(27)), [.init(0x2D)])
+        XCTAssertTrue(tracker.keyDown(for: CGKeyCode(27), characters: "-", isRepeat: true).isEmpty)
+        XCTAssertTrue(tracker.releaseAll().isEmpty)
+    }
+
     func testSwedishOptionTwoUsesResolvedAtCharacter() {
         var tracker = VNCKeyEventTracker()
 
