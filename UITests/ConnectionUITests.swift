@@ -78,8 +78,14 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertTrue(about.waitForExistence(timeout: 5))
         about.click()
 
-        XCTAssertTrue(app.staticTexts["Based on open source software"].waitForExistence(timeout: 5),
-                      "The About panel should open after choosing its menu item")
+        let aboutPanel = app.dialogs.firstMatch
+        XCTAssertTrue(aboutPanel.waitForExistence(timeout: 5),
+                      "The About dialog should open after choosing its menu item")
+        XCTAssertTrue(aboutPanel.staticTexts.matching(
+            NSPredicate(format: "label BEGINSWITH %@", "Version ")).firstMatch.exists,
+                      "The About dialog should show the application version")
+        XCTAssertTrue(app.windows.matching(identifier: "main").firstMatch.exists,
+                      "The main application window should remain open behind About")
         XCTAssertTrue(quickConnect.waitForExistence(timeout: 5),
                       "Opening About must not replace or close the main window")
         XCTAssertGreaterThan(quickConnect.frame.width, 0,

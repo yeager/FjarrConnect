@@ -31,6 +31,8 @@ jobs:
           xcode-version: '16.4'
       - run: brew install xcodegen xcbeautify
       - run: python3 scripts/check-resources.py && xcodegen generate
+      - name: Test RoyalVNCKit package
+        run: swift test --package-path Vendor/RoyalVNCKit
       - name: Test
         run: |
           set -o pipefail
