@@ -25,6 +25,11 @@ private final class CursorTrackingWindow: NSWindow {
     }
 }
 
+private final class VNCKeyboardFocusTestView: NSView {
+    override var canBecomeKeyView: Bool { true }
+    override var acceptsFirstResponder: Bool { true }
+}
+
 /// A local RFB server exercises the actual RoyalVNCKit handshake and session lifecycle.
 final class VNCIntegrationTests: XCTestCase {
     func testVNCConnectsToLocalServerAndStops() throws {
@@ -817,6 +822,27 @@ final class VNCIntegrationTests: XCTestCase {
         view.keyDown(with: resumedDashDown)
         view.keyUp(with: resumedDashUp)
 
+        // Switching VNC tabs can move first-responder focus while the app
+        // window stays active. Release the remote key before a late key-up is
+        // delivered to some other view.
+        let focusSink = VNCKeyboardFocusTestView(frame: host.bounds)
+        focusSink.autoresizingMask = [.width, .height]
+        host.addSubview(focusSink)
+        let heldQDown = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                         modifierFlags: [], timestamp: 0,
+                                         windowNumber: window.windowNumber, context: nil,
+                                         characters: "q", charactersIgnoringModifiers: "q",
+                                         isARepeat: false, keyCode: 12)!
+        let lateQUp = NSEvent.keyEvent(with: .keyUp, location: .zero,
+                                       modifierFlags: [], timestamp: 0,
+                                       windowNumber: window.windowNumber, context: nil,
+                                       characters: "q", charactersIgnoringModifiers: "q",
+                                       isARepeat: false, keyCode: 12)!
+        view.keyDown(with: heldQDown)
+        XCTAssertTrue(window.makeFirstResponder(focusSink))
+        view.keyUp(with: lateQUp)
+        XCTAssertTrue(window.makeFirstResponder(view))
+
         // macOS can deactivate the app without a key-up reaching this view.
         // Clear remote key state even if the window itself remains key.
         let xDownBeforeAppDeactivation = NSEvent.keyEvent(with: .keyDown, location: .zero,
@@ -877,7 +903,7 @@ final class VNCIntegrationTests: XCTestCase {
 
         let sent = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
-            return contents.split(separator: "\n").count >= 50
+            return contents.split(separator: "\n").count >= 52
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [sent], timeout: 5), .completed)
         let contents = try String(contentsOf: receivedKeys, encoding: .utf8)
@@ -894,6 +920,7 @@ final class VNCIntegrationTests: XCTestCase {
             0x40, 0x40,
             0xFFE9, 0xFFE9, 0x40, 0x40, 0xFFE9,
             0x2D, 0x2D, 0x2D, 0x2D, 0x2D, 0x2D, 0x2D,
+            0x71, 0x71,
             0x78, 0x78,
             0x79, 0x79,
             0xE9, 0xE9,
@@ -905,6 +932,9 @@ final class VNCIntegrationTests: XCTestCase {
         let dashEvents = events.filter { $0.1 == 0x2D }
         XCTAssertEqual(dashEvents.map { $0.0 }, [true, true, true, true, false, true, false],
                        "Focus loss must release an autorepeating dash once, and a new press after focus returns must remain usable")
+        let qEvents = events.filter { $0.1 == 0x71 }
+        XCTAssertEqual(qEvents.map { $0.0 }, [true, false],
+                       "Changing first responder must release a held key even while the window remains active")
         let xEvents = events.filter { $0.1 == 0x78 }
         XCTAssertEqual(xEvents.map { $0.0 }, [true, false],
                        "App deactivation must release a held key even when the window does not resign key")
