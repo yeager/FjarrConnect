@@ -64,6 +64,50 @@ jobs:
             build-test.log
             build/screenshots
           if-no-files-found: ignore
+  rdp-layout:
+    name: Failed RDP layout ${{ matrix.arch }}
+    needs: [rdp]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.4'
+      - run: brew install xcodegen xcbeautify
+      - run: python3 scripts/check-resources.py && xcodegen generate
+      - uses: actions/download-artifact@v7
+        with:
+          name: rdp-${{ matrix.arch }}
+          path: build/rdp-output/${{ matrix.arch }}
+      - name: Verify failed RDP connection and retry layout
+        run: |
+          set -o pipefail
+          xcodebuild test -project FjarrConnect.xcodeproj -scheme FjarrConnect \
+            -configuration Debug -destination 'platform=macOS' \
+            -derivedDataPath build/rdp-layout -resultBundlePath build/RDPLayout.xcresult \
+            ARCHS='${{ matrix.arch }}' ONLY_ACTIVE_ARCH=YES \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO \
+            -only-testing:FjarrConnectUITests/ConnectionUITests/testFailedRDPConnectionKeepsSidebarAndSessionBarsAtTop \
+            | tee build-rdp-layout.log | xcbeautify
+          xcrun xcresulttool get test-results summary --path build/RDPLayout.xcresult --format json \
+            | python3 -c 'import json, sys; result=json.load(sys.stdin); assert result.get("passedTests", 0) >= 1 and result.get("skippedTests", 0) == 0 and result.get("failedTests", 0) == 0, result'
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: failed-rdp-layout-${{ matrix.arch }}
+          path: |
+            build/RDPLayout.xcresult
+            build-rdp-layout.log
+          if-no-files-found: ignore
   build:
     name: Package macOS ${{ matrix.arch }}
     needs: [tests, rdp]
