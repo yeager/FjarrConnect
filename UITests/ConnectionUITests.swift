@@ -47,8 +47,9 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertTrue(hideSidebarButtons.firstMatch.waitForExistence(timeout: 5))
         let hideSidebar = try XCTUnwrap(hideSidebarButtons.allElementsBoundByIndex.first(where: \.isHittable))
         hideSidebar.click()
-        let showSidebar = app.buttons["Show Sidebar"]
-        XCTAssertTrue(showSidebar.waitForExistence(timeout: 5))
+        let showSidebarButtons = app.buttons.matching(identifier: "Show Sidebar")
+        XCTAssertTrue(showSidebarButtons.firstMatch.waitForExistence(timeout: 5))
+        let showSidebar = try XCTUnwrap(showSidebarButtons.allElementsBoundByIndex.first(where: \.isHittable))
         showSidebar.click()
 
         XCTAssertTrue(quickConnect.waitForExistence(timeout: 5))
