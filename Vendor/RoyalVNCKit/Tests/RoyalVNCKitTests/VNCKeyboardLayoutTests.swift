@@ -104,5 +104,32 @@ final class VNCKeyboardLayoutTests: XCTestCase {
         XCTAssertEqual(tracker.releaseAll().map(\.rawValue), [0xE4, 0xE5])
         XCTAssertTrue(tracker.releaseAll().isEmpty)
     }
+
+    func testPendingAutorepeatsAreBoundedUntilTheSendQueueDrains() {
+        let queue = Queue<VNCSendableMessage>()
+        let initialDown = VNCProtocol.KeyEvent(isDown: true, key: 0x2D)
+        let repeatDown = VNCProtocol.KeyEvent(isDown: true, key: 0x2D)
+
+        queue.enqueue(initialDown)
+        queue.enqueueKeyRepeat(repeatDown)
+        queue.enqueueKeyRepeat(repeatDown)
+        queue.enqueueKeyRepeat(repeatDown)
+
+        XCTAssertNotNil(queue.dequeue() as? VNCProtocol.KeyEvent, "The initial press is preserved")
+        XCTAssertNil(queue.dequeue(), "Repeats coalesce while the initial key-down is still pending")
+
+        queue.enqueueKeyRepeat(repeatDown)
+        queue.enqueueKeyRepeat(repeatDown)
+        XCTAssertNotNil(queue.dequeue() as? VNCProtocol.KeyEvent, "One pending repeat is preserved after the initial press drains")
+        XCTAssertNil(queue.dequeue(), "Further repeats coalesce until that pending repeat drains")
+
+        queue.enqueueKeyRepeat(repeatDown)
+        queue.enqueue(VNCProtocol.KeyEvent(isDown: false, key: 0x2D))
+        queue.enqueueKeyRepeat(repeatDown)
+        XCTAssertEqual((queue.dequeue() as? VNCProtocol.KeyEvent)?.isDown, true)
+        XCTAssertEqual((queue.dequeue() as? VNCProtocol.KeyEvent)?.isDown, false)
+        XCTAssertEqual((queue.dequeue() as? VNCProtocol.KeyEvent)?.isDown, true,
+                       "A key-up starts a new physical press cycle")
+    }
 }
 #endif

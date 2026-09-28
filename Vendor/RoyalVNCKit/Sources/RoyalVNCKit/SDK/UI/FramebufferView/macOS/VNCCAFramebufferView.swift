@@ -565,7 +565,11 @@ extension VNCCAFramebufferView {
 		}
 
 		for keyCode in keyCodes {
-			connection.keyDown(keyCode)
+			if event.isARepeat {
+				connection.enqueueKeyRepeat(keyCode)
+			} else {
+				connection.keyDown(keyCode)
+			}
 		}
 	}
 

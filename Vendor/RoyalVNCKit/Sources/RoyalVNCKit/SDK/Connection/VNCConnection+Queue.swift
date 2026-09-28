@@ -25,6 +25,16 @@ extension VNCConnection {
 		enqueueClientToServerMessage(keyEvent)
 	}
 
+	/// Keeps at most one unsent autorepeat per key. If the network send loop
+	/// stalls, queued repeats must not grow without bound ahead of the key-up.
+	func enqueueKeyRepeat(_ key: VNCKeyCode) {
+		guard settings.inputMode != .none else { return }
+
+		let keyCode = key.rawValue(forAppleRemoteDesktop: state.isAppleRemoteDesktop)
+		let keyEvent = VNCProtocol.KeyEvent(isDown: true, key: keyCode)
+		clientToServerMessageQueue.enqueueKeyRepeat(keyEvent)
+	}
+
     func enqueueMouseEvent(nonNormalizedX: UInt16,
                            nonNormalizedY: UInt16) {
         guard settings.inputMode != .none else { return }

@@ -9,6 +9,21 @@ final class Queue<T>: @unchecked Sendable {
 		list.append(element)
 	}
 
+	func enqueueKeyRepeat(_ event: VNCProtocol.KeyEvent) {
+		lock.lock(); defer { lock.unlock() }
+		for queued in list.reversed() {
+			guard let keyEvent = queued as? VNCProtocol.KeyEvent,
+				  keyEvent.key == event.key else {
+				continue
+			}
+			if keyEvent.isDown { return }
+			break
+		}
+		if let typedEvent = event as? T {
+			list.append(typedEvent)
+		}
+	}
+
 	func dequeue() -> T? {
 		lock.lock(); defer { lock.unlock() }
 		guard !list.isEmpty else { return nil }
