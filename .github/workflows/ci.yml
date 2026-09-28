@@ -91,7 +91,8 @@ jobs:
       - name: Verify failed RDP connection and retry layout
         run: |
           set -o pipefail
-          xcodebuild test -project FjarrConnect.xcodeproj -scheme FjarrConnect \
+          python3 scripts/with-rdp-test-fixture.py xcodebuild test \
+            -project FjarrConnect.xcodeproj -scheme FjarrConnect \
             -configuration Debug -destination 'platform=macOS' \
             -derivedDataPath build/rdp-layout -resultBundlePath build/RDPLayout.xcresult \
             ARCHS='${{ matrix.arch }}' ONLY_ACTIVE_ARCH=YES \

@@ -245,7 +245,10 @@ final class ConnectionUITests: XCTestCase {
                       "The app should show RDP runtime loading while it prepares a first connection")
         XCTAssertTrue(quickConnect.isHittable,
                       "Loading FreeRDP must not block the sidebar or the main event loop")
-        XCTAssertTrue(app.buttons["newConnection"].isHittable,
+        // macOS exposes both the toolbar wrapper and its clickable child with
+        // this identifier; test the actual button, not the wrapper element.
+        let newConnectionButton = app.buttons.matching(identifier: "newConnection").element(boundBy: 1)
+        XCTAssertTrue(newConnectionButton.isHittable,
                       "The toolbar should remain responsive while FreeRDP loads")
         let password = app.secureTextFields["auth.password"]
         XCTAssertTrue(password.waitForExistence(timeout: 30))
