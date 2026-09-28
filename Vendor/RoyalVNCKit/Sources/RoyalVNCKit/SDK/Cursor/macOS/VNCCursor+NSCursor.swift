@@ -9,6 +9,12 @@ import AppKit
 
 public extension VNCCursor {
 	var nsCursor: NSCursor {
+		nsCursor(scaleFactor: 1)
+	}
+
+	/// Converts framebuffer-pixel dimensions into the points used by AppKit.
+	/// Use the same factor for the hotspot so the click location stays aligned.
+	func nsCursor(scaleFactor: CGFloat) -> NSCursor {
 		guard !isEmpty else {
 			return Self.emptyNSCursor
 		}
@@ -17,8 +23,13 @@ public extension VNCCursor {
 			return Self.emptyNSCursor
 		}
 
+		let factor = scaleFactor.isFinite && scaleFactor > 0 ? scaleFactor : 1
+		nsImage.size = NSSize(width: nsImage.size.width * factor,
+						  height: nsImage.size.height * factor)
+
 		let cursor = NSCursor(image: nsImage,
-							  hotSpot: hotspot.cgPoint)
+							  hotSpot: CGPoint(x: CGFloat(hotspot.x) * factor,
+										   y: CGFloat(hotspot.y) * factor))
 
 		return cursor
 	}

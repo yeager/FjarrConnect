@@ -66,6 +66,7 @@
 "ssh.authentication" = "SSH usa las claves, ssh-agent y la configuración SSH del Mac. Introduce las contraseñas y verifica las nuevas claves del servidor en el terminal.";
 "ssh.ended" = "SSH ha finalizado. Lee el mensaje del terminal antes de volver a conectarte.";
 "rdp.install" = "Falta el componente RDP integrado o no se pudo cargar. Reinstale FjärrConnect para la arquitectura de su Mac.";
+"rdp.waitingForDesktop" = "Esperando al escritorio remoto…";
 "rdp.invalid" = "Las credenciales RDP no pueden contener saltos de línea.";
 "rdp.ended" = "RDP ha finalizado. Comprueba el servidor, las credenciales y el certificado y vuelve a conectarte.";
 "discovery.resolveFailed" = "No se pudo acceder al servidor. Comprueba el servicio, la red y el permiso de acceso a la red local y actualiza.";
@@ -78,11 +79,14 @@
 "vnc.usernameRequired.signIn" = "Iniciar sesión con un usuario del Mac…";
 "vnc.macAuthenticationRejected" = "Compartir pantalla de Mac rechazó el inicio de sesión. Comprueba el nombre corto de usuario y la contraseña de la cuenta, y que tenga permiso en los ajustes de Compartir pantalla.";
 "vnc.connectionFailed" = "La conexión VNC falló. Comprueba la dirección y el puerto y confirma que Compartir pantalla o el servicio VNC está activado en el equipo remoto y que la cuenta tiene permiso.";
+"vnc.retryingFirstConnection" = "La conexión inicial falló. Se volverá a intentar una vez…";
 "vnc.unsupportedSecurity" = "El servidor ofrece un método de seguridad VNC que FjärrConnect no puede usar. FjärrConnect admite VeNCrypt X509Vnc y X509Plain con verificación del certificado, además de la autenticación VNC estándar.";
 "rdp.error.network" = "No se pudo acceder al servidor. Comprueba que el escritorio remoto está activado y que la dirección y el puerto son accesibles.";
+"rdp.error.securityNegotiation" = "La negociación RDP terminó antes de seleccionar un protocolo de seguridad. Comprueba que la dirección corresponde a un servidor RDP y que sus ajustes de seguridad son compatibles con el perfil.";
 "rdp.error.authentication" = "El servidor rechazó la identificación. Comprueba el nombre de usuario, la contraseña y el permiso para usar el escritorio remoto.";
 "rdp.error.certificate" = "Falló la conexión segura. Comprueba el certificado del servidor y los ajustes de TLS.";
 "rdp.error.account" = "Es necesario revisar la cuenta: puede estar bloqueada, desactivada, caducada o requerir un cambio de contraseña. Comprueba su acceso al escritorio remoto.";
+"rdp.phase" = "Fase de conexión RDP:";
 "rdp.exitCode" = "Código de salida del cliente:";
 "vnc.blackScreen" = "El servidor está enviando una imagen negra. En un Mac, comprueba Compartir pantalla o Gestión remota en Ajustes del Sistema → General → Compartir. Puede ser necesario desactivar y volver a activar la función directamente en el Mac remoto para conceder acceso a la pantalla y a los dispositivos de entrada. Comprueba también que la pantalla remota no está en reposo.";
 "vnc.waitingForImage" = "La conexión está establecida, pero el servidor aún no ha enviado una imagen del escritorio. Comprueba la función de compartir pantalla en el ordenador remoto.";
@@ -203,6 +207,9 @@
 
 "options.clipboard" = "Compartir texto e imágenes del portapapeles con la sesión activa";
 "options.rdpClipboard" = "Compartir el portapapeles de texto e imágenes con la sesión activa";
+"options.rdpClipboardFiles" = "Compartir archivos con Windows mediante el portapapeles";
+"rdp.clipboardFiles.connectOnce" = "Conectar una vez con portapapeles de archivos";
+"options.rdpClipboardFiles.hint" = "Requiere compatibilidad del servidor. La copia de archivos en ambas direcciones está implementada, pero aún no se ha verificado con un servidor Windows real. El portapapeles de archivos está desactivado de forma predeterminada.";
 
 "options.ssh" = "Conexión SSH";
 

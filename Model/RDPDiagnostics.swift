@@ -50,7 +50,10 @@ struct RDPDiagnostics {
 /// A user-saveable connection report with no credentials or raw backend output.
 enum DiagnosticReport {
     static func text(profile: ConnectionProfile, status: SessionStatus,
-                     health: SessionHealth? = nil, now: Date = .now) -> String {
+                     health: SessionHealth? = nil, connectionPhase: String? = nil,
+                     requestedSecurityProtocols: UInt32? = nil, selectedSecurityProtocol: UInt32? = nil,
+                     inputState: UInt32? = nil,
+                     now: Date = .now) -> String {
         let formatter = ISO8601DateFormatter()
         let state: String
         switch status {
@@ -71,6 +74,33 @@ enum DiagnosticReport {
         #endif
         let connectionTime = health?.tcpConnectionMilliseconds.map(String.init) ?? "unavailable"
         let packetLoss = health?.packetLossPercent.map { String(format: "%.1f", locale: Locale(identifier: "en_US_POSIX"), $0) } ?? "unavailable"
+        let knownPhases: Set<String> = ["CONNECTION_STATE_INITIAL", "CONNECTION_STATE_NEGO", "CONNECTION_STATE_NLA",
+            "CONNECTION_STATE_AAD", "CONNECTION_STATE_MCS_CREATE_REQUEST", "CONNECTION_STATE_MCS_CREATE_RESPONSE",
+            "CONNECTION_STATE_MCS_ERECT_DOMAIN", "CONNECTION_STATE_MCS_ATTACH_USER", "CONNECTION_STATE_MCS_ATTACH_USER_CONFIRM",
+            "CONNECTION_STATE_MCS_CHANNEL_JOIN_REQUEST", "CONNECTION_STATE_MCS_CHANNEL_JOIN_RESPONSE",
+            "CONNECTION_STATE_RDP_SECURITY_COMMENCEMENT", "CONNECTION_STATE_SECURE_SETTINGS_EXCHANGE",
+            "CONNECTION_STATE_CONNECT_TIME_AUTO_DETECT_REQUEST", "CONNECTION_STATE_CONNECT_TIME_AUTO_DETECT_RESPONSE",
+            "CONNECTION_STATE_LICENSING", "CONNECTION_STATE_MULTITRANSPORT_BOOTSTRAPPING_REQUEST",
+            "CONNECTION_STATE_MULTITRANSPORT_BOOTSTRAPPING_RESPONSE", "CONNECTION_STATE_CAPABILITIES_EXCHANGE_DEMAND_ACTIVE",
+            "CONNECTION_STATE_CAPABILITIES_EXCHANGE_MONITOR_LAYOUT", "CONNECTION_STATE_CAPABILITIES_EXCHANGE_CONFIRM_ACTIVE",
+            "CONNECTION_STATE_FINALIZATION", "CONNECTION_STATE_ACTIVE"]
+        let safePhase = connectionPhase.flatMap { knownPhases.contains($0) ? $0 : nil } ?? "unavailable"
+        let safeRequestedProtocols = requestedSecurityProtocols.map { String(format: "0x%08X", $0) } ?? "unavailable"
+        let safeSelectedProtocol: String
+        switch selectedSecurityProtocol {
+        case .some(0): safeSelectedProtocol = "RDP"
+        case .some(1): safeSelectedProtocol = "TLS"
+        case .some(2): safeSelectedProtocol = "NLA"
+        case .some(4): safeSelectedProtocol = "RDSTLS"
+        case .some(8): safeSelectedProtocol = "NLA-Extended"
+        case .some(16): safeSelectedProtocol = "RDS-AAD"
+        case .none: safeSelectedProtocol = "unavailable"
+        default: safeSelectedProtocol = "unknown"
+        }
+        func presence(_ bit: UInt32) -> String {
+            guard let inputState else { return "unavailable" }
+            return inputState & bit == bit ? "yes" : "no"
+        }
         return [
             "FjarrConnect diagnostic report",
             "created: \(formatter.string(from: now))",
@@ -82,6 +112,12 @@ enum DiagnosticReport {
             "tcp-connect-ms: \(connectionTime)",
             "packet-loss-percent: \(packetLoss)",
             "graphics-codec: \(health?.codec ?? "unavailable")",
+            "rdp-connection-phase: \(profile.transport == .rdp || profile.transport == .remoteApp ? safePhase : "unavailable")",
+            "rdp-requested-security-protocols: \(profile.transport == .rdp || profile.transport == .remoteApp ? safeRequestedProtocols : "unavailable")",
+            "rdp-selected-security-protocol: \(profile.transport == .rdp || profile.transport == .remoteApp ? safeSelectedProtocol : "unavailable")",
+            "rdp-arguments-parsed: \(profile.transport == .rdp || profile.transport == .remoteApp ? presence(1) : "unavailable")",
+            "rdp-username-configured: \(profile.transport == .rdp || profile.transport == .remoteApp ? presence(2) : "unavailable")",
+            "rdp-password-configured: \(profile.transport == .rdp || profile.transport == .remoteApp ? presence(4) : "unavailable")",
             "endpoint: omitted",
             "credentials: omitted",
             "server-output: omitted",
@@ -90,17 +126,26 @@ enum DiagnosticReport {
     }
 
     static func save(profile: ConnectionProfile, status: SessionStatus,
-                     health: SessionHealth? = nil) throws {
+                     health: SessionHealth? = nil, connectionPhase: String? = nil,
+                     requestedSecurityProtocols: UInt32? = nil, selectedSecurityProtocol: UInt32? = nil,
+                     inputState: UInt32? = nil) throws {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = "FjarrConnect-diagnostic.txt"
         panel.allowedContentTypes = [.plainText]
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        try write(profile: profile, status: status, health: health, to: url)
+        try write(profile: profile, status: status, health: health, connectionPhase: connectionPhase,
+                  requestedSecurityProtocols: requestedSecurityProtocols,
+                  selectedSecurityProtocol: selectedSecurityProtocol, inputState: inputState, to: url)
     }
 
     static func write(profile: ConnectionProfile, status: SessionStatus,
-                      health: SessionHealth? = nil, to url: URL, now: Date = .now) throws {
-        try text(profile: profile, status: status, health: health, now: now)
+                      health: SessionHealth? = nil, connectionPhase: String? = nil,
+                      requestedSecurityProtocols: UInt32? = nil, selectedSecurityProtocol: UInt32? = nil,
+                      inputState: UInt32? = nil,
+                      to url: URL, now: Date = .now) throws {
+        try text(profile: profile, status: status, health: health, connectionPhase: connectionPhase,
+                 requestedSecurityProtocols: requestedSecurityProtocols,
+                 selectedSecurityProtocol: selectedSecurityProtocol, inputState: inputState, now: now)
             .write(to: url, atomically: true, encoding: .utf8)
     }
 }

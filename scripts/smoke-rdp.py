@@ -82,6 +82,18 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
                     str(library), '-Wl,-rpath,' + str(library.parent), '-o', str(probe)], check=True)
     empty_translations = directory / 'empty-translations.json'
     empty_translations.write_text('{}')
+    phase_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
+                                 input='', text=True, capture_output=True, timeout=15,
+                                 env=dict(os.environ, FC_TEST_CONNECTION_PHASE='1'))
+    assert phase_check.returncode == 0, (
+        f'RDP connection phase reporting failed: {phase_check.stdout}\n{phase_check.stderr}')
+    print(f'RDP {architecture}: {phase_check.stdout.strip()}')
+    security_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
+                                    input='', text=True, capture_output=True, timeout=15,
+                                    env=dict(os.environ, FC_TEST_SECURITY_PROTOCOLS='1'))
+    assert security_check.returncode == 0, (
+        f'RDP security negotiation reporting failed: {security_check.stdout}\n{security_check.stderr}')
+    print(f'RDP {architecture}: {security_check.stdout.strip()}')
     keyboard_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
                                     input='', text=True, capture_output=True, timeout=15,
                                     env=dict(os.environ, FC_TEST_KEYBOARD_INPUT='1'))
@@ -99,6 +111,29 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
     assert 'scan codes resolved and released in order: 29,56,335 (raw End 335).' in secure_attention_check.stdout, (
         f'RDP extended End scan code was unexpected: {secure_attention_check.stdout}')
     print(f'RDP {architecture}: {secure_attention_check.stdout.strip()}')
+    frame_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
+                                 input='', text=True, capture_output=True, timeout=15,
+                                 env=dict(os.environ, FC_TEST_FRAME_RECEIVED='1'))
+    assert frame_check.returncode == 0, (
+        f'RDP first-frame status failed (exit {frame_check.returncode}): '
+        f'{frame_check.stdout}\n{frame_check.stderr}')
+    print(f'RDP {architecture}: {frame_check.stdout.strip()}')
+    for marker, expected in [('', '0'), ('/fc:clipboard-files\n', '1')]:
+        option_check = subprocess.run(
+            [str(probe), str(empty_translations), str(directory / 'desktop.png')],
+            input='+clipboard\n' + marker, text=True, capture_output=True, timeout=15,
+            env=dict(os.environ, FC_TEST_CLIPBOARD_FILE_OPTION='1',
+                     FC_TEST_CLIPBOARD_FILE_OPTION_EXPECTED=expected))
+        assert option_check.returncode == 0, (
+            f'RDP file-clipboard opt-in parsing failed: {option_check.stdout}\n{option_check.stderr}')
+    print(f'RDP {architecture}: file clipboard is off by default; explicit opt-in enables both directions.')
+    inbound_file_check = subprocess.run(
+        [str(probe), str(empty_translations), str(directory / 'desktop.png')],
+        input='+clipboard\n/fc:clipboard-files\n', text=True, capture_output=True, timeout=30,
+        env=dict(os.environ, FC_TEST_RDP_FILE_CLIPBOARD_INBOUND='1'))
+    assert inbound_file_check.returncode == 0, (
+        f'RDP Windows-to-Mac file clipboard failed: {inbound_file_check.stdout}\n{inbound_file_check.stderr}')
+    print(f'RDP {architecture}: {inbound_file_check.stderr.strip()}')
     image_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
                                  input='', text=True, capture_output=True, timeout=15,
                                  env=dict(os.environ, FC_TEST_CLIPBOARD_IMAGE='1'))
@@ -114,7 +149,7 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
                                  env=dict(os.environ, FC_TEST_CLIPBOARD_FILES='1'))
     assert files_check.returncode == 0, (
         f'RDP file clipboard manifest validation failed: {files_check.stdout}\n{files_check.stderr}')
-    print(f'RDP {architecture}: local file-descriptor validation passed; network file clipboard remains disabled.')
+    print(f'RDP {architecture}: local file-descriptor validation passed; this smoke test does not connect to Windows.')
     failure_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
                                    input='', text=True, capture_output=True, timeout=15,
                                    env=dict(os.environ, FC_TEST_FAILURE_CATEGORIES='1'))

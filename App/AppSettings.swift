@@ -17,13 +17,13 @@ enum AppSettings {
     static let automaticUpdateChecks = "settings.automaticUpdateChecks"
 
     static func shouldShowSidebar(showSidebar: Bool, autoHideWhileConnected: Bool,
-                                  hasActiveSessions: Bool) -> Bool {
-        showSidebar && !(autoHideWhileConnected && hasActiveSessions)
+                                  selectedSessionStatus: SessionStatus?) -> Bool {
+        showSidebar && !(autoHideWhileConnected && selectedSessionStatus?.isEstablished == true)
     }
 
     static func shouldShowSessionTabs(autoHideWhileConnected: Bool,
-                                      hasActiveSessions: Bool) -> Bool {
-        !autoHideWhileConnected || !hasActiveSessions
+                                      selectedSessionStatus: SessionStatus?) -> Bool {
+        !autoHideWhileConnected || selectedSessionStatus?.isEstablished != true
     }
 
     static func shouldCheckForUpdates(storedPreference: Bool?) -> Bool {

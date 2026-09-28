@@ -66,6 +66,7 @@
 "ssh.authentication" = "SSH utilise les clés, ssh-agent et la configuration SSH de votre Mac. Saisissez les mots de passe et vérifiez les nouvelles clés d’hôte dans le terminal.";
 "ssh.ended" = "SSH s’est arrêté. Consultez le message du terminal avant de vous reconnecter.";
 "rdp.install" = "Le composant RDP intégré est absent ou n’a pas pu être chargé. Réinstallez FjärrConnect pour l’architecture de votre Mac.";
+"rdp.waitingForDesktop" = "En attente du bureau distant…";
 "rdp.invalid" = "Les identifiants RDP ne peuvent pas contenir de sauts de ligne.";
 "rdp.ended" = "RDP s’est arrêté. Vérifiez le serveur, les identifiants et le certificat, puis reconnectez-vous.";
 "discovery.resolveFailed" = "Impossible de joindre ce serveur. Vérifiez le service, le réseau et l’autorisation d’accès au réseau local, puis actualisez.";
@@ -78,11 +79,14 @@
 "vnc.usernameRequired.signIn" = "Se connecter avec un nom d’utilisateur Mac…";
 "vnc.macAuthenticationRejected" = "Le partage d’écran du Mac a refusé la connexion. Vérifiez le nom d’utilisateur court et le mot de passe du compte, ainsi que son autorisation dans les réglages du partage d’écran.";
 "vnc.connectionFailed" = "La connexion VNC a échoué. Vérifiez l’adresse et le port, puis confirmez que Partage d’écran ou le service VNC est activé sur l’ordinateur distant et que le compte est autorisé.";
+"vnc.retryingFirstConnection" = "La première connexion a échoué. Nouvelle tentative unique…";
 "vnc.unsupportedSecurity" = "Le serveur propose une méthode de sécurité VNC que FjärrConnect ne peut pas utiliser. FjärrConnect prend en charge VeNCrypt X509Vnc et X509Plain avec vérification du certificat, ainsi que l’authentification VNC standard.";
 "rdp.error.network" = "Impossible de joindre le serveur. Vérifiez que le bureau à distance est activé et que cette adresse et ce port sont accessibles.";
+"rdp.error.securityNegotiation" = "La négociation RDP s’est terminée avant la sélection d’un protocole de sécurité. Vérifiez que l’adresse mène à un serveur RDP et que ses réglages de sécurité sont compatibles avec le profil.";
 "rdp.error.authentication" = "Le serveur a refusé l’identification. Vérifiez le nom d’utilisateur, le mot de passe et l’autorisation d’utiliser le bureau à distance.";
 "rdp.error.certificate" = "La connexion sécurisée a échoué. Vérifiez le certificat du serveur et les réglages TLS.";
 "rdp.error.account" = "Le compte doit être vérifié : il peut être verrouillé, désactivé, expiré ou nécessiter un changement de mot de passe. Vérifiez son accès au bureau à distance.";
+"rdp.phase" = "Phase de connexion RDP :";
 "rdp.exitCode" = "Code de sortie du client :";
 "vnc.blackScreen" = "Le serveur envoie une image noire. Sur un Mac, vérifiez Partage d’écran ou Gestion à distance dans Réglages Système → Général → Partage. Il peut être nécessaire de désactiver puis réactiver la fonction directement sur le Mac distant pour autoriser l’accès à l’écran et aux périphériques d’entrée. Vérifiez aussi que l’écran distant est éveillé.";
 "vnc.waitingForImage" = "La connexion est établie, mais le serveur n’a pas encore envoyé d’image du bureau. Vérifiez le partage d’écran sur l’ordinateur distant.";
@@ -203,6 +207,9 @@
 
 "options.clipboard" = "Partager le texte et les images du presse-papiers avec la session active";
 "options.rdpClipboard" = "Partager le presse-papiers texte et image avec la session active";
+"options.rdpClipboardFiles" = "Partager des fichiers avec Windows via le presse-papiers";
+"rdp.clipboardFiles.connectOnce" = "Se connecter une fois avec le presse-papiers de fichiers";
+"options.rdpClipboardFiles.hint" = "Nécessite la prise en charge du serveur. La copie de fichiers dans les deux sens est implémentée, mais n’a pas été vérifiée sur un vrai serveur Windows. Le presse-papiers de fichiers est désactivé par défaut.";
 
 "options.ssh" = "Connexion SSH";
 

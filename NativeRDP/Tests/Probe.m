@@ -4,6 +4,11 @@
 #import "FCRDPView.h"
 #import "FCKeyboardSequences.h"
 #include <freerdp/error.h>
+#include <freerdp/client/cliprdr.h>
+#include <freerdp/utils/cliprdr_utils.h>
+#include <freerdp/gdi/gdi.h>
+#include <freerdp/settings_types.h>
+#include <winpr/shell.h>
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
@@ -17,19 +22,29 @@ enum {
 // in this test-only category preserves compile-time checking without exposing
 // them through the shipping C API.
 @interface NSView (FCRDPClipboardProbe)
+- (void)publishFrame:(rdpGdi *)gdi;
 - (void)clipboardTick;
 - (void)setSessionActive:(BOOL)active pasteboard:(NSPasteboard *)pasteboard;
 - (void)setClipboardActive:(BOOL)active pasteboard:(NSPasteboard *)pasteboard;
 - (void)captureClipboardFromPasteboard:(NSPasteboard *)pasteboard;
 - (NSArray<NSURL *> *)clipboardFileURLsFromPasteboard:(NSPasteboard *)pasteboard;
 - (NSData *)fileDescriptorDataForURLs:(NSArray<NSURL *> *)urls;
+- (NSData *)clipboardFileDescriptorsForRequestFormat:(UINT32)requestedFormat
+                                      registeredFormat:(UINT32)registeredFormat
+                                            serverFlags:(UINT32)serverFlags;
 - (NSData *)clipboardFileContentsForURL:(NSURL *)url expectedSize:(uint64_t)expectedSize
                                   flags:(uint32_t)flags offset:(uint64_t)offset requestedLength:(uint32_t)requestedLength;
+- (NSData *)clipboardFileContentsForRequest:(const CLIPRDR_FILE_CONTENTS_REQUEST *)request
+                               serverFlags:(UINT32)serverFlags;
 - (NSData *)unicodeInputDataForText:(NSString *)text;
 - (DWORD)scancode:(unsigned short)key;
 - (NSData *)DIBFromPasteboard:(NSPasteboard *)pasteboard;
 - (void)receiveClipboardDIB:(NSData *)dib;
 - (void)writeClipboardDIB:(NSData *)dib;
+- (BOOL)beginRemoteClipboardFileTransfer:(NSData *)data clip:(CliprdrClientContext *)clip;
+- (UINT)receiveRemoteClipboardFileResponse:(CliprdrClientContext *)clip
+                                  response:(const CLIPRDR_FILE_CONTENTS_RESPONSE *)response;
+- (UINT32)clipboardFeatureMaskForFileTransfer:(BOOL)enabled;
 @end
 
 static NSString *expectedFingerprint;
@@ -37,6 +52,14 @@ static NSString *expectedTitle;
 static BOOL sawCertificate;
 static BOOL rejectCertificate;
 static BOOL incorrectCertificate;
+static CLIPRDR_FILE_CONTENTS_REQUEST capturedRemoteFileRequest;
+static NSUInteger remoteFileRequestCount;
+static UINT captureRemoteFileRequest(CliprdrClientContext *clip, const CLIPRDR_FILE_CONTENTS_REQUEST *request) {
+    if (!request) return 1;
+    capturedRemoteFileRequest = *request;
+    remoteFileRequestCount++;
+    return CHANNEL_RC_OK;
+}
 static NSModalResponse inspectCertificate(id self, SEL command) {
     NSAlert *alert = self;
     sawCertificate = YES;
@@ -61,8 +84,159 @@ int main(int argc, const char **argv) {
         NSString *json = [[NSString alloc] initWithData:translations encoding:NSUTF8StringEncoding];
         NSView *view = (__bridge_transfer NSView *)fc_rdp_create(arguments.UTF8String, json.UTF8String);
         if (!view) { fputs("fc_rdp_create returned NULL\n", stderr); return 3; }
+        if ([NSProcessInfo.processInfo.environment[@"FC_TEST_RDP_NEGOTIATION"] isEqualToString:@"1"]) {
+            // A password-free live probe isolates FreeRDP negotiation from
+            // authentication. Print only state enums and protocol flags.
+            fc_rdp_start((__bridge void *)view);
+            int status = 0;
+            for (NSUInteger attempt = 0; attempt < 200; attempt++) {
+                status = fc_rdp_status((__bridge void *)view);
+                if (status == 2 || status == 3) break;
+                usleep(100000);
+            }
+            const char *phase = fc_rdp_connection_phase((__bridge void *)view);
+            printf("RDP negotiation probe: status=%d phase=%s failure=%d error=0x%08x requested=0x%08x selected=0x%08x\n",
+                   status, phase ?: "unavailable", fc_rdp_failure((__bridge void *)view),
+                   fc_rdp_error((__bridge void *)view),
+                   fc_rdp_requested_protocols((__bridge void *)view), fc_rdp_selected_protocol((__bridge void *)view));
+            fc_rdp_stop((__bridge void *)view);
+            return status == 3 && phase ? 0 : 25;
+        }
+        if ([NSProcessInfo.processInfo.environment[@"FC_TEST_CLIPBOARD_FILE_OPTION"] isEqualToString:@"1"]) {
+            const BOOL expected = [NSProcessInfo.processInfo.environment[@"FC_TEST_CLIPBOARD_FILE_OPTION_EXPECTED"] isEqualToString:@"1"];
+            const BOOL requested = [[view valueForKey:@"clipboardFileTransferRequested"] boolValue];
+            const BOOL markerRemoved = ![[view valueForKey:@"arguments"] containsString:@"/fc:clipboard-files"];
+            const UINT32 clipboardFeatures = [(id)view clipboardFeatureMaskForFileTransfer:requested];
+            const UINT32 expectedFeatures = CLIPRDR_FLAG_LOCAL_TO_REMOTE | CLIPRDR_FLAG_REMOTE_TO_LOCAL |
+                (expected ? CLIPRDR_FLAG_LOCAL_TO_REMOTE_FILES | CLIPRDR_FLAG_REMOTE_TO_LOCAL_FILES : 0);
+            printf("RDP file-clipboard opt-in accepted=%d removed-before-FreeRDP=%d bidirectional=%d\n",
+                   requested, markerRemoved,
+                   (clipboardFeatures & (CLIPRDR_FLAG_LOCAL_TO_REMOTE_FILES | CLIPRDR_FLAG_REMOTE_TO_LOCAL_FILES)) ==
+                    (expected ? CLIPRDR_FLAG_LOCAL_TO_REMOTE_FILES | CLIPRDR_FLAG_REMOTE_TO_LOCAL_FILES : 0));
+            return requested == expected && markerRemoved &&
+                clipboardFeatures == expectedFeatures ? 0 : 19;
+        }
+        if ([NSProcessInfo.processInfo.environment[@"FC_TEST_RDP_FILE_CLIPBOARD_INBOUND"] isEqualToString:@"1"]) {
+            const uint64_t fileSize = 4ULL * 1024 * 1024 + 9;
+            FILEDESCRIPTORW descriptor = {0};
+            descriptor.dwFlags = FD_FILESIZE;
+            descriptor.nFileSizeLow = (DWORD)fileSize;
+            const unichar name[] = { 'f', 'i', 'x', 't', 'u', 'r', 'e', '.', 'b', 'i', 'n' };
+            memcpy(descriptor.cFileName, name, sizeof(name));
+            BYTE *encoded = NULL;
+            UINT32 encodedLength = 0;
+            if (cliprdr_serialize_file_list(&descriptor, 1, &encoded, &encodedLength) != CHANNEL_RC_OK || !encoded) return 26;
+            NSData *manifest = [NSData dataWithBytes:encoded length:encodedLength];
+            free(encoded);
+
+            [view setValue:@YES forKey:@"clipboardFileTransferAllowed"];
+            [view setValue:@YES forKey:@"sessionActive"];
+            [view setValue:@NO forKey:@"cancelled"];
+            [(id)view setClipboardActive:YES pasteboard:NSPasteboard.generalPasteboard];
+            CliprdrClientContext clip = {0};
+            clip.ClientFileContentsRequest = captureRemoteFileRequest;
+            remoteFileRequestCount = 0;
+            BOOL accepted = [(id)view beginRemoteClipboardFileTransfer:manifest clip:&clip];
+            id transfer = [view valueForKey:@"remoteClipboardTransfer"];
+            NSArray *transferFiles = [transfer valueForKey:@"files"];
+            NSURL *receivedFile = [transferFiles.firstObject valueForKey:@"url"];
+            BOOL firstRequestValid = accepted && remoteFileRequestCount == 1 &&
+                capturedRemoteFileRequest.dwFlags == FILECONTENTS_RANGE &&
+                capturedRemoteFileRequest.listIndex == 0 && capturedRemoteFileRequest.nPositionLow == 0 &&
+                capturedRemoteFileRequest.cbRequested == 4 * 1024 * 1024;
+
+            NSMutableData *firstChunk = [NSMutableData dataWithLength:capturedRemoteFileRequest.cbRequested];
+            memset(firstChunk.mutableBytes, 'A', firstChunk.length);
+            CLIPRDR_FILE_CONTENTS_RESPONSE firstResponse = {0};
+            firstResponse.common.msgFlags = CB_RESPONSE_OK;
+            firstResponse.streamId = capturedRemoteFileRequest.streamId;
+            firstResponse.cbRequested = (UINT32)firstChunk.length;
+            firstResponse.requestedData = firstChunk.bytes;
+            [(id)view receiveRemoteClipboardFileResponse:&clip response:&firstResponse];
+            BOOL secondRequestValid = remoteFileRequestCount == 2 &&
+                capturedRemoteFileRequest.nPositionLow == 4 * 1024 * 1024 &&
+                capturedRemoteFileRequest.cbRequested == 9;
+
+            NSData *lastChunk = [@"BCDEFGHIJ" dataUsingEncoding:NSUTF8StringEncoding];
+            CLIPRDR_FILE_CONTENTS_RESPONSE lastResponse = {0};
+            lastResponse.common.msgFlags = CB_RESPONSE_OK;
+            lastResponse.streamId = capturedRemoteFileRequest.streamId;
+            lastResponse.cbRequested = (UINT32)lastChunk.length;
+            lastResponse.requestedData = lastChunk.bytes;
+            [(id)view receiveRemoteClipboardFileResponse:&clip response:&lastResponse];
+
+            NSData *received = receivedFile ? [NSData dataWithContentsOfURL:receivedFile] : nil;
+            const BOOL contentValid = received.length == fileSize &&
+                ((const BYTE *)received.bytes)[0] == 'A' &&
+                memcmp((const BYTE *)received.bytes + 4 * 1024 * 1024, "BCDEFGHIJ", 9) == 0;
+            const BOOL completed = [view valueForKey:@"remoteClipboardTransfer"] == nil;
+            FILEDESCRIPTORW unsafeDescriptor = {0};
+            unsafeDescriptor.dwFlags = FD_FILESIZE;
+            const unichar unsafeName[] = { '.', '.', '/', 'x' };
+            memcpy(unsafeDescriptor.cFileName, unsafeName, sizeof(unsafeName));
+            BYTE *unsafeBytes = NULL;
+            UINT32 unsafeLength = 0;
+            BOOL unsafeRejected = cliprdr_serialize_file_list(&unsafeDescriptor, 1,
+                                                               &unsafeBytes, &unsafeLength) == CHANNEL_RC_OK &&
+                unsafeBytes && ![(id)view beginRemoteClipboardFileTransfer:
+                    [NSData dataWithBytes:unsafeBytes length:unsafeLength] clip:&clip];
+            free(unsafeBytes);
+
+            FILEDESCRIPTORW oversizedDescriptor = {0};
+            oversizedDescriptor.dwFlags = FD_FILESIZE;
+            oversizedDescriptor.nFileSizeLow = 256u * 1024u * 1024u + 1u;
+            const unichar safeName[] = { 'l', 'a', 'r', 'g', 'e', '.', 'b', 'i', 'n' };
+            memcpy(oversizedDescriptor.cFileName, safeName, sizeof(safeName));
+            BYTE *oversizedBytes = NULL;
+            UINT32 oversizedLength = 0;
+            BOOL oversizedRejected = cliprdr_serialize_file_list(&oversizedDescriptor, 1,
+                                                                  &oversizedBytes, &oversizedLength) == CHANNEL_RC_OK &&
+                oversizedBytes && ![(id)view beginRemoteClipboardFileTransfer:
+                    [NSData dataWithBytes:oversizedBytes length:oversizedLength] clip:&clip];
+            free(oversizedBytes);
+            fprintf(stderr, "RDP inbound file clipboard accepted=%d chunks=%lu ranges=%d/%d content=%d complete=%d\n",
+                    accepted, (unsigned long)remoteFileRequestCount, firstRequestValid, secondRequestValid,
+                    contentValid, completed);
+            if (receivedFile) [[NSFileManager defaultManager] removeItemAtURL:receivedFile.URLByDeletingLastPathComponent error:nil];
+            fprintf(stderr, "RDP inbound file clipboard rejected unsafe-name=%d oversized=%d\n",
+                    unsafeRejected, oversizedRejected);
+            return accepted && firstRequestValid && secondRequestValid && contentValid && completed &&
+                unsafeRejected && oversizedRejected ? 0 : 26;
+        }
         const uint32_t abi = fc_rdp_abi();
-        if (abi != 3) { fprintf(stderr, "Unexpected RDP ABI: %u\n", abi); return 3; }
+        if (abi != 7) { fprintf(stderr, "Unexpected RDP ABI: %u\n", abi); return 3; }
+        if ([NSProcessInfo.processInfo.environment[@"FC_TEST_SECURITY_PROTOCOLS"] isEqualToString:@"1"]) {
+            [view setValue:@(0x0B) forKey:@"requestedProtocols"];
+            [view setValue:@(0x08) forKey:@"selectedProtocol"];
+            if (fc_rdp_requested_protocols((__bridge void *)view) != 0x0B ||
+                fc_rdp_selected_protocol((__bridge void *)view) != 0x08) return 24;
+            puts("RDP security negotiation flags are exposed without backend logs.");
+            return 0;
+        }
+        if (fc_rdp_has_frame((__bridge void *)view) != 0) {
+            fputs("An RDP view reported a frame before receiving desktop pixels\n", stderr); return 20;
+        }
+        if ([NSProcessInfo.processInfo.environment[@"FC_TEST_CONNECTION_PHASE"] isEqualToString:@"1"]) {
+            const char *initial = fc_rdp_connection_phase((__bridge void *)view);
+            if (!initial || strcmp(initial, "CONNECTION_STATE_INITIAL") != 0) return 22;
+            [view setValue:@(CONNECTION_STATE_NEGO) forKey:@"connectionStage"];
+            const char *phase = fc_rdp_connection_phase((__bridge void *)view);
+            if (!phase || strcmp(phase, "CONNECTION_STATE_NEGO") != 0) return 23;
+            puts("RDP connection phase safely reports CONNECTION_STATE_NEGO.");
+            return 0;
+        }
+        if ([NSProcessInfo.processInfo.environment[@"FC_TEST_FRAME_RECEIVED"] isEqualToString:@"1"]) {
+            uint8_t pixels[16] = { 0, 0, 255, 0, 0, 255, 0, 0,
+                                   255, 0, 0, 0, 255, 255, 255, 0 };
+            rdpGdi frame = {0};
+            frame.primary_buffer = pixels; frame.width = 2; frame.height = 2; frame.stride = 8;
+            [(id)view publishFrame:&frame];
+            if (fc_rdp_has_frame((__bridge void *)view) != 1) {
+                fputs("A valid RDP framebuffer was not reported to the session\n", stderr); return 21;
+            }
+            puts("First desktop frame detected; the waiting overlay can be removed.");
+            return 0;
+        }
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_RDP_SAS"] isEqualToString:@"1"]) {
             const uint32_t control = [(id)view scancode:59];
             const uint32_t alt = [(id)view scancode:58];
@@ -83,25 +257,33 @@ int main(int argc, const char **argv) {
         }
         NSWindow *window = nil;
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_FAILURE_CATEGORIES"] isEqualToString:@"1"]) {
-            const struct { const char *name; UINT32 error; int category; } cases[] = {
-                {"network", FREERDP_ERROR_CONNECT_FAILED, 1},
-                {"certificate", FREERDP_ERROR_TLS_CONNECT_FAILED, 2},
-                {"authentication", FREERDP_ERROR_CONNECT_WRONG_PASSWORD, 3},
-                {"account", FREERDP_ERROR_CONNECT_ACCOUNT_LOCKED_OUT, 4},
-                {"activation", FREERDP_ERROR_CONNECT_ACTIVATION_TIMEOUT, 5},
-                {"nla", FREERDP_ERROR_CONNECT_HYBRID_REQUIRED_BY_SERVER, 6},
-                {"licensing", MAKE_FREERDP_ERROR(ERRINFO, ERRINFO_LICENSE_NO_LICENSE_SERVER), 7},
-                {"server-logoff", FREERDP_ERROR_LOGOFF_BY_USER, 8},
-                {"unknown", UINT32_MAX, 0}
+            const struct { const char *name; UINT32 error; int stage; int category; } cases[] = {
+                {"network", FREERDP_ERROR_CONNECT_FAILED, CONNECTION_STATE_INITIAL, 1},
+                {"transport", FREERDP_ERROR_CONNECT_TRANSPORT_FAILED, CONNECTION_STATE_INITIAL, 1},
+                {"negotiation-timeout", FREERDP_ERROR_CONNECT_FAILED, CONNECTION_STATE_NEGO, 9},
+                {"negotiation-transport", FREERDP_ERROR_CONNECT_TRANSPORT_FAILED, CONNECTION_STATE_NEGO, 9},
+                {"security-negotiation", FREERDP_ERROR_SECURITY_NEGO_CONNECT_FAILED, CONNECTION_STATE_NEGO, 9},
+                {"certificate", FREERDP_ERROR_TLS_CONNECT_FAILED, CONNECTION_STATE_NEGO, 2},
+                {"authentication", FREERDP_ERROR_CONNECT_WRONG_PASSWORD, CONNECTION_STATE_NLA, 3},
+                {"account", FREERDP_ERROR_CONNECT_ACCOUNT_LOCKED_OUT, CONNECTION_STATE_NLA, 4},
+                {"activation", FREERDP_ERROR_CONNECT_ACTIVATION_TIMEOUT, CONNECTION_STATE_ACTIVE, 5},
+                {"nla", FREERDP_ERROR_CONNECT_HYBRID_REQUIRED_BY_SERVER, CONNECTION_STATE_NEGO, 6},
+                {"licensing", MAKE_FREERDP_ERROR(ERRINFO, ERRINFO_LICENSE_NO_LICENSE_SERVER), CONNECTION_STATE_LICENSING, 7},
+                {"server-logoff", FREERDP_ERROR_LOGOFF_BY_USER, CONNECTION_STATE_ACTIVE, 8},
+                {"unknown", UINT32_MAX, CONNECTION_STATE_INITIAL, 0}
             };
             for (size_t index = 0; index < sizeof(cases) / sizeof(cases[0]); index++) {
                 [view setValue:@(cases[index].error) forKey:@"errorCode"];
-                if (fc_rdp_failure((__bridge void *)view) != cases[index].category) {
-                    fprintf(stderr, "RDP error category mismatch: %s\n", cases[index].name);
+                [view setValue:@(cases[index].stage) forKey:@"connectionStage"];
+                const int actualCategory = fc_rdp_failure((__bridge void *)view);
+                if (actualCategory != cases[index].category) {
+                    fprintf(stderr, "RDP error category mismatch: %s expected=%d actual=%d error=0x%08x stage=%d expected-stage=%d\n",
+                            cases[index].name, cases[index].category, actualCategory,
+                            fc_rdp_error((__bridge void *)view), [[view valueForKey:@"connectionStage"] intValue], cases[index].stage);
                     return 11;
                 }
             }
-            puts("RDP failure categories passed: network, certificate, authentication, account, activation, NLA, licensing, server logoff, unknown.");
+            puts("RDP failure categories passed: network, negotiation transport, security negotiation, certificate, authentication, account, activation, NLA, licensing, server logoff, unknown.");
             return 0;
         }
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_KEYBOARD_INPUT"] isEqualToString:@"1"]) {
@@ -146,17 +328,17 @@ int main(int argc, const char **argv) {
             NSPasteboard *pasteboard = [NSPasteboard pasteboardWithUniqueName];
             BOOL wrote = [pasteboard writeObjects:@[file]];
             [(id)view setSessionActive:NO pasteboard:pasteboard];
-            BOOL inactiveCleared = [[view valueForKey:@"clipboardFiles"] count] == 0;
+            BOOL inactiveCleared = [[view valueForKeyPath:@"clipboardFileSnapshot.files"] count] == 0;
             fprintf(stderr, "clipboard-activation context app=%d key=%d allowed=%d status=%d wrote=%d\n",
                     NSApp.isActive, window.isKeyWindow,
                     [[view valueForKey:@"clipboardAllowed"] boolValue],
                     [[view valueForKey:@"connectionStatus"] intValue], wrote);
             [(id)view setSessionActive:YES pasteboard:pasteboard];
             [(id)view setClipboardActive:YES pasteboard:pasteboard];
-            BOOL activeCaptured = [[view valueForKey:@"clipboardFiles"] isEqualToArray:@[file]] &&
-                [view valueForKey:@"clipboardFileDescriptors"] != nil;
+            BOOL activeCaptured = [[view valueForKeyPath:@"clipboardFileSnapshot.files"] isEqualToArray:@[file]] &&
+                [view valueForKeyPath:@"clipboardFileSnapshot.descriptors"] != nil;
             [(id)view setSessionActive:NO pasteboard:pasteboard];
-            BOOL inactiveClearedAgain = [[view valueForKey:@"clipboardFiles"] count] == 0 &&
+            BOOL inactiveClearedAgain = [[view valueForKeyPath:@"clipboardFileSnapshot.files"] count] == 0 &&
                 ![[view valueForKey:@"clipboardActive"] boolValue];
             [pasteboard releaseGlobally]; [[NSFileManager defaultManager] removeItemAtURL:file error:nil];
             BOOL valid = wrote && inactiveCleared && activeCaptured && inactiveClearedAgain;
@@ -173,11 +355,13 @@ int main(int argc, const char **argv) {
             if (![files createDirectoryAtURL:directory withIntermediateDirectories:YES attributes:nil error:nil]) return 9;
             NSURL *file = [directory URLByAppendingPathComponent:@"fixture-å.txt"];
             NSURL *emptyFile = [directory URLByAppendingPathComponent:@"empty.txt"];
+            NSURL *alternateFile = [directory URLByAppendingPathComponent:@"alternate.txt"];
             NSURL *folder = [directory URLByAppendingPathComponent:@"folder" isDirectory:YES];
             NSURL *link = [directory URLByAppendingPathComponent:@"link.txt"];
             NSError *error = nil;
             BOOL created = [[NSData dataWithBytes:"clipboard fixture" length:17] writeToURL:file options:0 error:&error] &&
                 [[NSData data] writeToURL:emptyFile options:0 error:&error] &&
+                [[@"alternate fixture" dataUsingEncoding:NSUTF8StringEncoding] writeToURL:alternateFile options:0 error:&error] &&
                 [files createDirectoryAtURL:folder withIntermediateDirectories:NO attributes:nil error:&error] &&
                 [files createSymbolicLinkAtURL:link withDestinationURL:file error:&error];
             if (!created) { [files removeItemAtURL:directory error:nil]; return 9; }
@@ -197,6 +381,73 @@ int main(int argc, const char **argv) {
                     (unsigned long)descriptors.length,
                     [descriptors rangeOfData:unicodeName options:0 range:NSMakeRange(0, descriptors.length)].location != NSNotFound);
 
+            // Feed realistic FILECONTENTS_SIZE and RANGE requests through the
+            // same handler used by the CLIPRDR network callback.
+            [view setValue:@YES forKey:@"clipboardActive"];
+            [view setValue:@YES forKey:@"clipboardFileTransferAllowed"];
+            const UINT32 fileGroupFormat = 0xC123;
+            CLIPRDR_FILE_CONTENTS_REQUEST sizeRequest = {0};
+            sizeRequest.listIndex = 0; sizeRequest.dwFlags = FILECONTENTS_SIZE; sizeRequest.cbRequested = sizeof(uint64_t);
+            NSData *requestedDescriptors = [(id)view clipboardFileDescriptorsForRequestFormat:fileGroupFormat
+                registeredFormat:fileGroupFormat serverFlags:CB_STREAM_FILECLIP_ENABLED];
+            const BOOL descriptorRequestGates = [requestedDescriptors isEqualToData:descriptors] &&
+                ![(id)view clipboardFileDescriptorsForRequestFormat:fileGroupFormat registeredFormat:0
+                    serverFlags:CB_STREAM_FILECLIP_ENABLED] &&
+                ![(id)view clipboardFileDescriptorsForRequestFormat:fileGroupFormat registeredFormat:fileGroupFormat
+                    serverFlags:0];
+            const BOOL rejectedManifestClearedOldSnapshot =
+                [view valueForKey:@"clipboardFileTransferSnapshot"] == nil &&
+                ![(id)view clipboardFileContentsForRequest:&sizeRequest serverFlags:CB_STREAM_FILECLIP_ENABLED];
+            NSData *refreshedDescriptors = [(id)view clipboardFileDescriptorsForRequestFormat:fileGroupFormat
+                registeredFormat:fileGroupFormat serverFlags:CB_STREAM_FILECLIP_ENABLED];
+            NSData *protocolSize = [(id)view clipboardFileContentsForRequest:&sizeRequest
+                                                                  serverFlags:CB_STREAM_FILECLIP_ENABLED];
+            CLIPRDR_FILE_CONTENTS_REQUEST rangeRequest = {0};
+            rangeRequest.listIndex = 0; rangeRequest.dwFlags = FILECONTENTS_RANGE;
+            rangeRequest.nPositionLow = 4; rangeRequest.cbRequested = 6;
+            NSData *protocolRange = [(id)view clipboardFileContentsForRequest:&rangeRequest
+                                                                   serverFlags:CB_STREAM_FILECLIP_ENABLED];
+            CLIPRDR_FILE_CONTENTS_REQUEST invalidSizeRequest = sizeRequest;
+            invalidSizeRequest.cbRequested = 7;
+            CLIPRDR_FILE_CONTENTS_REQUEST invalidIndexRequest = rangeRequest;
+            invalidIndexRequest.listIndex = 2;
+            const BOOL invalidProtocolRequestsRejected =
+                ![(id)view clipboardFileContentsForRequest:&invalidSizeRequest serverFlags:CB_STREAM_FILECLIP_ENABLED] &&
+                ![(id)view clipboardFileContentsForRequest:&invalidIndexRequest serverFlags:CB_STREAM_FILECLIP_ENABLED] &&
+                ![(id)view clipboardFileContentsForRequest:&rangeRequest serverFlags:0];
+            uint64_t protocolSizeValue = 0;
+            if (protocolSize.length == sizeof(protocolSizeValue))
+                memcpy(&protocolSizeValue, protocolSize.bytes, sizeof(protocolSizeValue));
+            valid = valid && protocolSizeValue == 17 && [refreshedDescriptors isEqualToData:descriptors] &&
+                [protocolRange isEqualToData:[@"board " dataUsingEncoding:NSUTF8StringEncoding]] &&
+                invalidProtocolRequestsRejected && descriptorRequestGates && rejectedManifestClearedOldSnapshot;
+            fprintf(stderr, "cliprdr-requests size=%d range=%d rejected=%d descriptor-gates=%d stale-manifest-cleared=%d\n", protocolSizeValue == 17,
+                    protocolRange != nil && [protocolRange isEqualToData:[@"board " dataUsingEncoding:NSUTF8StringEncoding]],
+                    invalidProtocolRequestsRejected, descriptorRequestGates, rejectedManifestClearedOldSnapshot);
+
+            // Windows may request a file range after the Mac clipboard has
+            // already changed. Keep serving the manifest it requested until
+            // Windows asks for a replacement manifest.
+            NSData *alternateDescriptors = [(id)view fileDescriptorDataForURLs:@[alternateFile]];
+            CLIPRDR_FILE_CONTENTS_REQUEST snapshotRangeRequest = {0};
+            snapshotRangeRequest.listIndex = 0; snapshotRangeRequest.dwFlags = FILECONTENTS_RANGE;
+            snapshotRangeRequest.cbRequested = 18;
+            NSData *previousSnapshotRange = [(id)view clipboardFileContentsForRequest:&snapshotRangeRequest
+                serverFlags:CB_STREAM_FILECLIP_ENABLED];
+            const BOOL oldSnapshotStable = [previousSnapshotRange isEqualToData:[@"clipboard fixture" dataUsingEncoding:NSUTF8StringEncoding]];
+            // Changing local pasteboard data does not replace the manifest the remote side is using.
+            NSData *replacedDescriptors = [(id)view clipboardFileDescriptorsForRequestFormat:fileGroupFormat
+                registeredFormat:fileGroupFormat serverFlags:CB_STREAM_FILECLIP_ENABLED];
+            NSData *replacementSnapshotRange = [(id)view clipboardFileContentsForRequest:&snapshotRangeRequest
+                serverFlags:CB_STREAM_FILECLIP_ENABLED];
+            const BOOL transferSnapshotStable = [alternateDescriptors isEqualToData:replacedDescriptors] &&
+                oldSnapshotStable &&
+                [replacementSnapshotRange isEqualToData:[@"alternate fixture" dataUsingEncoding:NSUTF8StringEncoding]];
+            valid = valid && transferSnapshotStable;
+            fprintf(stderr, "cliprdr-snapshot stays-with-manifest=%d changes-on-next-manifest=%d\n",
+                    oldSnapshotStable,
+                    [replacementSnapshotRange isEqualToData:[@"alternate fixture" dataUsingEncoding:NSUTF8StringEncoding]]);
+
             const uint64_t fileSize = 17;
             NSData *size = [(id)view clipboardFileContentsForURL:file expectedSize:fileSize
                                                            flags:FCProbeFileContentsSize offset:0 requestedLength:0];
@@ -214,6 +465,12 @@ int main(int argc, const char **argv) {
                 flags:FCProbeFileContentsSize | FCProbeFileContentsRange offset:0 requestedLength:8];
             const BOOL invalidOffsetRejected = ![(id)view clipboardFileContentsForURL:file expectedSize:fileSize
                 flags:FCProbeFileContentsRange offset:fileSize + 1 requestedLength:1];
+            BOOL repeatedZeroLengthRejected = YES;
+            for (NSUInteger attempt = 0; attempt < 128; attempt++) {
+                NSData *invalidRange = [(id)view clipboardFileContentsForURL:file expectedSize:fileSize
+                    flags:FCProbeFileContentsRange offset:0 requestedLength:0];
+                if (invalidRange) { repeatedZeroLengthRejected = NO; break; }
+            }
             const BOOL zeroLengthRejected = ![(id)view clipboardFileContentsForURL:file expectedSize:fileSize
                 flags:FCProbeFileContentsRange offset:0 requestedLength:0];
             const BOOL oversizedReadRejected = ![(id)view clipboardFileContentsForURL:file expectedSize:fileSize
@@ -227,28 +484,52 @@ int main(int argc, const char **argv) {
             valid = valid && decodedSize == fileSize && range &&
                 [range isEqualToData:[@"board " dataUsingEncoding:NSUTF8StringEncoding]] && endRange.length == 0 &&
                 emptySize.length == sizeof(uint64_t) && emptyRange && emptyRange.length == 0 &&
-                invalidFlagsRejected && invalidOffsetRejected && zeroLengthRejected && oversizedReadRejected &&
+                invalidFlagsRejected && invalidOffsetRejected && zeroLengthRejected && repeatedZeroLengthRejected &&
+                oversizedReadRejected &&
                 wrongSizeRejected && folderRejected && symlinkRejected;
-            fprintf(stderr, "file-ranges size=%d range=%d end=%d empty-size=%d empty-range=%d invalid=%d/%d/%d/%d/%d/%d/%d\n",
+            fprintf(stderr, "file-ranges size=%d range=%d end=%d empty-size=%d empty-range=%d invalid=%d/%d/%d/%d/%d/%d/%d/%d\n",
                     decodedSize == fileSize, range != nil && [range isEqualToData:[@"board " dataUsingEncoding:NSUTF8StringEncoding]],
                     endRange.length == 0, emptySize.length == sizeof(uint64_t), emptyRange != nil && emptyRange.length == 0,
-                    invalidFlagsRejected, invalidOffsetRejected, zeroLengthRejected, oversizedReadRejected,
+                    invalidFlagsRejected, invalidOffsetRejected, zeroLengthRejected, repeatedZeroLengthRejected,
+                    oversizedReadRejected,
                     wrongSizeRejected, folderRejected, symlinkRejected);
 
+            // A new pasteboard generation with no eligible files must not
+            // leave the prior Windows manifest available for later reads.
+            NSData *staleManifest = [(id)view fileDescriptorDataForURLs:urls];
+            [(id)view clipboardFileDescriptorsForRequestFormat:fileGroupFormat registeredFormat:fileGroupFormat
+                serverFlags:CB_STREAM_FILECLIP_ENABLED];
+            NSData *emptyManifest = [(id)view fileDescriptorDataForURLs:@[]];
+            NSData *emptyAnnouncement = [(id)view clipboardFileDescriptorsForRequestFormat:fileGroupFormat
+                registeredFormat:fileGroupFormat serverFlags:CB_STREAM_FILECLIP_ENABLED];
+            const BOOL emptyGenerationClearsTransfer = !emptyManifest &&
+                !emptyAnnouncement &&
+                [view valueForKey:@"clipboardFileSnapshot"] == nil &&
+                [view valueForKey:@"clipboardFileTransferSnapshot"] == nil &&
+                ![(id)view clipboardFileContentsForRequest:&sizeRequest serverFlags:CB_STREAM_FILECLIP_ENABLED];
+            fprintf(stderr, "file-manifest empty-generation-clears-transfer=%d\n", emptyGenerationClearsTransfer);
+            valid = valid && staleManifest.length > 0 && emptyGenerationClearsTransfer;
+
             // Replacing a file with a different length invalidates the captured manifest.
+            [(id)view fileDescriptorDataForURLs:urls];
+            [(id)view clipboardFileDescriptorsForRequestFormat:fileGroupFormat registeredFormat:fileGroupFormat
+                serverFlags:CB_STREAM_FILECLIP_ENABLED];
             int fileDescriptor = open(file.fileSystemRepresentation, O_WRONLY | O_APPEND | O_NOFOLLOW | O_CLOEXEC);
             const char changed = '!';
             const BOOL changedFile = fileDescriptor >= 0 && write(fileDescriptor, &changed, sizeof(changed)) == sizeof(changed);
             if (fileDescriptor >= 0) close(fileDescriptor);
             const BOOL staleManifestRejected = ![(id)view clipboardFileContentsForURL:file expectedSize:fileSize
                 flags:FCProbeFileContentsSize offset:0 requestedLength:0];
-            fprintf(stderr, "file-mutation changed=%d stale-manifest-rejected=%d\n", changedFile, staleManifestRejected);
-            valid = valid && changedFile && staleManifestRejected;
+            const BOOL staleProtocolRequestRejected = ![(id)view clipboardFileContentsForRequest:&sizeRequest
+                serverFlags:CB_STREAM_FILECLIP_ENABLED];
+            fprintf(stderr, "file-mutation changed=%d stale-manifest-rejected=%d stale-protocol-request-rejected=%d\n",
+                    changedFile, staleManifestRejected, staleProtocolRequestRejected);
+            valid = valid && changedFile && staleManifestRejected && staleProtocolRequestRejected;
             [(id)view captureClipboardFromPasteboard:pasteboard];
             NSData *text = [view valueForKey:@"clipboardText"];
             fprintf(stderr, "file-manifest-after-mutation files=%lu text-present=%d\n",
-                    (unsigned long)[[view valueForKey:@"clipboardFiles"] count], text != nil);
-            valid = valid && text == nil && [[view valueForKey:@"clipboardFiles"] count] == 2;
+                    (unsigned long)[[view valueForKeyPath:@"clipboardFileSnapshot.files"] count], text != nil);
+            valid = valid && text == nil && [[view valueForKeyPath:@"clipboardFileSnapshot.files"] count] == 2;
             [pasteboard releaseGlobally];
             [files removeItemAtURL:directory error:nil];
             return valid ? 0 : 9;

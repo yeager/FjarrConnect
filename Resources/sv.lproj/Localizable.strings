@@ -74,6 +74,7 @@
 "ssh.authentication" = "SSH använder Macens nycklar, ssh-agent och SSH-inställningar. Ange lösenord och verifiera nya värdnycklar i terminalen.";
 "ssh.ended" = "SSH avslutades. Läs meddelandet i terminalen innan du ansluter igen.";
 "rdp.install" = "Den inbyggda RDP-komponenten saknas eller kunde inte läsas in. Installera om FjärrConnect för din Mac-arkitektur.";
+"rdp.waitingForDesktop" = "Väntar på fjärrskrivbordet…";
 "rdp.invalid" = "Inloggningsuppgifter för RDP får inte innehålla radbrytningar.";
 "rdp.ended" = "RDP avslutades. Kontrollera server, inloggning och certifikat och anslut igen.";
 "discovery.resolveFailed" = "Kunde inte nå servern. Kontrollera tjänsten, nätverket och behörigheten för lokalt nätverk och uppdatera sedan.";
@@ -90,12 +91,15 @@
 "vnc.usernameRequired.signIn" = "Logga in med Mac-användarnamn …";
 "vnc.macAuthenticationRejected" = "Macens skärmdelning avvisade inloggningen. Kontrollera kontots korta användarnamn och lösenord samt att kontot är tillåtet i inställningarna för skärmdelning.";
 "vnc.connectionFailed" = "VNC-anslutningen misslyckades. Kontrollera adress och port, bekräfta sedan att Skärmdelning eller VNC-tjänsten är aktiverad på fjärrdatorn och att kontot har behörighet.";
+"vnc.retryingFirstConnection" = "Den första anslutningen misslyckades. Försöker en gång till…";
 "vnc.unsupportedSecurity" = "Servern erbjuder en VNC-säkerhetsmetod som FjärrConnect inte kan använda. FjärrConnect stöder certifikatverifierad VeNCrypt X509Vnc och X509Plain samt vanlig VNC-autentisering.";
 
 "rdp.error.network" = "Servern kunde inte nås. Kontrollera att Fjärrskrivbord är aktiverat och att adressen och porten är tillgängliga.";
+"rdp.error.securityNegotiation" = "RDP-förhandlingen avslutades innan något säkerhetsprotokoll valdes. Kontrollera att adressen går till en RDP-server och att dess säkerhetsinställningar passar profilen.";
 "rdp.error.authentication" = "Servern avvisade inloggningen. Kontrollera användarnamn, lösenord och behörighet för Fjärrskrivbord.";
 "rdp.error.certificate" = "Den säkra anslutningen misslyckades. Kontrollera serverns certifikat och TLS-inställningar.";
 "rdp.error.account" = "Kontot behöver åtgärdas: det kan vara låst, inaktiverat, utgånget eller kräva lösenordsbyte. Kontrollera behörigheten för Fjärrskrivbord.";
+"rdp.phase" = "RDP-anslutningsfas:";
 "rdp.exitCode" = "Klientens avslutskod:";
 "vnc.blackScreen" = "Servern skickar en svart bild. På en Mac: kontrollera Skärmdelning eller Fjärrhantering under Systeminställningar → Allmänt → Delning. Funktionen kan behöva slås av och på lokalt för att ge åtkomst till skärm och inmatning. Kontrollera också att fjärrskärmen är vaken.";
 "vnc.waitingForImage" = "Ansluten, men servern har ännu inte skickat någon skrivbordsbild. Kontrollera skärmdelningen på fjärrdatorn.";
@@ -218,6 +222,9 @@
 
 "options.clipboard" = "Dela text och bilder via urklipp med den aktiva sessionen";
 "options.rdpClipboard" = "Dela text- och bildurklipp med den aktiva sessionen";
+"options.rdpClipboardFiles" = "Dela filer med Windows via urklipp";
+"rdp.clipboardFiles.connectOnce" = "Anslut en gång med filurklipp";
+"options.rdpClipboardFiles.hint" = "Kräver stöd på servern. Filkopiering i båda riktningarna är implementerad men inte verifierad mot en riktig Windows-server. Filurklipp är avstängt som standard.";
 
 "options.ssh" = "SSH-anslutning";
 

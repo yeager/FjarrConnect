@@ -41,7 +41,9 @@ struct VNCClipboardSessionGate {
 final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VNCClipboardDelegate, SessionRecordingSource, SessionHealthProviding {
     let profile: ConnectionProfile
     private var password: String?
+    private let connectionTimeout: TimeInterval
     private var connectionDeadline: DispatchWorkItem?
+    private var macScreenSharingRetryUsed = false
     private var credentialFailure: String?
     private var requestedAuthentication: VNCAuthenticationType?
     private var frameCheck: DispatchWorkItem?
@@ -63,6 +65,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
     @Published private(set) var fileTransferNotice: String?
 
     private var connection: VNCConnection?
+    private var latestCursor: VNCCursor?
     private let logger = VNCPrintLogger()
     private var downloadDestination: URL?
     private var downloadSize: UInt64 = 0
@@ -79,9 +82,10 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         !isLoadingRemoteFiles && listedRemoteDirectory == remoteDirectory
     }
 
-    init(profile: ConnectionProfile, password: String?) {
+    init(profile: ConnectionProfile, password: String?, connectionTimeout: TimeInterval = 20) {
         self.profile = profile
         self.password = password
+        self.connectionTimeout = max(0.01, connectionTimeout)
         super.init()
     }
 
@@ -89,12 +93,23 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
 
     func start() {
         guard connection == nil else { return }
+        latestCursor = nil
         credentialFailure = nil
         requestedAuthentication = nil
         savedCredentialsRejected = false
+        macScreenSharingRetryUsed = false
         notice = nil
+        beginConnectionAttempt()
+    }
+
+    private func beginConnectionAttempt() {
+#if DEBUG
+        let protocolTraceEnabled = ProcessInfo.processInfo.environment["FJARRCONNECT_TEST_LIVE_MAC_VNC_TRACE"] == "1"
+#else
+        let protocolTraceEnabled = false
+#endif
         let settings = VNCConnection.Settings(
-            isDebugLoggingEnabled: false,
+            isDebugLoggingEnabled: protocolTraceEnabled,
             hostname: profile.host,
             port: profile.port,
             isShared: true,
@@ -125,11 +140,25 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         let deadline = DispatchWorkItem { [weak self, weak connection] in
             guard let self, let connection, self.connection === connection,
                   self.status == .connecting else { return }
+            if self.profile.usesMacScreenSharingAuthentication,
+               !self.macScreenSharingRetryUsed, let password = self.password {
+                self.macScreenSharingRetryUsed = true
+                self.connectionDeadline = nil
+                self.notice = NSLocalizedString("vnc.retryingFirstConnection", comment: "")
+                self.status = .connecting
+                connection.delegate = nil
+                connection.clipboardDelegate = nil
+                connection.disconnect()
+                self.connection = nil
+                self.password = password
+                self.beginConnectionAttempt()
+                return
+            }
             self.stop()
             self.status = .disconnected(reason: Self.connectionTimeoutMessage(authentication: self.requestedAuthentication))
         }
         connectionDeadline = deadline
-        DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: deadline)
+        DispatchQueue.main.asyncAfter(deadline: .now() + connectionTimeout, execute: deadline)
     }
 
     func stop() {
@@ -160,11 +189,17 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         old?.clipboardDelegate = nil
         old?.disconnect()
         framebufferView = nil
+        latestCursor = nil
         status = .disconnected(reason: nil)
     }
 
     func setActive(_ active: Bool) {
         clipboardGate.setActive(active, changeCount: NSPasteboard.general.changeCount)
+        if !active {
+            // A key-up can be routed after a tab change to a different view.
+            // Release the old session's pressed state before it becomes inactive.
+            framebufferView?.releasePressedKeys()
+        }
         connection?.resetClipboardSynchronization()
     }
 
@@ -248,6 +283,24 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
                 self.frameCheck?.cancel()
                 self.notice = nil
                 self.connectionDeadline?.cancel()
+                if Self.shouldRetryInitialMacScreenSharingConnection(
+                    usesMacScreenSharingAuthentication: self.profile.usesMacScreenSharingAuthentication,
+                    passwordWasProvided: self.password != nil,
+                    retryAlreadyUsed: self.macScreenSharingRetryUsed,
+                    status: self.status,
+                    error: connectionState.error
+                ), let password = self.password {
+                    self.macScreenSharingRetryUsed = true
+                    connection.delegate = nil
+                    connection.clipboardDelegate = nil
+                    self.connection = nil
+                    connection.disconnect()
+                    self.password = password
+                    self.notice = NSLocalizedString("vnc.retryingFirstConnection", comment: "")
+                    self.status = .connecting
+                    self.beginConnectionAttempt()
+                    return
+                }
                 self.savedCredentialsRejected = Self.shouldOfferCredentialRetry(
                     passwordWasProvided: self.password != nil,
                     authentication: self.requestedAuthentication,
@@ -540,8 +593,8 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
                 connection: connection,
                 connectionDelegate: self
             )
-            if let cursor = self.framebufferView?.currentCursor {
-                view.currentCursor = cursor
+            if let cursor = self.latestCursor {
+                view.connection(connection, didUpdateCursor: cursor)
             }
             self.framebufferView = view
             connection.delegate = self
@@ -568,6 +621,7 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
                     didUpdateCursor cursor: VNCCursor) {
         DispatchQueue.main.async { [weak self] in
             guard let self, self.connection === connection else { return }
+            self.latestCursor = cursor
             self.framebufferView?.connection(connection, didUpdateCursor: cursor)
         }
     }
@@ -623,6 +677,29 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
         guard passwordWasProvided, authentication?.requiresPassword == true, let error else { return false }
         if case VNCError.authentication(.clientCouldNotDecideOnSecurityType) = error { return false }
         return true
+    }
+
+    static func shouldRetryInitialMacScreenSharingConnection(
+        usesMacScreenSharingAuthentication: Bool,
+        passwordWasProvided: Bool,
+        retryAlreadyUsed: Bool,
+        status: SessionStatus,
+        error: Error?
+    ) -> Bool {
+        guard usesMacScreenSharingAuthentication,
+              passwordWasProvided,
+              !retryAlreadyUsed,
+              (status == .connecting || status == .disconnecting),
+              let error else { return false }
+        if let connectionError = error as? VNCError.ConnectionError {
+            if case .cancelled = connectionError { return false }
+            return true
+        }
+        if case let VNCError.connection(connectionError) = error {
+            if case .cancelled = connectionError { return false }
+            return true
+        }
+        return false
     }
 
     static func connectionTimeoutMessage(authentication: VNCAuthenticationType?) -> String {

@@ -16,25 +16,30 @@ It supports macOS 14 or later on Apple Silicon (arm64) and Intel (x86_64).
 
 **[GitHub repository](https://github.com/yeager/FjarrConnect)**
 
-## Latest release: version 0.2.29
+## Latest release: version 0.2.30
 
-**[Download version 0.2.29](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.29)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.29-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.29-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.30](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.30)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.30-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.30-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-Version 0.2.29 asks for updated credentials when a saved VNC password is rejected and
-stops automatic retries for that authentication failure. Saved Mac VNC profiles expose
-the password field, and Advanced connection options expand correctly. The current
-`main` branch also fixes removal of a saved password when the change action is selected
-and saved with an empty field; this fix is not included in the released download yet.
-Version 0.2.27 reports an error when
-saving a connection diagnostics report fails. Version 0.2.26 added VNC image clipboard
-and file-transfer support, stronger connection diagnostics, bounded automatic
-reconnect, saved-session improvements and profile import/export.
-H.264 recordings remain available for embedded RDP and VNC tabs, with a red indicator while
-recording; recordings contain the remote desktop only, without audio.
+This checkout contains unreleased 0.2.31 work; it is not included in the 0.2.30 downloads.
+The changes add optional, bidirectional file clipboard transfer to RDP profiles. It remains off until
+enabled in that profile and requires a Windows RDP server that advertises file clipboard
+support. Local protocol tests cover both directions; Windows server integration remains unverified.
+Failed RDP sessions now identify the FreeRDP negotiation phase in the error and
+optional diagnostic report, without including backend logs or credentials. A server that
+answers but cannot agree on an RDP security method is distinguished from an unreachable host.
+Version 0.2.30 added the optional stable-release check, fixes Backspace, Return and Tab
+input to VNC, supports VNC Tight file uploads when offered by the server, and adds
+RDP security selection and a Ctrl+Alt+End action. It also improves RemoteApp tab labels,
+supports certificate-verified VeNCrypt `X509Plain`, and fixes saved-password removal.
+The Settings switch disables both automatic and manual update checks. The app opens the
+release page; it does not download or install updates.
+
+H.264 recordings are available for embedded RDP and VNC tabs, with a red indicator while
+recording. Recordings contain the remote desktop only, without audio.
 
 The downloads are ad-hoc signed and not notarized. macOS may ask for approval in
 **System Settings → Privacy & Security** on first launch.
@@ -76,6 +81,8 @@ for version-specific changes and current limitations.
   and optionally run a start command after login. Keys stay in your OpenSSH setup.
 - **Advanced options:** configure an RDP gateway and explicitly shared folders, or
   opt in to at most three reconnection attempts for a dropped session in the same tab.
+  Mac Screen Sharing retries once after an initial connection error or silent timeout
+  when a password was provided; it does not retry authentication failures.
   Add a host MAC address to send a Wake-on-LAN magic packet from the profile’s context
   menu. Wake-on-LAN depends on the host, network adapter and local network configuration.
 - **Profile transfer and protection:** import Microsoft `.rdp` and INI-style `.vnc`
@@ -104,7 +111,7 @@ for version-specific changes and current limitations.
 
 | Protocol | How it works | Authentication |
 |---|---|---|
-| VNC / Mac Screen Sharing | Embedded desktop through [RoyalVNCKit](https://github.com/royalapplications/royalvnc), with keyboard, mouse, text and image clipboard | VNC password or remote Mac username/password; optional Keychain storage |
+| VNC / Mac Screen Sharing | Embedded desktop through [RoyalVNCKit](https://github.com/royalapplications/royalvnc), with keyboard, mouse, server-supplied cursor shapes, text and image clipboard | VNC password or remote Mac username/password; optional Keychain storage |
 | SSH | Embedded [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) terminal running macOS `/usr/bin/ssh`, with optional encrypted keep-alives during idle periods | Your SSH configuration, keys and ssh-agent; passwords and new host-key confirmation in the terminal |
 | RDP | Embedded [FreeRDP](https://github.com/FreeRDP/FreeRDP) desktop or RemoteApp, keyboard/mouse, resizing, text and image clipboard, shared folders and RD Gateway over HTTPS | FreeRDP security negotiation; optional per-profile mode and localized certificate verification |
 | SFTP | Built-in file panel using the authenticated OpenSSH connection | Keys/agent or interactive password and host-key prompts |
@@ -124,6 +131,10 @@ Sharing. Profiles without a username remain Standard VNC for backward compatibil
 VNC clipboard synchronization follows the active session. Text and standard DIB V5
 images are supported when the server advertises the RFB extended-clipboard format;
 clipboard file transfer is not supported. Use the file panel or SFTP for files.
+Some Mac Screen Sharing servers do not send cursor-shape updates. FjärrConnect keeps
+the local arrow visible until the server provides a shape.
+Held VNC keys are released when the app or its window loses focus, preventing a key
+from repeating remotely if macOS does not deliver its matching key-up event.
 
 **RDP is bundled:** no Homebrew installation is needed for the downloaded app.
 Each app includes the matching FreeRDP 3.32.0 runtime and loads it in the app process.
@@ -133,7 +144,8 @@ certificates show the server identity and SHA-256 fingerprint with **Cancel**,
 Certificate verification remains enabled. The Windows desktop-start disconnection
 caused by disabled network-latency measurements is fixed in 0.2.7. Desktop display,
 resizing and a sustained connection were checked against a Windows server using NLA.
-Other connection failures show a localized error.
+An RDP security-negotiation failure is distinguished from an unreachable host; other
+connection failures show their recognized localized error.
 
 Choose an RDP keyboard layout in **Settings → Simple → Keyboard**. Automatic mode
 maps the active macOS input source to U.S. or British English, Swedish, German,
@@ -191,6 +203,15 @@ contents. Switching tabs does not automatically send existing clipboard contents
 another server. Copy again after activating the intended tab. RDP’s standard macOS
 Edit menu actions send the corresponding Ctrl shortcuts to the remote application.
 
+RDP profiles have a separate, off-by-default option for file clipboard through CLIPRDR.
+It supports copying in both directions when the Windows server advertises file clipboard
+support. Local protocol tests cover the manifest and chunk transfer, but the feature has not
+been verified against a live Windows server. Files received from Windows are staged in a
+private temporary folder. If the owning session stays active, replaced clipboard files are
+removed when the clipboard changes. Stale copies older than 24 hours are removed when the
+app launches. Shared folders and SFTP remain the recommended file flows until live
+integration testing is complete.
+
 VNC negotiates Unicode text with Extended Clipboard peers, including TigerVNC;
 legacy VNC peers are limited to Latin-1. Text is bounded to 1 MiB. Standard DIB V5
 images are supported up to 8 MiB with Extended Clipboard peers. Rich text and clipboard
@@ -212,9 +233,10 @@ a server acknowledgement, so refresh the listing to check whether it arrived. Up
 download are covered by local protocol fixtures, but Tight upload has not been verified
 against a real VNC server; SFTP remains the recommended file flow. Most VNC servers do
 not advertise these channels. Tight transfer is a VNC file-transfer protocol, not
-clipboard file copying. RDP file clipboard transfer remains disabled pending a real
-Windows integration test. Uploads can also be started by dropping files onto the SFTP
-panel. Existing files require confirmation before replacement.
+clipboard file copying. RDP file clipboard is available only when explicitly enabled
+per profile, supports both directions and is still awaiting a real Windows integration test. Uploads can also
+be started by dropping files onto the SFTP panel. Existing files require confirmation
+before replacement.
 Folders are transferred recursively without merging
 into existing folders; symbolic links and special files are rejected. Transfers use
 private staging files, and originals are preserved on failure. Cancelling a transfer
@@ -256,8 +278,9 @@ not shown. **RemoteApp** is a separate session type: enter the
 server-published alias, such as `||wordpad`. Its tab is marked “RemoteApp” and
 uses a distinct icon; it opens in its own FjärrConnect session without dynamic
 desktop resizing. Shared folders remain the supported file flow.
-Clipboard file transfer is intentionally not enabled until it has been tested against
-supported Windows versions.
+RDP file clipboard supports both directions as an explicit per-profile opt-in. Local
+protocol tests pass, but no live Windows server test has been completed. Shared folders
+and SFTP remain the recommended file flows.
 
 RemoteApp profile and session handling is covered by argument and session tests. A
 RemoteApp must use the alias published by the RDS administrator (for example

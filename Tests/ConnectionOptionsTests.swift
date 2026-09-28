@@ -212,6 +212,48 @@ final class ConnectionOptionsTests: XCTestCase {
         XCTAssertFalse(profile.isValid)
     }
 
+    func testRDPFileClipboardRequiresExplicitProfileOptInAndTextClipboard() throws {
+        var profile = ConnectionProfile(name: "Desktop", transport: .rdp, host: "desktop.local")
+        profile.rdp = RDPOptions()
+        var input = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
+        XCTAssertFalse(input.contains("/fc:clipboard-files"))
+
+        profile.rdp?.clipboardFiles = true
+        input = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
+        XCTAssertTrue(input.contains("/fc:clipboard-files\n"))
+
+        profile.clipboardEnabled = false
+        input = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
+        XCTAssertFalse(input.contains("/fc:clipboard-files"))
+
+        profile.clipboardEnabled = true
+        profile.transport = .remoteApp
+        profile.rdp?.remoteApp = "||notepad"
+        input = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
+        XCTAssertTrue(input.contains("/fc:clipboard-files\n"))
+
+        profile.transport = .vnc
+        input = String(decoding: try XCTUnwrap(RDPArguments.input(profile: profile, password: nil)), as: UTF8.self)
+        XCTAssertFalse(input.contains("/fc:clipboard-files"))
+
+        let restored = try JSONDecoder().decode(ConnectionProfile.self, from: JSONEncoder().encode(profile))
+        XCTAssertTrue(restored.rdp?.sharesClipboardFiles == true)
+        let legacy = try JSONDecoder().decode(RDPOptions.self, from: Data("{}".utf8))
+        XCTAssertFalse(legacy.sharesClipboardFiles)
+    }
+
+    func testRDPFileClipboardCanBeEnabledForOneSessionWithoutChangingSavedProfile() {
+        var saved = ConnectionProfile(name: "Desktop", transport: .rdp, host: "desktop.local")
+        saved.rdp = RDPOptions()
+
+        let session = saved.enablingRDPFileClipboardForCurrentSession()
+
+        XCTAssertTrue(session.rdp?.sharesClipboardFiles == true)
+        XCTAssertFalse(saved.rdp?.sharesClipboardFiles == true)
+        XCTAssertEqual(session.id, saved.id)
+        XCTAssertEqual(session.host, saved.host)
+    }
+
     func testRDPSecurityModeDefaultsToNegotiationAndSupportsFreeRDPModes() throws {
         var profile = ConnectionProfile(name: "Desktop", transport: .rdp, host: "desktop.local")
         profile.rdp = RDPOptions()

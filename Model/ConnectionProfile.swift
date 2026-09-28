@@ -168,6 +168,17 @@ struct ConnectionProfile: Identifiable, Codable, Hashable {
         !(logsSSHCommands && !(ssh?.startCommand?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true))
     }
 
+    /// Returns an in-memory profile copy that enables Mac-to-Windows file
+    /// clipboard transfer for a single RDP session without changing the saved profile.
+    func enablingRDPFileClipboardForCurrentSession() -> ConnectionProfile {
+        guard transport == .rdp else { return self }
+        var copy = self
+        var options = copy.rdp ?? RDPOptions()
+        options.clipboardFiles = true
+        copy.rdp = options
+        return copy
+    }
+
     var fileProfile: ConnectionProfile {
         var result = self
         result.transport = .sftp

@@ -74,6 +74,7 @@
 "ssh.authentication" = "SSH uses your Mac’s keys, ssh-agent and SSH configuration. Enter passwords and verify new host keys in the terminal.";
 "ssh.ended" = "SSH ended. Read the terminal message for details before reconnecting.";
 "rdp.install" = "The embedded RDP component is missing or could not be loaded. Reinstall FjärrConnect for your Mac architecture.";
+"rdp.waitingForDesktop" = "Waiting for the remote desktop…";
 "rdp.invalid" = "RDP credentials cannot contain line breaks.";
 "rdp.ended" = "RDP ended. Check the server, credentials and certificate, then reconnect.";
 "discovery.resolveFailed" = "Could not reach this server. Check the service, network and Local Network permission, then refresh.";
@@ -90,12 +91,15 @@
 "vnc.usernameRequired.signIn" = "Sign in with a Mac username…";
 "vnc.macAuthenticationRejected" = "Mac Screen Sharing rejected the sign-in. Check the account’s short username and password, and confirm that the account is allowed in Screen Sharing settings.";
 "vnc.connectionFailed" = "The VNC connection failed. Check the address and port, then confirm that Screen Sharing or the VNC service is enabled on the remote computer and that the account is permitted.";
+"vnc.retryingFirstConnection" = "The initial connection failed. Retrying once…";
 "vnc.unsupportedSecurity" = "This server offered a VNC security method FjärrConnect cannot use. FjärrConnect supports certificate-verified VeNCrypt X509Vnc and X509Plain, plus standard VNC authentication.";
 
 "rdp.error.network" = "The server could not be reached. Check that Remote Desktop is enabled and that this address and port are reachable.";
+"rdp.error.securityNegotiation" = "RDP negotiation ended before a security protocol was selected. Check that this address is an RDP server and that its security settings are compatible with the profile.";
 "rdp.error.authentication" = "The server rejected the sign-in. Check the username, password and permission to use Remote Desktop.";
 "rdp.error.certificate" = "The secure connection failed. Check the server certificate and TLS settings.";
 "rdp.error.account" = "The account needs attention: it may be locked, disabled, expired or require a password change. Check its Remote Desktop access.";
+"rdp.phase" = "RDP connection phase:";
 "rdp.exitCode" = "Client exit code:";
 "vnc.blackScreen" = "The server is sending a black screen. On a Mac, check Screen Sharing or Remote Management under System Settings → General → Sharing. Turning it off and on locally may be required to grant screen and input access. Also check that the remote display is awake.";
 "vnc.waitingForImage" = "Connected, but the server has not sent a desktop image yet. Check screen sharing on the remote computer.";
@@ -218,6 +222,9 @@
 
 "options.clipboard" = "Share text and image clipboard with the active session";
 "options.rdpClipboard" = "Share text and image clipboard with the active session";
+"options.rdpClipboardFiles" = "Share files with Windows through the clipboard";
+"rdp.clipboardFiles.connectOnce" = "Connect once with file clipboard";
+"options.rdpClipboardFiles.hint" = "Requires server support. File copying in both directions is implemented but has not been verified with a live Windows server. File clipboard is off by default.";
 
 "options.ssh" = "SSH connection";
 

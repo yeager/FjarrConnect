@@ -2,28 +2,37 @@ import XCTest
 @testable import FjarrConnect
 
 final class AppSettingsTests: XCTestCase {
-    func testSidebarOnlyAutoHidesWhenEnabledAndASessionIsActive() {
+    func testSidebarOnlyAutoHidesAfterSelectedSessionIsEstablished() {
         XCTAssertTrue(AppSettings.shouldShowSidebar(showSidebar: true,
                                                      autoHideWhileConnected: false,
-                                                     hasActiveSessions: true))
+                                                     selectedSessionStatus: .connected))
         XCTAssertTrue(AppSettings.shouldShowSidebar(showSidebar: true,
                                                      autoHideWhileConnected: true,
-                                                     hasActiveSessions: false))
+                                                     selectedSessionStatus: .connecting))
         XCTAssertFalse(AppSettings.shouldShowSidebar(showSidebar: true,
                                                       autoHideWhileConnected: true,
-                                                      hasActiveSessions: true))
+                                                      selectedSessionStatus: .connected))
+        XCTAssertTrue(AppSettings.shouldShowSidebar(showSidebar: true,
+                                                     autoHideWhileConnected: true,
+                                                     selectedSessionStatus: .disconnected(reason: "failed")))
         XCTAssertFalse(AppSettings.shouldShowSidebar(showSidebar: false,
                                                       autoHideWhileConnected: false,
-                                                      hasActiveSessions: false))
+                                                      selectedSessionStatus: nil))
     }
 
-    func testSessionTabsOnlyAutoHideWhenEnabledAndASessionIsActive() {
+    func testSessionTabsOnlyAutoHideAfterSelectedSessionIsEstablished() {
         XCTAssertTrue(AppSettings.shouldShowSessionTabs(autoHideWhileConnected: false,
-                                                         hasActiveSessions: true))
+                                                         selectedSessionStatus: .connected))
         XCTAssertTrue(AppSettings.shouldShowSessionTabs(autoHideWhileConnected: true,
-                                                         hasActiveSessions: false))
+                                                         selectedSessionStatus: .connecting))
+        XCTAssertTrue(AppSettings.shouldShowSessionTabs(autoHideWhileConnected: true,
+                                                         selectedSessionStatus: .disconnected(reason: "failed")))
         XCTAssertFalse(AppSettings.shouldShowSessionTabs(autoHideWhileConnected: true,
-                                                          hasActiveSessions: true))
+                                                          selectedSessionStatus: .running))
+        XCTAssertTrue(AppSettings.shouldShowSessionTabs(autoHideWhileConnected: true,
+                                                         selectedSessionStatus: .disconnected(reason: "network timeout")))
+        XCTAssertTrue(AppSettings.shouldShowSessionTabs(autoHideWhileConnected: true,
+                                                         selectedSessionStatus: nil))
     }
 
     func testUpdateChecksCanBeDisabledAndDefaultToEnabled() {

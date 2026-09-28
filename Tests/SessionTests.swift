@@ -162,6 +162,25 @@ final class SessionTests: XCTestCase {
         XCTAssertFalse(manager.hasActiveSessions)
     }
 
+    func testFailedConnectionKeepsItsTabAvailableForReconnect() throws {
+        var sessions: [TestSession] = []
+        let manager = ConnectionManager { profile, _ in
+            let session = TestSession(profile: profile)
+            sessions.append(session)
+            return session
+        }
+
+        manager.connect(ConnectionProfile(name: "Office", host: "office.local"))
+        let tab = try XCTUnwrap(manager.selected)
+        sessions[0].status = .disconnected(reason: "network")
+
+        XCTAssertEqual(manager.tabs.count, 1)
+        XCTAssertEqual(manager.selectedID, tab.id)
+        XCTAssertTrue(tab.backend.status.isFinished)
+
+        manager.disconnectAll()
+    }
+
     func testOptedInReconnectRestartsTheSameTabWithBoundedRetry() throws {
         var sessions: [TestSession] = []
         let manager = ConnectionManager { profile, _ in

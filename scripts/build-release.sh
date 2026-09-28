@@ -2,11 +2,19 @@
 set -euo pipefail
 ARCH=${1:?Specify arm64 or x86_64}
 case "$ARCH" in arm64|x86_64) ;; *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;; esac
-mkdir -p dist
-xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
-  -configuration Release -destination 'generic/platform=macOS' \
-  -derivedDataPath "build/release-$ARCH" ARCHS="$ARCH" ONLY_ACTIVE_ARCH=YES \
-  CODE_SIGNING_ALLOWED=NO build | xcbeautify
+DIST_DIR=${FJARRCONNECT_DIST_DIR:-dist}
+mkdir -p "$DIST_DIR"
+if command -v xcbeautify >/dev/null 2>&1; then
+  xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
+    -configuration Release -destination 'generic/platform=macOS' \
+    -derivedDataPath "build/release-$ARCH" ARCHS="$ARCH" ONLY_ACTIVE_ARCH=YES \
+    CODE_SIGNING_ALLOWED=NO build | xcbeautify
+else
+  xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
+    -configuration Release -destination 'generic/platform=macOS' \
+    -derivedDataPath "build/release-$ARCH" ARCHS="$ARCH" ONLY_ACTIVE_ARCH=YES \
+    CODE_SIGNING_ALLOWED=NO build
+fi
 APP="build/release-$ARCH/Build/Products/Release/FjarrConnect.app"
 test -d "$APP"
 python3 scripts/check-resources.py --app "$APP"
@@ -29,6 +37,10 @@ if [ "$LICENSE_ROOT" = "$LOCAL_BUILD" ]; then LICENSE_ROOT="$OUTPUT"; fi
 if [ ! -d "$LICENSE_ROOT/Licenses" ]; then LICENSE_ROOT="$ARTIFACT"; fi
 test -d "$LICENSE_ROOT/Licenses"
 cp "$LICENSE_ROOT/Licenses/"* "$APP/Contents/Resources/Licenses/"
+# Ad-hoc signing is required for executable code on Apple Silicon. Sign the
+# copied runtime before tools inspect or load its executable pages.
+codesign --force --deep --sign - "$APP"
+codesign --verify --deep --strict "$APP"
 # Every executable, including the required embedded VNC framework, is single-architecture.
 test -f "$APP/Contents/Frameworks/RoyalVNCKit.framework/Versions/A/RoyalVNCKit"
 while IFS= read -r binary; do
@@ -36,13 +48,10 @@ while IFS= read -r binary; do
     test "$(lipo -archs "$binary")" = "$ARCH"
   fi
 done < <(find "$APP/Contents" -type f)
-# Ad-hoc signing is required for executable code on Apple Silicon.
 # This is NOT Developer ID signing or notarization.
-codesign --force --deep --sign - "$APP"
-codesign --verify --deep --strict "$APP"
 python3 scripts/smoke-app.py "$APP"
 python3 scripts/smoke-rdp.py "$APP/Contents/Frameworks/libFjarrRDP.dylib"
 VERSION=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$APP/Contents/Info.plist")
 ARCHIVE="FjarrConnect-${VERSION}-macOS-${ARCH}.zip"
-ditto -c -k --keepParent "$APP" "dist/$ARCHIVE"
-(cd dist && shasum -a 256 "$ARCHIVE" > "SHA256SUMS-${ARCH}.txt")
+ditto -c -k --keepParent "$APP" "$DIST_DIR/$ARCHIVE"
+(cd "$DIST_DIR" && shasum -a 256 "$ARCHIVE" > "SHA256SUMS-${ARCH}.txt")

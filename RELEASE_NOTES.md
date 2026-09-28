@@ -1,3 +1,26 @@
+Unreleased — planned for FjärrConnect 0.2.31
+
+- Show the FreeRDP connection phase after an RDP failure and include only recognized
+  phase names in an optional diagnostic report. Distinguish failed RDP security negotiation
+  from an unreachable host. Credentials and backend logs remain excluded.
+- Add bidirectional per-profile RDP file clipboard transfer. It is off by default and can
+  be enabled in Advanced options. File transfer requires a Windows RDP server that advertises
+  clipboard file support; text and image clipboard continue to work independently. Local
+  protocol tests pass, but live Windows integration remains unverified. Received files are
+  staged in a private temporary folder; while the owning session is active, replaced
+  clipboard files are removed when the clipboard changes. Stale copies older than
+  24 hours are removed on app launch.
+  Shared folders and SFTP remain the recommended file flows.
+- Retry one initial Mac Screen Sharing connection error or silent timeout when a password
+  is provided. Authentication failures are not retried. Keep session tabs at the top of the
+  window when a connection fails.
+- Decode RFB, XCursor and Apple's cached alpha cursor shapes. Some Mac Screen Sharing servers
+  do not send cursor-shape updates; the local arrow stays visible until a server shape arrives.
+- Release held VNC keys when the app or its window loses focus, including after autorepeat,
+  so a missed key-up does not leave a key repeating on the remote computer.
+
+---
+
 FjärrConnect 0.2.30
 
 - Check GitHub Releases for a newer stable version at app launch. Automatic checks
@@ -97,8 +120,9 @@ FjärrConnect 0.2.26
   FreeRDP build lacks CUPS and PC/SC support. RDP audio and microphone redirection
   remain unavailable until verified in a real macOS session.
 
-Known limitations: RDP clipboard file transfer and multi-monitor output are not
-enabled. RDP audio, microphone, printer and smart-card redirection are unavailable.
+Known limitations: RDP file clipboard is available in both directions as a per-profile
+opt-in but has not been verified against a real Windows server; multi-monitor output is not enabled. RDP
+audio, microphone, printer and smart-card redirection are unavailable.
 RemoteApp still needs a real Windows Server with a published alias for end-to-end
 verification. VNC clipboard supports text and standard DIB V5 images; clipboard
 file copying is not implemented. The VNC Tight file-transfer channel is optional,

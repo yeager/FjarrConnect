@@ -136,8 +136,12 @@ struct RDPOptions: Codable, Hashable {
     var securityMode: SecurityMode?
     /// Nil preserves FreeRDP's automatic network selection for older profiles.
     var networkProfile: NetworkProfile?
+    /// File clipboard is more sensitive than text/image clipboard and stays off
+    /// unless the profile explicitly opts in.
+    var clipboardFiles: Bool?
 
     var resizesRemoteDesktop: Bool { dynamicResolution ?? true }
+    var sharesClipboardFiles: Bool { clipboardFiles ?? false }
     var selectedSecurityMode: SecurityMode { securityMode ?? .automatic }
     var selectedNetworkProfile: NetworkProfile { networkProfile ?? .automatic }
     var remoteAppProgram: String? {

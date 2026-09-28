@@ -38,6 +38,15 @@ struct AdvancedConnectionOptions: View {
                 Text("wol.hint").font(.caption).foregroundStyle(.secondary)
             }
             if transport.isGraphical { Toggle((transport == .rdp || transport == .remoteApp) ? "options.rdpClipboard" : "options.clipboard", isOn: $clipboard) }
+            if transport == .rdp || transport == .remoteApp {
+                Toggle("options.rdpClipboardFiles", isOn: Binding(
+                    get: { rdp.sharesClipboardFiles },
+                    set: { rdp.clipboardFiles = $0 ? true : nil }
+                ))
+                .disabled(!clipboard)
+                Text("options.rdpClipboardFiles.hint")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             optionGroup(transport.isGraphical ? "files.connection" : "options.ssh") {
                 if transport.isGraphical {
                     Text("files.connection.hint").font(.caption).foregroundStyle(.secondary)

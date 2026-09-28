@@ -7,11 +7,13 @@ final class SFTPBrowserUITests: XCTestCase {
         let settings = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: settings, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: settings) }
+        let remote = settings.appendingPathComponent("remote", isDirectory: true)
+        try createRemoteFiles(at: remote)
         let profiles = settings.appendingPathComponent("profiles.json")
         let data: [[String: Any]] = try ["First files", "Second files"].map { name in
             ["id": UUID().uuidString, "name": name, "transport": "sftp", "host": "127.0.0.1",
              "port": try XCTUnwrap(fixture["port"] as? Int), "username": try XCTUnwrap(fixture["username"] as? String),
-             "ssh": ["startDirectory": try XCTUnwrap(fixture["remote"] as? String)]]
+             "ssh": ["startDirectory": remote.path]]
         }
         try JSONSerialization.data(withJSONObject: data).write(to: profiles)
         let app = XCUIApplication()
@@ -69,13 +71,15 @@ final class SFTPBrowserUITests: XCTestCase {
     func testFileSelectionNavigationPickersAndCloseConfirmation() throws {
         continueAfterFailure = false
         let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: URL(fileURLWithPath: "/tmp/fjarrconnect-sftp-ui-fixture.json"))) as? [String: Any])
-        let root = URL(fileURLWithPath: try XCTUnwrap(fixture["directory"] as? String))
-        let remote = try XCTUnwrap(fixture["remote"] as? String)
         let source = URL(fileURLWithPath: try XCTUnwrap(fixture["upload"] as? String))
-        let downloads = root.appendingPathComponent("downloads")
         let settings = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: settings, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: settings) }
+        let remoteDirectory = settings.appendingPathComponent("remote", isDirectory: true)
+        try createRemoteFiles(at: remoteDirectory)
+        let remote = remoteDirectory.path
+        let downloads = settings.appendingPathComponent("downloads", isDirectory: true)
+        try FileManager.default.createDirectory(at: downloads, withIntermediateDirectories: true)
         let profiles = settings.appendingPathComponent("profiles.json")
         let profile: [String: Any] = [
             "id": UUID().uuidString, "name": "UI files", "transport": "sftp", "host": "127.0.0.1",
@@ -171,6 +175,14 @@ final class SFTPBrowserUITests: XCTestCase {
 
     private func entry(_ name: String, in app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: "files.entry.\(name)").firstMatch
+    }
+
+    private func createRemoteFiles(at remote: URL) throws {
+        try FileManager.default.createDirectory(at: remote, withIntermediateDirectories: true)
+        try Data("First remote file\n".utf8).write(to: remote.appendingPathComponent("first.txt"))
+        let folder = remote.appendingPathComponent("folder", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Data("Nested remote file\n".utf8).write(to: folder.appendingPathComponent("nested.txt"))
     }
 
     private func choose(path: String, confirm: String, in app: XCUIApplication) {

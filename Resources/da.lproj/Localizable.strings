@@ -74,6 +74,7 @@
 "ssh.authentication" = "SSH bruger din Macs nøgler, ssh-agent og SSH-indstillinger. Indtast adgangskoder og bekræft nye værtsnøgler i terminalen.";
 "ssh.ended" = "SSH blev afsluttet. Læs terminalmeddelelsen, før du forbinder igen.";
 "rdp.install" = "Den indbyggede RDP-komponent mangler eller kunne ikke indlæses. Geninstaller FjärrConnect til din Mac-arkitektur.";
+"rdp.waitingForDesktop" = "Venter på fjernskrivebordet…";
 "rdp.invalid" = "RDP-loginoplysninger må ikke indeholde linjeskift.";
 "rdp.ended" = "RDP blev afsluttet. Kontrollér server, login og certifikat, og forbind igen.";
 "discovery.resolveFailed" = "Kunne ikke nå serveren. Kontrollér tjenesten, netværket og tilladelsen til lokalt netværk, og opdater derefter.";
@@ -90,12 +91,15 @@
 "vnc.usernameRequired.signIn" = "Log ind med et Mac-brugernavn …";
 "vnc.macAuthenticationRejected" = "Mac-skærmdeling afviste login. Kontrollér kontoens korte brugernavn og adgangskode, og bekræft, at kontoen har adgang i indstillingerne for skærmdeling.";
 "vnc.connectionFailed" = "VNC-forbindelsen mislykkedes. Kontrollér adressen og porten, og bekræft derefter at Skærmdeling eller VNC-tjenesten er aktiveret på fjerncomputeren, og at kontoen har adgang.";
+"vnc.retryingFirstConnection" = "Den første forbindelse mislykkedes. Prøver én gang til…";
 "vnc.unsupportedSecurity" = "Serveren tilbyder en VNC-sikkerhedsmetode, som FjärrConnect ikke kan bruge. FjärrConnect understøtter certifikatverificeret VeNCrypt X509Vnc og X509Plain samt standard VNC-godkendelse.";
 
 "rdp.error.network" = "Serveren kunne ikke nås. Kontrollér, at Fjernskrivebord er aktiveret, og at adressen og porten er tilgængelige.";
+"rdp.error.securityNegotiation" = "RDP-forhandlingen sluttede, før en sikkerhedsprotokol blev valgt. Kontrollér, at adressen peger på en RDP-server, og at dens sikkerhedsindstillinger passer til profilen.";
 "rdp.error.authentication" = "Serveren afviste login. Kontrollér brugernavn, adgangskode og tilladelse til Fjernskrivebord.";
 "rdp.error.certificate" = "Den sikre forbindelse mislykkedes. Kontrollér serverens certifikat og TLS-indstillinger.";
 "rdp.error.account" = "Kontoen kræver handling: den kan være låst, deaktiveret, udløbet eller kræve en ny adgangskode. Kontrollér adgangen til Fjernskrivebord.";
+"rdp.phase" = "Forhandlingsfase:";
 "rdp.exitCode" = "Klientens afslutningskode:";
 "vnc.blackScreen" = "Serveren sender et sort billede. På en Mac: kontrollér Skærmdeling eller Ekstern administration under Systemindstillinger → Generelt → Deling. Det kan være nødvendigt at slå funktionen fra og til lokalt for at give adgang til skærm og input. Kontrollér også, at fjernskærmen er vågen.";
 "vnc.waitingForImage" = "Forbundet, men serveren har endnu ikke sendt et skrivebordsbillede. Kontrollér skærmdeling på den eksterne computer.";
@@ -218,6 +222,9 @@
 
 "options.clipboard" = "Del tekst- og billedudklipsholder med den aktive session";
 "options.rdpClipboard" = "Del tekst- og billedudklipsholder med den aktive session";
+"options.rdpClipboardFiles" = "Del filer med Windows via udklipsholderen";
+"rdp.clipboardFiles.connectOnce" = "Forbind én gang med filudklipsholder";
+"options.rdpClipboardFiles.hint" = "Kræver serversupport. Filkopiering i begge retninger er implementeret, men ikke verificeret med en rigtig Windows-server. Filudklipsholderen er som standard slået fra.";
 
 "options.ssh" = "SSH-forbindelse";
 

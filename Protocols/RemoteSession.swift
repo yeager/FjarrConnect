@@ -51,6 +51,9 @@ protocol RemoteSession: ObservableObject, AnyObject where ObjectWillChangePublis
     var status: SessionStatus { get }
     var notice: String? { get }
     var negotiatedCodec: String? { get }
+    var connectionPhase: String? { get }
+    var requestedSecurityProtocols: UInt32? { get }
+    var selectedSecurityProtocol: UInt32? { get }
     func start()
     func stop()
     func setActive(_ active: Bool)
@@ -61,6 +64,9 @@ extension RemoteSession {
     var notice: String? { nil }
     func setActive(_ active: Bool) {}
     var negotiatedCodec: String? { nil }
+    var connectionPhase: String? { nil }
+    var requestedSecurityProtocols: UInt32? { nil }
+    var selectedSecurityProtocol: UInt32? { nil }
 }
 
 enum ProtocolRegistry {

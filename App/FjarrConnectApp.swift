@@ -41,8 +41,12 @@ struct FjarrConnectApp: App {
                 .environmentObject(connection)
                 .environmentObject(releaseUpdates)
                 .frame(minWidth: 900, minHeight: 560)
-                .background(WindowCloseConfirmation(shouldClose: connection.confirmClosingAll).allowsHitTesting(false))
+                .background(WindowCloseConfirmation(
+                    shouldClose: connection.confirmClosingAll,
+                    onClose: { connection.disconnectAll(); discovery.stop() }
+                ).allowsHitTesting(false))
                 .onAppear {
+                    markSmokeLaunchReadyIfRequested()
                     appDelegate.shouldTerminate = connection.confirmClosingAll
                     releaseUpdates.checkOnLaunchIfEnabled()
                     #if DEBUG
@@ -51,7 +55,8 @@ struct FjarrConnectApp: App {
                     #endif
                     if AppSettings.shouldAutoStartDiscovery { discovery.start() }
                 }
-                .onDisappear { connection.disconnectAll(); discovery.stop() }
+                // `onDisappear` can run during transient SwiftUI scene/view
+                // replacement. Keep sessions until the main window really closes.
                 .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                     connection.disconnectAll()
                     discovery.stop()
@@ -92,6 +97,19 @@ struct FjarrConnectApp: App {
                 }
             }
         }
+    }
+
+    /// The release smoke test passes a random token and waits for the window
+    /// content to appear. This distinguishes a live app from dyld being stuck
+    /// while opening one of its embedded frameworks.
+    private func markSmokeLaunchReadyIfRequested() {
+        let arguments = CommandLine.arguments
+        guard let index = arguments.firstIndex(of: "--fc-smoke-ready"),
+              arguments.indices.contains(index + 1),
+              let token = UUID(uuidString: arguments[index + 1]) else { return }
+        let marker = FileManager.default.temporaryDirectory
+            .appendingPathComponent("fjarrconnect-smoke-\(token.uuidString)")
+        try? Data("ready".utf8).write(to: marker, options: .atomic)
     }
 }
 

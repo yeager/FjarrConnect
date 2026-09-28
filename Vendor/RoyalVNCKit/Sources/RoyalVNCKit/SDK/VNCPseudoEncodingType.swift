@@ -6,9 +6,11 @@ import Foundation
 
 public enum VNCPseudoEncodingType: VNCEncodingType {
 	case lastRect = -224
+	case xCursor = -240
 	case cursor = -239
 	case desktopName = -307
 	case continuousUpdates = -313
+	case appleCursorImage = 0x450
 	case desktopSize = -223
 	case extendedDesktopSize = -308
 
@@ -44,15 +46,19 @@ public enum VNCPseudoEncodingType: VNCEncodingType {
 
 extension VNCPseudoEncodingType: CustomStringConvertible {
 	public var description: String {
-		switch self {
+			switch self {
 			case .lastRect:
 				"Last Rectangle"
+			case .xCursor:
+				"X Cursor"
 			case .cursor:
 				"Cursor"
 			case .desktopName:
 				"Desktop Name"
 			case .continuousUpdates:
 				"Continuous Updates"
+			case .appleCursorImage:
+				"Apple Cursor Image"
 			case .desktopSize:
 				"Desktop Size"
 			case .extendedDesktopSize:

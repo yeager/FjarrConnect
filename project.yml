@@ -40,7 +40,6 @@ targets:
         LSApplicationCategoryType: public.app-category.utilities
         NSHumanReadableCopyright: "Copyright © 2026 Daniel Nylander"
         NSLocalNetworkUsageDescription: "Find VNC, RDP and SSH servers on your local network."
-        NSMicrophoneUsageDescription: "Share this Mac's microphone with an RDP session when you enable microphone redirection."
         NSBonjourServices:
           - _rfb._tcp
           - _rdp._tcp
@@ -49,8 +48,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: se.fjarrconnect.app
         PRODUCT_NAME: FjarrConnect
-        MARKETING_VERSION: "0.2.30"
-        CURRENT_PROJECT_VERSION: "32"
+        MARKETING_VERSION: "0.2.31"
+        CURRENT_PROJECT_VERSION: "33"
         SWIFT_VERSION: "5.0"
         ARCHS: "$(NATIVE_ARCH_ACTUAL)"
         ONLY_ACTIVE_ARCH: NO

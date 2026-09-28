@@ -66,6 +66,7 @@
 "ssh.authentication" = "SSH verwendet die Schlüssel, den ssh-agent und die SSH-Konfiguration deines Mac. Gib Passwörter im Terminal ein und bestätige dort neue Hostschlüssel.";
 "ssh.ended" = "SSH wurde beendet. Lies vor dem erneuten Verbinden die Meldung im Terminal.";
 "rdp.install" = "Die integrierte RDP-Komponente fehlt oder konnte nicht geladen werden. Installieren Sie FjärrConnect für Ihre Mac-Architektur erneut.";
+"rdp.waitingForDesktop" = "Warten auf den Remotedesktop…";
 "rdp.invalid" = "RDP-Anmeldedaten dürfen keine Zeilenumbrüche enthalten.";
 "rdp.ended" = "RDP wurde beendet. Prüfe Server, Anmeldedaten und Zertifikat und verbinde dich erneut.";
 "discovery.resolveFailed" = "Der Server ist nicht erreichbar. Prüfe Dienst, Netzwerk und die Berechtigung für das lokale Netzwerk und aktualisiere dann.";
@@ -78,11 +79,14 @@
 "vnc.usernameRequired.signIn" = "Mit Mac-Benutzernamen anmelden …";
 "vnc.macAuthenticationRejected" = "Die Mac-Bildschirmfreigabe hat die Anmeldung abgelehnt. Prüfe den Kurznamen und das Passwort des Accounts sowie dessen Berechtigung in den Bildschirmfreigabe-Einstellungen.";
 "vnc.connectionFailed" = "Die VNC-Verbindung ist fehlgeschlagen. Prüfe Adresse und Port und bestätige dann, dass Bildschirmfreigabe oder der VNC-Dienst auf dem entfernten Computer aktiviert ist und der Account berechtigt ist.";
+"vnc.retryingFirstConnection" = "Die erste Verbindung ist fehlgeschlagen. Erneuter Versuch…";
 "vnc.unsupportedSecurity" = "Der Server bietet eine VNC-Sicherheitsmethode an, die FjärrConnect nicht verwenden kann. FjärrConnect unterstützt zertifikatsgeprüftes VeNCrypt X509Vnc und X509Plain sowie die Standard-VNC-Authentifizierung.";
 "rdp.error.network" = "Der Server ist nicht erreichbar. Prüfe, ob Remotedesktop aktiviert ist und Adresse sowie Port erreichbar sind.";
+"rdp.error.securityNegotiation" = "Die RDP-Aushandlung endete, bevor ein Sicherheitsprotokoll ausgewählt wurde. Prüfe, ob die Adresse zu einem RDP-Server führt und dessen Sicherheitseinstellungen zum Profil passen.";
 "rdp.error.authentication" = "Der Server hat die Anmeldung abgelehnt. Prüfe Benutzername, Passwort und die Berechtigung für Remotedesktop.";
 "rdp.error.certificate" = "Die sichere Verbindung ist fehlgeschlagen. Prüfe das Serverzertifikat und die TLS-Einstellungen.";
 "rdp.error.account" = "Der Account muss überprüft werden: Er ist möglicherweise gesperrt, deaktiviert oder abgelaufen oder benötigt ein neues Passwort. Prüfe seinen Remotedesktop-Zugriff.";
+"rdp.phase" = "RDP-Verbindungsphase:";
 "rdp.exitCode" = "Exit-Code des Clients:";
 "vnc.blackScreen" = "Der Server sendet ein schwarzes Bild. Prüfe auf einem Mac „Bildschirmfreigabe“ oder „Entfernte Verwaltung“ unter Systemeinstellungen → Allgemein → Freigabe. Eventuell musst du die Funktion direkt am entfernten Mac aus- und wieder einschalten, um Bildschirm- und Eingabezugriff zu erlauben. Prüfe auch, ob der entfernte Bildschirm aktiv ist.";
 "vnc.waitingForImage" = "Verbunden, aber der Server hat noch kein Schreibtischbild gesendet. Prüfe die Bildschirmfreigabe auf dem entfernten Computer.";
@@ -203,6 +207,9 @@
 
 "options.clipboard" = "Text- und Bildzwischenablage mit der aktiven Sitzung teilen";
 "options.rdpClipboard" = "Text- und Bildzwischenablage mit der aktiven Sitzung teilen";
+"options.rdpClipboardFiles" = "Dateien über die Zwischenablage mit Windows teilen";
+"rdp.clipboardFiles.connectOnce" = "Einmal mit Datei-Zwischenablage verbinden";
+"options.rdpClipboardFiles.hint" = "Serverunterstützung erforderlich. Das Kopieren von Dateien in beide Richtungen ist implementiert, aber noch nicht mit einem echten Windows-Server verifiziert. Die Datei-Zwischenablage ist standardmäßig deaktiviert.";
 
 "options.ssh" = "SSH-Verbindung";
 

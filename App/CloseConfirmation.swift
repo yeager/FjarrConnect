@@ -31,14 +31,18 @@ final class FjarrConnectAppDelegate: NSObject, NSApplicationDelegate {
 /// Preserve SwiftUI's window delegate for all callbacks except the close decision.
 struct WindowCloseConfirmation: NSViewRepresentable {
     let shouldClose: () -> Bool
+    let onClose: () -> Void
 
-    func makeNSView(context: Context) -> GuardView { GuardView(shouldClose: shouldClose) }
-    func updateNSView(_ view: GuardView, context: Context) { view.guardDelegate.shouldClose = shouldClose }
+    func makeNSView(context: Context) -> GuardView { GuardView(shouldClose: shouldClose, onClose: onClose) }
+    func updateNSView(_ view: GuardView, context: Context) {
+        view.guardDelegate.shouldClose = shouldClose
+        view.guardDelegate.onClose = onClose
+    }
 
     final class GuardView: NSView {
         let guardDelegate: GuardDelegate
-        init(shouldClose: @escaping () -> Bool) {
-            guardDelegate = GuardDelegate(shouldClose: shouldClose)
+        init(shouldClose: @escaping () -> Bool, onClose: @escaping () -> Void) {
+            guardDelegate = GuardDelegate(shouldClose: shouldClose, onClose: onClose)
             super.init(frame: .zero)
         }
         required init?(coder: NSCoder) { nil }
@@ -55,10 +59,18 @@ struct WindowCloseConfirmation: NSViewRepresentable {
     final class GuardDelegate: NSObject, NSWindowDelegate {
         weak var original: (any NSWindowDelegate)?
         var shouldClose: () -> Bool
-        init(shouldClose: @escaping () -> Bool) { self.shouldClose = shouldClose }
+        var onClose: () -> Void
+        init(shouldClose: @escaping () -> Bool, onClose: @escaping () -> Void) {
+            self.shouldClose = shouldClose
+            self.onClose = onClose
+        }
         func windowShouldClose(_ sender: NSWindow) -> Bool {
             guard shouldClose() else { return false }
             return original?.windowShouldClose?(sender) ?? true
+        }
+        func windowWillClose(_ notification: Notification) {
+            onClose()
+            original?.windowWillClose?(notification)
         }
         override func responds(to selector: Selector!) -> Bool {
             super.responds(to: selector) || original?.responds(to: selector) == true

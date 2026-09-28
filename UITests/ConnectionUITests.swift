@@ -19,6 +19,198 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertFalse(app.menuItems["Next session"].isEnabled)
     }
 
+    func testQuickConnectStaysVisibleWhenSidebarListScrollsAndIsShownAgain() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let profileFile = directory.appendingPathComponent("profiles.json")
+        let profiles: [[String: Any]] = (0..<24).map { index in
+            ["id": UUID().uuidString, "name": "Sidebar profile \(index)", "transport": "vnc",
+             "host": "sidebar-\(index).invalid", "port": 5900]
+        }
+        try JSONSerialization.data(withJSONObject: profiles).write(to: profileFile)
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = profileFile.path
+        app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        app.launch()
+        defer { app.terminate() }
+
+        let quickConnect = app.textFields["sidebar.quickConnect"]
+        XCTAssertTrue(quickConnect.waitForExistence(timeout: 15))
+        XCTAssertTrue(quickConnect.isHittable)
+        app.scrollViews.firstMatch.swipeUp()
+        XCTAssertTrue(quickConnect.isHittable,
+                      "Quick Connect should stay above the scrolling list of saved connections")
+
+        let hideSidebar = app.buttons["Hide Sidebar"]
+        XCTAssertTrue(hideSidebar.waitForExistence(timeout: 5))
+        hideSidebar.click()
+        let showSidebar = app.buttons["Show Sidebar"]
+        XCTAssertTrue(showSidebar.waitForExistence(timeout: 5))
+        showSidebar.click()
+
+        XCTAssertTrue(quickConnect.waitForExistence(timeout: 5))
+        let topRowIsVisible = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"),
+                                                        object: quickConnect)
+        XCTAssertEqual(XCTWaiter.wait(for: [topRowIsVisible], timeout: 5), .completed,
+                       "The top sidebar row should be visible after showing the sidebar again")
+    }
+
+    func testRDPProfileOffersOneSessionFileClipboardActionWithoutSavingOptIn() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let profile: [String: Any] = [
+            "id": UUID().uuidString, "name": "RDP file test", "transport": "rdp",
+            "host": "rdp.invalid", "port": 3389, "rdp": ["clipboardFiles": false]
+        ]
+        try JSONSerialization.data(withJSONObject: [profile]).write(to: file)
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = file.path
+        app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        app.launch()
+        defer { app.terminate() }
+
+        let row = app.buttons["connect.RDP file test"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 15))
+        row.rightClick()
+        XCTAssertTrue(app.menuItems["Connect once with file clipboard"].waitForExistence(timeout: 5))
+        app.typeKey(.escape, modifierFlags: [])
+
+        let savedProfiles = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [[String: Any]])
+        let savedRDP = try XCTUnwrap(savedProfiles.first?["rdp"] as? [String: Any])
+        XCTAssertEqual(savedRDP["clipboardFiles"] as? Bool, false)
+    }
+
+    func testSessionTabsStayAtTopOfWindowAfterConnectionStarts() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let profile: [String: Any] = [
+            "id": UUID().uuidString, "name": "Layout test", "transport": "ssh",
+            "host": "127.0.0.1", "port": 45999
+        ]
+        try JSONSerialization.data(withJSONObject: [profile]).write(to: file)
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = file.path
+        app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        app.launch()
+        defer { app.terminate() }
+
+        let profileRow = app.buttons["connect.Layout test"].firstMatch
+        XCTAssertTrue(profileRow.waitForExistence(timeout: 15))
+        profileRow.doubleClick()
+        let sessionTab = app.buttons["session.select.Layout test"].firstMatch
+        XCTAssertTrue(sessionTab.waitForExistence(timeout: 10))
+        let window = app.windows.firstMatch
+        XCTAssertTrue(window.exists)
+        XCTAssertLessThan(sessionTab.frame.minY - window.frame.minY, 180,
+                          "The session tab bar should remain directly below the window toolbar, including after a connection error")
+    }
+
+    func testFailedVNCConnectionKeepsSessionMenuAtTop() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let profile: [String: Any] = [
+            "id": UUID().uuidString, "name": "VNC layout test", "transport": "vnc",
+            "host": "127.0.0.1", "port": 45905, "clipboardEnabled": false
+        ]
+        try JSONSerialization.data(withJSONObject: [profile]).write(to: file)
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = file.path
+        app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        app.launch()
+        defer { app.terminate() }
+
+        let profileRow = app.buttons["connect.VNC layout test"].firstMatch
+        XCTAssertTrue(profileRow.waitForExistence(timeout: 15))
+        profileRow.doubleClick()
+        let connect = app.buttons["auth.connect"].firstMatch
+        XCTAssertTrue(connect.waitForExistence(timeout: 5))
+        connect.click()
+        XCTAssertTrue(app.buttons["session.select.VNC layout test"].waitForExistence(timeout: 10))
+        let tab = app.buttons["session.select.VNC layout test"].firstMatch
+        let reconnect = app.buttons["Reconnect"].firstMatch
+        // The VNC session's production connection deadline is 20 seconds.
+        // Leave margin for the UI to publish its disconnected state afterward.
+        XCTAssertTrue(reconnect.waitForExistence(timeout: 25),
+                      "The closed VNC test connection should reach its disconnected state")
+        let window = app.windows.firstMatch
+        XCTAssertLessThan(tab.frame.minY - window.frame.minY, 180,
+                          "A failed VNC session should not push the session menu down the window")
+        XCTAssertTrue(app.textFields["sidebar.quickConnect"].exists,
+                      "A failed VNC session should preserve the visible sidebar preference")
+        XCTAssertGreaterThan(tab.frame.height, 0,
+                             "The failed session's tab should retain a visible frame after disconnection")
+        XCTAssertLessThan(reconnect.frame.minY - window.frame.minY, 240,
+                          "The session controls should stay directly below the tab bar after a connection error")
+    }
+
+    func testFailedRDPConnectionKeepsSidebarAndSessionBarsAtTop() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+#if arch(arm64)
+        let architecture = "arm64"
+#elseif arch(x86_64)
+        let architecture = "x86_64"
+#else
+        throw XCTSkip("No matching embedded FreeRDP runtime for this test architecture")
+#endif
+        let runtimeCandidates = [
+            root.appendingPathComponent("build/rdp-\(architecture)/FreeRDP-build/libFjarrRDP.dylib"),
+            root.appendingPathComponent("build/rdp-output/\(architecture)/libFjarrRDP.dylib"),
+            root.appendingPathComponent("build/verify-release-\(architecture)/Build/Products/Release/FjarrConnect.app/Contents/Frameworks/libFjarrRDP.dylib")
+        ]
+        guard let runtime = runtimeCandidates.first(where: { FileManager.default.fileExists(atPath: $0.path) }) else {
+            throw XCTSkip("A local embedded FreeRDP runtime is needed to exercise the RDP failure layout")
+        }
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("profiles.json")
+        let profile: [String: Any] = [
+            "id": UUID().uuidString, "name": "RDP layout test", "transport": "rdp",
+            "host": "127.0.0.1", "port": 45999, "username": "layout-test"
+        ]
+        try JSONSerialization.data(withJSONObject: [profile]).write(to: file)
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = file.path
+        app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        app.launchEnvironment["FJARRCONNECT_RDP_LIBRARY"] = runtime.path
+        app.launch()
+        defer { app.terminate() }
+
+        let profileRow = app.buttons["connect.RDP layout test"].firstMatch
+        XCTAssertTrue(profileRow.waitForExistence(timeout: 15))
+        profileRow.doubleClick()
+        let password = app.secureTextFields["auth.password"]
+        XCTAssertTrue(password.waitForExistence(timeout: 5))
+        password.click()
+        password.typeText("ui-test-only")
+        app.buttons["auth.connect"].click()
+
+        let tab = app.buttons["session.select.RDP layout test"].firstMatch
+        XCTAssertTrue(tab.waitForExistence(timeout: 10))
+        let reconnect = app.buttons["Reconnect"].firstMatch
+        XCTAssertTrue(reconnect.waitForExistence(timeout: 20), "The closed RDP test port should fail promptly")
+        let window = app.windows.firstMatch
+        let quickConnect = app.textFields["sidebar.quickConnect"]
+        XCTAssertLessThan(quickConnect.frame.minY - window.frame.minY, 180,
+                          "A failed RDP connection must not push the sidebar down")
+        XCTAssertLessThan(tab.frame.minY - window.frame.minY, 180,
+                          "A failed RDP connection must keep session tabs under the window toolbar")
+        XCTAssertLessThan(reconnect.frame.minY - window.frame.minY, 260,
+                          "A multiline RDP error must keep session controls near the tab bar")
+    }
+
     func testMacScreenSharingProfileRequiresUsernameBeforeSave() throws {
         continueAfterFailure = false
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

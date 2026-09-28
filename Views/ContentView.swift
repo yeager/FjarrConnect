@@ -17,6 +17,7 @@ struct ContentView: View {
     @State private var commandLog: ConnectionProfile?
     @State private var errorMessage: String?
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @State private var manualSidebarVisibility: NavigationSplitViewVisibility?
     @AppStorage(AppSettings.showSidebar) private var showSidebar = true
     @AppStorage(AppSettings.useLargeControls) private var useLargeControls = false
     @AppStorage(AppSettings.autoHideSidebarWhileConnected) private var autoHideSidebarWhileConnected = false
@@ -24,59 +25,32 @@ struct ContentView: View {
     @FocusState private var quickFocused: Bool
 
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            sidebar.navigationSplitViewColumnWidth(min: 250, ideal: 290, max: 400)
-        } detail: {
-            VStack(spacing: 0) {
-                if !connection.tabs.isEmpty {
-                    if AppSettings.shouldShowSessionTabs(autoHideWhileConnected: autoHideSessionTabsWhileConnected,
-                                                         hasActiveSessions: connection.hasActiveSessions) {
-                        SessionTabBar(tabs: connection.tabs, selectedID: connection.selectedID,
-                                      select: { connection.selectedID = $0 }, close: { connection.requestClose($0) })
-                        .frame(height: 56)
-                        .background(.bar, ignoresSafeAreaEdges: [])
-                        Divider()
-                    }
-                    if let tab = connection.selected {
-                        SessionDetailView(tab: tab, reconnect: {
-                            let saved = profiles.profiles.first { $0.id == tab.backend.profile.id } ?? tab.backend.profile
-                            var current = tab.backend.profile.transport == .sftp ? saved.fileProfile : saved
-                            if (tab.backend as? VNCRemoteSession)?.serverRequiresMacAccount == true {
-                                current.usesMacScreenSharingAuthentication = true
-                            }
-                            requestConnect(current, forcePrompt: true)
-                        },
-                                          close: { connection.requestClose(tab.id) },
-                                          openFiles: { urls in
-                                              connection.connect(tab.backend.profile.fileProfile, initialFileUploads: urls)
-                                          })
-                            .id(tab.id)
-                    }
-                } else { welcome }
-            }
-        }
-        .navigationTitle("FjärrConnect")
-        .controlSize(useLargeControls ? .large : .regular)
+        navigationView
         .onAppear(perform: syncSidebarVisibility)
-        .onChange(of: showSidebar) { _, _ in syncSidebarVisibility() }
-        .onChange(of: autoHideSidebarWhileConnected) { _, _ in syncSidebarVisibility() }
-        .onChange(of: connection.hasActiveSessions) { _, _ in syncSidebarVisibility() }
-        .onChange(of: columnVisibility) { _, _ in syncSidebarVisibility() }
+        .onChange(of: showSidebar) { _, _ in
+            manualSidebarVisibility = nil
+            syncSidebarVisibility()
+        }
+        .onChange(of: autoHideSidebarWhileConnected) { _, _ in
+            manualSidebarVisibility = nil
+            syncSidebarVisibility()
+        }
+        .onChange(of: columnVisibility) { _, visibility in sidebarVisibilityDidChange(visibility) }
+        .onChange(of: connection.selectedID) { _, _ in
+            manualSidebarVisibility = nil
+            syncSidebarVisibility()
+        }
+        .onChange(of: connection.tabs.map { $0.backend.status }) { _, _ in
+            manualSidebarVisibility = nil
+            syncSidebarVisibility()
+        }
         .onChange(of: connection.selected?.backend.status) { _, status in
+            manualSidebarVisibility = nil
+            syncSidebarVisibility()
             guard status?.isFinished == true,
                   let session = connection.selected?.backend as? VNCRemoteSession,
                   session.savedCredentialsRejected else { return }
             credentials = session.profile
-        }
-        .toolbar {
-            ToolbarItemGroup {
-                Button { quickFocused = true } label: { Image(systemName: "bolt") }
-                    .help("action.quickConnect").keyboardShortcut("k")
-                    .accessibilityLabel(Text("action.quickConnect"))
-                Button { showingNew = true } label: { Image(systemName: "plus") }
-                    .help("profile.new").keyboardShortcut("n")
-                    .accessibilityLabel(Text("profile.new")).accessibilityIdentifier("newConnection")
-            }
         }
         .sheet(isPresented: $showingNetworkSearch, onDismiss: applyDiscoveredAction) {
             NetworkDiscoveryView(scanner: scanner) { profile, connect in
@@ -85,11 +59,7 @@ struct ContentView: View {
             }
         }
         .onDisappear { scanner.stop() }
-        .onReceive(NotificationCenter.default.publisher(for: .connectSavedProfile)) { notification in
-            guard let id = notification.object as? UUID,
-                  let profile = profiles.profiles.first(where: { $0.id == id }) else { return }
-            requestConnect(profile)
-        }
+        .onReceive(NotificationCenter.default.publisher(for: .connectSavedProfile), perform: connectSavedProfile)
         .sheet(isPresented: $showingNew) { ProfileEditorView(profile: nil) }
         .sheet(item: $editing) { ProfileEditorView(profile: $0) }
         .sheet(item: $commandLog) { SSHCommandLogView(profile: $0) }
@@ -124,28 +94,118 @@ struct ContentView: View {
         } message: { Text(deleting?.name ?? "") }
     }
 
+    private var navigationView: some View {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
+            sidebar.navigationSplitViewColumnWidth(min: 250, ideal: 290, max: 400)
+        } detail: {
+            VStack(spacing: 0) {
+                if !connection.tabs.isEmpty,
+                   AppSettings.shouldShowSessionTabs(autoHideWhileConnected: autoHideSessionTabsWhileConnected,
+                                                     selectedSessionStatus: connection.selected?.backend.status) {
+                    VStack(spacing: 0) {
+                        SessionTabBar(tabs: connection.tabs, selectedID: connection.selectedID,
+                                      select: { connection.selectedID = $0 }, close: { connection.requestClose($0) })
+                            .frame(height: 56)
+                            .background(.bar, ignoresSafeAreaEdges: [])
+                        Divider()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 57, alignment: .top)
+                }
+
+                if let tab = connection.selected {
+                    SessionDetailView(tab: tab, reconnect: {
+                        let saved = profiles.profiles.first { $0.id == tab.backend.profile.id } ?? tab.backend.profile
+                        var current = tab.backend.profile.transport == .sftp ? saved.fileProfile : saved
+                        if (tab.backend as? VNCRemoteSession)?.serverRequiresMacAccount == true {
+                            current.usesMacScreenSharingAuthentication = true
+                        }
+                        requestConnect(current, forcePrompt: true)
+                    },
+                                      close: { connection.requestClose(tab.id) },
+                                      openFiles: { urls in
+                                          connection.connect(tab.backend.profile.fileProfile, initialFileUploads: urls)
+                                      })
+                    .id(tab.id)
+                } else {
+                    welcome
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+        .navigationTitle("FjärrConnect")
+        .controlSize(useLargeControls ? .large : .regular)
+        .toolbar {
+            ToolbarItemGroup {
+                Button { quickFocused = true } label: { Image(systemName: "bolt") }
+                    .help("action.quickConnect").keyboardShortcut("k")
+                    .accessibilityLabel(Text("action.quickConnect"))
+                Button { showingNew = true } label: { Image(systemName: "plus") }
+                    .help("profile.new").keyboardShortcut("n")
+                    .accessibilityLabel(Text("profile.new")).accessibilityIdentifier("newConnection")
+            }
+        }
+    }
+
     private var keepsSidebarVisible: Bool {
         AppSettings.shouldShowSidebar(showSidebar: showSidebar,
                                       autoHideWhileConnected: autoHideSidebarWhileConnected,
-                                      hasActiveSessions: connection.hasActiveSessions)
+                                      selectedSessionStatus: connection.selected?.backend.status)
+    }
+
+    private var shouldAutoHideSidebar: Bool {
+        autoHideSidebarWhileConnected && connection.selected?.backend.status.isEstablished == true
     }
 
     private func syncSidebarVisibility() {
-        let target: NavigationSplitViewVisibility = keepsSidebarVisible ? .all : .detailOnly
+        let target = shouldAutoHideSidebar ? (manualSidebarVisibility ?? .detailOnly) :
+            (keepsSidebarVisible ? .all : .detailOnly)
         if columnVisibility != target { columnVisibility = target }
     }
 
+    private func sidebarVisibilityDidChange(_ visibility: NavigationSplitViewVisibility) {
+        let target = shouldAutoHideSidebar ? (manualSidebarVisibility ?? .detailOnly) :
+            (keepsSidebarVisible ? .all : .detailOnly)
+        guard visibility != target else { return }
+
+        if shouldAutoHideSidebar {
+            // Auto-hide is a connection-time default, while the toolbar remains
+            // available for a temporary manual override during that session.
+            manualSidebarVisibility = visibility
+        } else {
+            // Persist an explicit toolbar choice so the sidebar stays hidden
+            // after selection, status, or window layout updates.
+            showSidebar = visibility != .detailOnly
+        }
+        syncSidebarVisibility()
+    }
+
+    private func connectSavedProfile(_ notification: Notification) {
+        guard let profileID = notification.object as? UUID else { return }
+        guard let profile = profiles.profiles.first(where: { $0.id == profileID }) else { return }
+        requestConnect(profile)
+    }
+
     private var sidebar: some View {
-        List(selection: $selectedProfileID) {
-            Section("action.quickConnect") {
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("action.quickConnect")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
                 HStack(spacing: 8) {
                     TextField("quickconnect.placeholder", text: $quickConnect)
                         .textFieldStyle(.roundedBorder).focused($quickFocused).onSubmit(runQuickConnect)
+                        .accessibilityIdentifier("sidebar.quickConnect")
                     Button(action: runQuickConnect) { Image(systemName: "arrow.right.circle.fill").font(.title3) }
                         .buttonStyle(.borderless).help("action.connect")
                         .disabled(quickConnect.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }.padding(.vertical, 4)
+                }
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            Divider()
+
+          List(selection: $selectedProfileID) {
             if !profiles.favorites.isEmpty {
                 Section("sidebar.favorites") {
                     ForEach(profiles.favorites.filter { matches($0) }) { profile in profileRow(profile) }
@@ -207,7 +267,10 @@ struct ContentView: View {
                     }
                 }
             }
-        }.listStyle(.sidebar).searchable(text: $search, prompt: Text("search.placeholder"))
+          }
+          .listStyle(.sidebar)
+          .searchable(text: $search, prompt: Text("search.placeholder"))
+        }
     }
 
     private func profileRow(_ profile: ConnectionProfile) -> some View {
@@ -236,6 +299,12 @@ struct ContentView: View {
             .accessibilityIdentifier("favorite.\(profile.name)")
         }.tag(profile.id).contextMenu {
             Button("action.connect") { requestConnect(profile) }
+            if profile.transport == .rdp {
+                Button("rdp.clipboardFiles.connectOnce") {
+                    requestConnect(profile.enablingRDPFileClipboardForCurrentSession(),
+                                   forcePrompt: false, persistUsage: false)
+                }
+            }
             Button("files.title") { connection.connect(profile.fileProfile) }
             Button("links.smb") { if let url = profile.serviceURL("smb") { NSWorkspace.shared.open(url) } }
             Button("links.web") { if let url = profile.serviceURL("https") { NSWorkspace.shared.open(url) } }
@@ -312,7 +381,11 @@ struct ContentView: View {
         requestConnect(profile)
     }
     private func requestConnect(_ profile: ConnectionProfile, forcePrompt: Bool = false) {
-        profiles.markUsed(profile.id)
+        requestConnect(profile, forcePrompt: forcePrompt, persistUsage: true)
+    }
+
+    private func requestConnect(_ profile: ConnectionProfile, forcePrompt: Bool, persistUsage: Bool) {
+        if persistUsage { profiles.markUsed(profile.id) }
         if profile.transport == .ssh || profile.transport == .sftp { connection.connect(profile); return }
         if (profile.transport == .rdp || profile.transport == .remoteApp) && !RDPRemoteSession.isAvailable {
             errorMessage = NSLocalizedString("rdp.install", comment: ""); return
@@ -332,13 +405,29 @@ struct ContentView: View {
     }
 
     private func continueConnect(_ profile: ConnectionProfile, forcePrompt: Bool) {
-        do {
-            if !forcePrompt, let password = try KeychainStore.password(for: profile.id) {
-                let gatewayPassword = profile.rdp?.gatewayUsername == nil ? nil : try KeychainStore.password(for: profile.id, purpose: .gateway)
-                if profile.rdp?.gatewayUsername != nil && gatewayPassword == nil { credentials = profile }
-                else { connection.connect(profile, password: password, gatewayPassword: gatewayPassword) }
-            } else { credentials = profile }
-        } catch { errorMessage = error.localizedDescription }
+        guard !forcePrompt else { credentials = profile; return }
+        // Keychain reads can block while macOS authorizes access to a protected
+        // item. Keep that wait off the main thread so the window remains usable.
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                let password = try KeychainStore.password(for: profile.id)
+                let gatewayPassword = profile.rdp?.gatewayUsername == nil ? nil :
+                    try KeychainStore.password(for: profile.id, purpose: .gateway)
+                DispatchQueue.main.async {
+                    if let password {
+                        if profile.rdp?.gatewayUsername != nil && gatewayPassword == nil {
+                            self.credentials = profile
+                        } else {
+                            self.connection.connect(profile, password: password, gatewayPassword: gatewayPassword)
+                        }
+                    } else {
+                        self.credentials = profile
+                    }
+                }
+            } catch {
+                DispatchQueue.main.async { self.errorMessage = error.localizedDescription }
+            }
+        }
     }
 }
 
@@ -421,7 +510,7 @@ private struct SessionDetailView: View {
                 Button("action.disconnect", action: close)
             }.padding(12).background(.bar)
             Divider()
-            if let error = tab.backend.status.error {
+            if let error = tab.backend.status.error, tab.backend.notice == nil {
                 HStack(alignment: .top) {
                     Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                         .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
@@ -430,7 +519,11 @@ private struct SessionDetailView: View {
                         do {
                             try DiagnosticReport.save(profile: tab.backend.profile,
                                                       status: tab.backend.status,
-                                                      health: tab.health)
+                                                      health: tab.health,
+                                                      connectionPhase: tab.backend.connectionPhase,
+                                                      requestedSecurityProtocols: tab.backend.requestedSecurityProtocols,
+                                                      selectedSecurityProtocol: tab.backend.selectedSecurityProtocol,
+                                                      inputState: (tab.backend as? RDPRemoteSession)?.inputState)
                         } catch {
                             diagnosticSaveFailed = true
                         }
@@ -447,7 +540,12 @@ private struct SessionDetailView: View {
                     .foregroundStyle(.orange).padding().frame(maxWidth: .infinity, alignment: .leading)
             }
             if tab.backend.status.isFinished && tab.backend.profile.transport != .ssh {
-                ContentUnavailableView("status.disconnected", systemImage: "network.slash", description: Text("session.retry"))
+                VStack(spacing: 12) {
+                    ContentUnavailableView("status.disconnected", systemImage: "network.slash", description: Text("session.retry"))
+                        .frame(maxWidth: .infinity)
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             } else {
                 tab.backend.makeScreenView()
                     .dropDestination(for: URL.self) { urls, _ in
@@ -471,6 +569,7 @@ private struct SessionDetailView: View {
                     }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onChange(of: (tab.backend as? VNCRemoteSession)?.isLoadingRemoteFiles ?? false) { _, isLoading in
             guard !isLoading, waitingForVNCFileListing,
                   let vnc = tab.backend as? VNCRemoteSession else { return }

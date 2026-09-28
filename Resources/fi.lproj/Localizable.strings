@@ -66,6 +66,7 @@
 "ssh.authentication" = "SSH käyttää Macin avaimia, ssh-agentia ja SSH-asetuksia. Kirjoita salasanat ja vahvista uudet palvelinavaimet päätteessä.";
 "ssh.ended" = "SSH päättyi. Lue päätteen ilmoitus ennen kuin yhdistät uudelleen.";
 "rdp.install" = "Sisäinen RDP-komponentti puuttuu tai sitä ei voitu ladata. Asenna FjärrConnect uudelleen Macisi arkkitehtuurille.";
+"rdp.waitingForDesktop" = "Odotetaan etätyöpöytää…";
 "rdp.invalid" = "RDP-kirjautumistiedoissa ei saa olla rivinvaihtoja.";
 "rdp.ended" = "RDP päättyi. Tarkista palvelin, kirjautumistiedot ja varmenne ja yhdistä uudelleen.";
 "discovery.resolveFailed" = "Palvelimeen ei saatu yhteyttä. Tarkista palvelu, verkko ja paikallisen verkon käyttöoikeus ja päivitä sitten.";
@@ -78,11 +79,14 @@
 "vnc.usernameRequired.signIn" = "Kirjaudu Macin käyttäjätunnuksella …";
 "vnc.macAuthenticationRejected" = "Macin näytönjako hylkäsi kirjautumisen. Tarkista tilin lyhyt käyttäjätunnus ja salasana sekä tilin käyttöoikeus näytönjaon asetuksissa.";
 "vnc.connectionFailed" = "VNC-yhteys epäonnistui. Tarkista osoite ja portti ja vahvista sitten, että Näytönjako tai VNC-palvelu on käytössä etätietokoneessa ja että tilillä on käyttöoikeus.";
+"vnc.retryingFirstConnection" = "Ensimmäinen yhteys epäonnistui. Yritetään vielä kerran…";
 "vnc.unsupportedSecurity" = "Palvelin tarjoaa VNC-suojausmenetelmän, jota FjärrConnect ei voi käyttää. FjärrConnect tukee varmenteella todennettua VeNCrypt X509Vnc- ja X509Plain-tilaa sekä tavallista VNC-todennusta.";
 "rdp.error.network" = "Palvelimeen ei saatu yhteyttä. Tarkista, että etätyöpöytä on käytössä ja osoite ja portti ovat saavutettavissa.";
+"rdp.error.securityNegotiation" = "RDP-neuvottelu päättyi ennen suojausprotokollan valintaa. Varmista, että osoite johtaa RDP-palvelimeen ja että sen suojausasetukset sopivat profiiliin.";
 "rdp.error.authentication" = "Palvelin hylkäsi kirjautumisen. Tarkista käyttäjätunnus, salasana ja etätyöpöydän käyttöoikeus.";
 "rdp.error.certificate" = "Suojattu yhteys epäonnistui. Tarkista palvelimen varmenne ja TLS-asetukset.";
 "rdp.error.account" = "Tili on tarkistettava: se voi olla lukittu, poistettu käytöstä tai vanhentunut tai salasana on ehkä vaihdettava. Tarkista tilin etätyöpöydän käyttöoikeus.";
+"rdp.phase" = "RDP-yhteyden vaihe:";
 "rdp.exitCode" = "Asiakasohjelman poistumiskoodi:";
 "vnc.blackScreen" = "Palvelin lähettää mustaa kuvaa. Tarkista Macissa Näytönjako tai Etähallinta kohdassa Järjestelmäasetukset → Yleiset → Jako. Toiminto on ehkä poistettava käytöstä ja otettava uudelleen käyttöön suoraan etä-Macissa näytön ja syötteen käyttöoikeuksien myöntämiseksi. Tarkista myös, ettei etänäyttö ole lepotilassa.";
 "vnc.waitingForImage" = "Yhteys on muodostettu, mutta palvelin ei ole vielä lähettänyt työpöytäkuvaa. Tarkista etätietokoneen näytönjako.";
@@ -203,6 +207,9 @@
 
 "options.clipboard" = "Jaa tekstin ja kuvien leikepöytä aktiivisen istunnon kanssa";
 "options.rdpClipboard" = "Jaa teksti- ja kuvapöytä aktiivisen istunnon kanssa";
+"options.rdpClipboardFiles" = "Jaa tiedostoja Windowsin kanssa leikepöydän kautta";
+"rdp.clipboardFiles.connectOnce" = "Yhdistä kerran tiedostoleikepöydällä";
+"options.rdpClipboardFiles.hint" = "Vaatii palvelimen tuen. Tiedostojen kopiointi molempiin suuntiin on toteutettu, mutta sitä ei ole vielä varmennettu oikealla Windows-palvelimella. Tiedostoleikepöytä on oletuksena pois käytöstä.";
 
 "options.ssh" = "SSH-yhteys";
 

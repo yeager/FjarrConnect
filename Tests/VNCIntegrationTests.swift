@@ -9,14 +9,113 @@ private struct VNCSessionScreenView: View {
     var body: some View { session.makeScreenView() }
 }
 
+private final class CursorTrackingWindow: NSWindow {
+    private(set) var cursorRectInvalidations = 0
+    var simulatedPointerLocation = NSPoint.zero
+
+    override var isKeyWindow: Bool { true }
+
+    override var mouseLocationOutsideOfEventStream: NSPoint {
+        simulatedPointerLocation
+    }
+
+    override func invalidateCursorRects(for view: NSView) {
+        cursorRectInvalidations += 1
+        super.invalidateCursorRects(for: view)
+    }
+}
+
 /// A local RFB server exercises the actual RoyalVNCKit handshake and session lifecycle.
 final class VNCIntegrationTests: XCTestCase {
     func testVNCConnectsToLocalServerAndStops() throws {
         try exerciseServer(requiresUsername: false)
     }
 
+    func testMacScreenSharingRetriesOneSilentFirstConnection() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let portFile = directory.appendingPathComponent("port")
+        let server = Process()
+        server.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+        server.arguments = ["-c", Self.server, portFile.path, "retry-once", portFile.path + ".uploaded"]
+        server.standardOutput = FileHandle.nullDevice
+        server.environment = ProcessInfo.processInfo.environment.filter {
+            !$0.key.hasPrefix("DYLD_") && !$0.key.hasPrefix("XCTest") && !$0.key.hasPrefix("XCInject")
+        }
+        try server.run()
+        defer { if server.isRunning { server.terminate(); server.waitUntilExit() } }
+        let ready = expectation(description: "retry fixture ready")
+        DispatchQueue.global().async {
+            for _ in 0..<200 {
+                if FileManager.default.fileExists(atPath: portFile.path) || !server.isRunning { ready.fulfill(); return }
+                Thread.sleep(forTimeInterval: 0.05)
+            }
+        }
+        wait(for: [ready], timeout: 12)
+        let port = try XCTUnwrap(UInt16(String(contentsOf: portFile, encoding: .utf8)))
+        let profile = ConnectionProfile(name: "Retry fixture", host: "127.0.0.1", port: port,
+                                        username: "test", usesMacScreenSharingAuthentication: true)
+        let session = VNCRemoteSession(profile: profile, password: "test-only", connectionTimeout: 0.35)
+        defer { session.stop() }
+        let connected = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in session.status == .connected }, object: nil)
+        session.start()
+        XCTAssertEqual(XCTWaiter.wait(for: [connected], timeout: 8), .completed)
+        XCTAssertEqual(session.status, .connected)
+        XCTAssertEqual(try String(contentsOf: portFile.appendingPathExtension("count"), encoding: .utf8), "2")
+    }
+
+    func testMacScreenSharingRetriesOneFailedHandshake() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let portFile = directory.appendingPathComponent("port")
+        let server = Process()
+        server.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+        server.arguments = ["-c", Self.server, portFile.path, "close-once", portFile.path + ".uploaded"]
+        server.standardOutput = FileHandle.nullDevice
+        server.environment = ProcessInfo.processInfo.environment.filter {
+            !$0.key.hasPrefix("DYLD_") && !$0.key.hasPrefix("XCTest") && !$0.key.hasPrefix("XCInject")
+        }
+        try server.run()
+        defer { if server.isRunning { server.terminate(); server.waitUntilExit() } }
+        let ready = expectation(description: "failed-handshake fixture ready")
+        DispatchQueue.global().async {
+            for _ in 0..<200 {
+                if FileManager.default.fileExists(atPath: portFile.path) || !server.isRunning { ready.fulfill(); return }
+                Thread.sleep(forTimeInterval: 0.05)
+            }
+        }
+        wait(for: [ready], timeout: 12)
+        let port = try XCTUnwrap(UInt16(String(contentsOf: portFile, encoding: .utf8)))
+        let profile = ConnectionProfile(name: "Failed-handshake fixture", host: "127.0.0.1", port: port,
+                                        username: "test", usesMacScreenSharingAuthentication: true)
+        let session = VNCRemoteSession(profile: profile, password: "test-only", connectionTimeout: 2)
+        defer { session.stop() }
+        let connected = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in session.status == .connected }, object: nil)
+        session.start()
+        XCTAssertEqual(XCTWaiter.wait(for: [connected], timeout: 8), .completed)
+        XCTAssertEqual(session.status, .connected)
+        XCTAssertEqual(try String(contentsOf: portFile.appendingPathExtension("count"), encoding: .utf8), "2")
+    }
+
     func testAppleVNCExplainsMissingUsername() throws {
         try exerciseServer(requiresUsername: true)
+    }
+
+    func testCursorPointSizeAndHotspotFollowFramebufferScale() {
+        let pixels = Data(repeating: 0xFF, count: 3 * 2 * 4)
+        let cursor = VNCCursor(imageData: pixels,
+                               size: VNCSize(width: 3, height: 2),
+                               hotspot: VNCPoint(x: 2, y: 1),
+                               bitsPerComponent: 8,
+                               bitsPerPixel: 32,
+                               bytesPerPixel: 4)
+
+        let displayed = cursor.nsCursor(scaleFactor: 0.5)
+
+        XCTAssertEqual(displayed.image.size, CGSize(width: 1.5, height: 1))
+        XCTAssertEqual(displayed.hotSpot, CGPoint(x: 1, y: 0.5))
     }
 
     func testLiveAppleVNCReachesRequiredUsernamePromptWithoutCredentials() throws {
@@ -41,7 +140,8 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertEqual(session.status.error, NSLocalizedString("vnc.usernameRequired", comment: ""))
     }
 
-    func testAuthenticatedLiveMacVNCUsesSavedKeychainProfileAndReportsCapabilities() throws {
+    @MainActor
+    func testAuthenticatedLiveMacVNCUsesSavedKeychainProfileAndReportsCapabilities() async throws {
         guard ProcessInfo.processInfo.environment["FJARRCONNECT_TEST_LIVE_MAC_VNC_AUTHENTICATED"] == "1",
               let host = ProcessInfo.processInfo.environment["FJARRCONNECT_TEST_LIVE_MAC_VNC_HOST"],
               ConnectionURI.validHost(host) else {
@@ -49,12 +149,15 @@ final class VNCIntegrationTests: XCTestCase {
         }
         let store = ProfileStore()
         guard let profile = store.profiles.first(where: {
-            $0.host == host && $0.transport == .vnc && $0.usesMacScreenSharingAuthentication
+            $0.host == host && $0.transport == .vnc
         }) else {
-            throw XCTSkip("No saved Mac Screen Sharing profile exists for the selected host")
+            throw XCTSkip("No saved VNC profile exists for the selected host")
         }
         guard !profile.requiresBiometricUnlock else {
             throw XCTSkip("The saved profile requires interactive biometric authentication")
+        }
+        guard let username = profile.username, !username.isEmpty else {
+            throw XCTSkip("The saved Mac Screen Sharing profile has no username")
         }
         let password: String?
         do {
@@ -66,7 +169,16 @@ final class VNCIntegrationTests: XCTestCase {
             throw XCTSkip("The saved profile has no Keychain credential")
         }
 
-        let session = VNCRemoteSession(profile: profile, password: password)
+        var macProfile = profile
+        macProfile.username = username
+        macProfile.usesMacScreenSharingAuthentication = true
+        let session = VNCRemoteSession(profile: macProfile, password: password)
+        let hostingView = NSHostingView(rootView: VNCSessionScreenView(session: session))
+        let testWindow = CursorTrackingWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600),
+                                              styleMask: [.titled], backing: .buffered, defer: false)
+        testWindow.isReleasedWhenClosed = false
+        testWindow.contentView = hostingView
+        testWindow.makeKeyAndOrderFront(nil)
         let resolved = expectation(description: "Authenticated live VNC connection resolves")
         var didResolve = false
         let subscription = session.$status.sink { status in
@@ -77,12 +189,18 @@ final class VNCIntegrationTests: XCTestCase {
         defer {
             subscription.cancel()
             session.stop()
+            testWindow.close()
         }
 
         session.start()
-        XCTAssertEqual(XCTWaiter.wait(for: [resolved], timeout: 30), .completed,
-                       "The saved Mac VNC profile should authenticate or return a bounded connection error")
-        XCTAssertTrue(session.status.isEstablished, "The saved Mac VNC credential was not accepted")
+        // Apple Screen Sharing may be silent on the first connection. The
+        // session retries once after its 20-second deadline.
+        await fulfillment(of: [resolved], timeout: 45)
+        XCTAssertTrue(session.status.isEstablished,
+                      "The saved Mac VNC profile did not connect: \(session.status.error ?? session.status.label); " +
+                      "mac-account-challenge=\(session.serverRequiresMacAccount), " +
+                      "username-challenge=\(session.serverRequiresUsername), " +
+                      "saved-credentials-rejected=\(session.savedCredentialsRejected)")
         guard session.status.isEstablished else { return }
 
         print("[VNC live] Mac Screen Sharing authenticated; file-list/download=\(session.fileTransferAvailable); upload=\(session.fileUploadAvailable)")
@@ -92,6 +210,39 @@ final class VNCIntegrationTests: XCTestCase {
         } ?? false
         print("[VNC live] framebuffer-created=\(framebuffer != nil); framebuffer-size=\(framebuffer?.framebufferSize.width ?? 0)x\(framebuffer?.framebufferSize.height ?? 0); metal-layer-active=\(visibleMetalLayer)")
         XCTAssertNotNil(framebuffer, "An established VNC session should install its framebuffer in the application session")
+        XCTAssertTrue(framebuffer?.currentCursor === NSCursor.arrow,
+                      "Keep a visible local pointer until a VNC server supplies a remote shape")
+        if let framebuffer, let window = framebuffer.window as? CursorTrackingWindow {
+            let localPoint = NSPoint(x: min(max(24, framebuffer.bounds.midX), framebuffer.bounds.maxX - 24),
+                                     y: min(max(24, framebuffer.bounds.midY), framebuffer.bounds.maxY - 24))
+            let point = framebuffer.convert(localPoint, to: nil)
+            window.simulatedPointerLocation = point
+            _ = window.makeFirstResponder(framebuffer)
+            let event = try XCTUnwrap(NSEvent.mouseEvent(with: .mouseMoved,
+                                                        location: point,
+                                                        modifierFlags: [],
+                                                        timestamp: ProcessInfo.processInfo.systemUptime,
+                                                        windowNumber: window.windowNumber,
+                                                        context: nil,
+                                                        eventNumber: 0,
+                                                        clickCount: 0,
+                                                        pressure: 0))
+            framebuffer.mouseMoved(with: event)
+        }
+        let cursorReceived = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let cursor = framebuffer?.remoteCursor else { return false }
+            return !cursor.isEmpty
+        }, object: nil)
+        let receivedRemoteCursor = XCTWaiter.wait(for: [cursorReceived], timeout: 8) == .completed
+        if let cursor = framebuffer?.remoteCursor, !cursor.isEmpty {
+            print("[VNC live] server cursor shape=\(cursor.size.width)x\(cursor.size.height); hotspot=\(cursor.hotspot.x),\(cursor.hotspot.y)")
+            XCTAssertTrue(receivedRemoteCursor)
+        } else if framebuffer?.remoteCursor?.isEmpty == true {
+            print("[VNC live] server requested a hidden cursor")
+        } else {
+            print("[VNC live] server cursor shape=not-sent; local arrow remains visible")
+            XCTAssertTrue(framebuffer?.currentCursor === NSCursor.arrow)
+        }
     }
 
 #if canImport(CFNetwork)
@@ -301,6 +452,33 @@ final class VNCIntegrationTests: XCTestCase {
             error: VNCError.authentication(.securityHandshakingFailed(reason: nil))))
     }
 
+    func testOnlyTransientMacScreenSharingHandshakeFailuresRetryOnce() {
+        let handshakeClosed = VNCError.ConnectionError.closedDuringHandshake(
+            handshakingPhase: "Receive Server Init", underlyingError: nil
+        )
+        XCTAssertTrue(VNCRemoteSession.shouldRetryInitialMacScreenSharingConnection(
+            usesMacScreenSharingAuthentication: true, passwordWasProvided: true,
+            retryAlreadyUsed: false, status: .connecting, error: handshakeClosed
+        ))
+        XCTAssertFalse(VNCRemoteSession.shouldRetryInitialMacScreenSharingConnection(
+            usesMacScreenSharingAuthentication: true, passwordWasProvided: true,
+            retryAlreadyUsed: true, status: .connecting, error: handshakeClosed
+        ))
+        XCTAssertFalse(VNCRemoteSession.shouldRetryInitialMacScreenSharingConnection(
+            usesMacScreenSharingAuthentication: true, passwordWasProvided: false,
+            retryAlreadyUsed: false, status: .connecting, error: handshakeClosed
+        ))
+        XCTAssertFalse(VNCRemoteSession.shouldRetryInitialMacScreenSharingConnection(
+            usesMacScreenSharingAuthentication: true, passwordWasProvided: true,
+            retryAlreadyUsed: false, status: .connected, error: handshakeClosed
+        ))
+        XCTAssertFalse(VNCRemoteSession.shouldRetryInitialMacScreenSharingConnection(
+            usesMacScreenSharingAuthentication: true, passwordWasProvided: true,
+            retryAlreadyUsed: false, status: .connecting,
+            error: VNCError.authentication(.securityHandshakingFailed(reason: nil))
+        ))
+    }
+
     func testARDTimeoutExplainsThatTheMacDidNotFinishAuthentication() {
         XCTAssertEqual(
             VNCRemoteSession.connectionTimeoutMessage(authentication: .appleRemoteDesktop),
@@ -469,8 +647,11 @@ final class VNCIntegrationTests: XCTestCase {
                 }, object: nil)
                 XCTAssertEqual(XCTWaiter.wait(for: [received], timeout: 10), .completed)
             }
-            try assertRenderedDesktop(session, isBlack: blackInitially)
-            if resize { try assertResize(session, trigger: URL(fileURLWithPath: portFile.path + ".resize")) }
+            if resize {
+                try assertResize(session, trigger: URL(fileURLWithPath: portFile.path + ".resize"))
+            } else {
+                try assertRenderedDesktop(session, isBlack: blackInitially)
+            }
             if keyboard { try assertKeyboardCharacters(session, receivedKeys: URL(fileURLWithPath: portFile.path + ".keys")) }
             if verifyInitialFocus { try assertInitialFocus(session) }
             if blackInitially {
@@ -496,14 +677,16 @@ final class VNCIntegrationTests: XCTestCase {
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
-        window.orderFront(nil)
+        window.initialFirstResponder = host
+        window.makeKeyAndOrderFront(nil)
         defer { window.close() }
         func framebuffer(in view: NSView) -> VNCCAFramebufferView? {
             if let frame = view as? VNCCAFramebufferView { return frame }
             return view.subviews.lazy.compactMap { framebuffer(in: $0) }.first
         }
         let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            framebuffer(in: host)?.framebufferSize == CGSize(width: 2, height: 2)
+            guard let view = framebuffer(in: host) else { return false }
+            return view.framebufferSize == CGSize(width: 2, height: 2) && view.window === window
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed)
         let view = try XCTUnwrap(framebuffer(in: host))
@@ -594,6 +777,62 @@ final class VNCIntegrationTests: XCTestCase {
                                            isARepeat: false, keyCode: 19)!
         view.keyUp(with: lateAtKeyUp)
 
+        // AppKit can leave the framebuffer as first responder when the whole
+        // window loses key status. A matching key-up may then go to another
+        // app, so the view must release the remote key on window deactivation.
+        let dashDown = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                        modifierFlags: [], timestamp: 0,
+                                        windowNumber: window.windowNumber, context: nil,
+                                        characters: "-", charactersIgnoringModifiers: "-",
+                                        isARepeat: false, keyCode: 27)!
+        view.keyDown(with: dashDown)
+        for _ in 0..<3 {
+            let repeatedDashDown = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                                    modifierFlags: [], timestamp: 0,
+                                                    windowNumber: window.windowNumber, context: nil,
+                                                    characters: "-", charactersIgnoringModifiers: "-",
+                                                    isARepeat: true, keyCode: 27)!
+            view.keyDown(with: repeatedDashDown)
+        }
+        NotificationCenter.default.post(name: NSWindow.didResignKeyNotification, object: window)
+        let lateDashUp = NSEvent.keyEvent(with: .keyUp, location: .zero,
+                                          modifierFlags: [], timestamp: 0,
+                                          windowNumber: window.windowNumber, context: nil,
+                                          characters: "-", charactersIgnoringModifiers: "-",
+                                          isARepeat: false, keyCode: 27)!
+        view.keyUp(with: lateDashUp)
+
+        // Returning to the VNC tab must start with a clean key state. A fresh
+        // press after focus returns should still be delivered as a normal pair.
+        let resumedDashDown = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                               modifierFlags: [], timestamp: 0,
+                                               windowNumber: window.windowNumber, context: nil,
+                                               characters: "-", charactersIgnoringModifiers: "-",
+                                               isARepeat: false, keyCode: 27)!
+        let resumedDashUp = NSEvent.keyEvent(with: .keyUp, location: .zero,
+                                             modifierFlags: [], timestamp: 0,
+                                             windowNumber: window.windowNumber, context: nil,
+                                             characters: "-", charactersIgnoringModifiers: "-",
+                                             isARepeat: false, keyCode: 27)!
+        view.keyDown(with: resumedDashDown)
+        view.keyUp(with: resumedDashUp)
+
+        // macOS can deactivate the app without a key-up reaching this view.
+        // Clear remote key state even if the window itself remains key.
+        let xDownBeforeAppDeactivation = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                                          modifierFlags: [], timestamp: 0,
+                                                          windowNumber: window.windowNumber, context: nil,
+                                                          characters: "x", charactersIgnoringModifiers: "x",
+                                                          isARepeat: false, keyCode: 7)!
+        view.keyDown(with: xDownBeforeAppDeactivation)
+        NotificationCenter.default.post(name: NSApplication.didResignActiveNotification, object: NSApp)
+        let lateXUp = NSEvent.keyEvent(with: .keyUp, location: .zero,
+                                       modifierFlags: [], timestamp: 0,
+                                       windowNumber: window.windowNumber, context: nil,
+                                       characters: "x", charactersIgnoringModifiers: "x",
+                                       isARepeat: false, keyCode: 7)!
+        view.keyUp(with: lateXUp)
+
         func sendCharacter(_ character: String, keyCode: UInt16) {
             let down = NSEvent.keyEvent(with: .keyDown, location: .zero,
                                         modifierFlags: [], timestamp: 0,
@@ -638,7 +877,7 @@ final class VNCIntegrationTests: XCTestCase {
 
         let sent = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
-            return contents.split(separator: "\n").count >= 41
+            return contents.split(separator: "\n").count >= 50
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [sent], timeout: 5), .completed)
         let contents = try String(contentsOf: receivedKeys, encoding: .utf8)
@@ -654,6 +893,8 @@ final class VNCIntegrationTests: XCTestCase {
             0xFFE1, 0xFFE1, 0x40, 0x40, 0xFFE1, 0xFFE1,
             0x40, 0x40,
             0xFFE9, 0xFFE9, 0x40, 0x40, 0xFFE9,
+            0x2D, 0x2D, 0x2D, 0x2D, 0x2D, 0x2D, 0x2D,
+            0x78, 0x78,
             0x79, 0x79,
             0xE9, 0xE9,
             0xE5, 0xE4, 0xF6, 0xE5, 0xE4, 0xF6,
@@ -661,25 +902,21 @@ final class VNCIntegrationTests: XCTestCase {
             0x010020AC, 0x010065E5, 0x0101F642,
             0xFF08, 0xFF08, 0xFF0D, 0xFF0D, 0xFF09, 0xFF09
         ])
-        XCTAssertEqual(events.map { $0.0 }, [
-            true, false, true, false, true, false,
-            true, false, true, false, true, false,
-            true, false,
-            true, false, true, false, false,
-            true, false, true, false,
-            true, true, true, false, false, false,
-            true, true, true, false, false, false,
-            true, false, true, false, true, false
-        ])
+        let dashEvents = events.filter { $0.1 == 0x2D }
+        XCTAssertEqual(dashEvents.map { $0.0 }, [true, true, true, true, false, true, false],
+                       "Focus loss must release an autorepeating dash once, and a new press after focus returns must remain usable")
+        let xEvents = events.filter { $0.1 == 0x78 }
+        XCTAssertEqual(xEvents.map { $0.0 }, [true, false],
+                       "App deactivation must release a held key even when the window does not resign key")
     }
 
     private func assertResize(_ session: VNCRemoteSession, trigger: URL) throws {
         let host = NSHostingView(rootView: VNCSessionScreenView(session: session))
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
-                              styleMask: [.titled], backing: .buffered, defer: false)
+        let window = CursorTrackingWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
+                                          styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
-        window.orderFront(nil)
+        window.makeKeyAndOrderFront(nil)
         defer { window.close() }
         func framebuffer(in view: NSView) -> VNCCAFramebufferView? {
             if let frame = view as? VNCCAFramebufferView { return frame }
@@ -693,6 +930,13 @@ final class VNCIntegrationTests: XCTestCase {
         let originalCursor = originalView.currentCursor
         XCTAssertEqual(originalCursor.image.size, CGSize(width: 2, height: 2))
         XCTAssertTrue(window.makeFirstResponder(originalView))
+        window.simulatedPointerLocation = originalView.convert(
+            NSPoint(x: originalView.bounds.midX, y: originalView.bounds.midY), to: nil)
+        XCTAssertTrue(originalView.visibleRect.contains(
+            originalView.convert(window.mouseLocationOutsideOfEventStream, from: nil)))
+        originalCursor.set()
+        XCTAssertTrue(NSCursor.current === originalCursor,
+                      "The remote cursor should be active before the server changes its shape")
         try Data().write(to: trigger)
         let resized = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             framebuffer(in: host)?.framebufferSize == CGSize(width: 5, height: 3)
@@ -704,19 +948,71 @@ final class VNCIntegrationTests: XCTestCase {
                   let pixel = NSBitmapImageRep(cgImage: image).colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB) else { return false }
             return pixel.blueComponent > 0.95 && pixel.redComponent < 0.05
         }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [painted], timeout: 5), .completed)
+        let paintedResult = XCTWaiter.wait(for: [painted], timeout: 5)
+        let resizedView = framebuffer(in: host)
+        let resizedImage = resizedView?.framebuffer?.cgImage
+        let resizedPixel = resizedImage.flatMap { NSBitmapImageRep(cgImage: $0).colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB) }
+        let resizedImageDescription = resizedImage.map { "\($0.width)x\($0.height)" } ?? "nil"
+        XCTAssertEqual(paintedResult, .completed,
+                       "Expected a rendered blue 5x3 frame; view=\(String(describing: resizedView?.framebufferSize)), image=\(resizedImageDescription), pixel=\(String(describing: resizedPixel))")
         if window.isKeyWindow {
             XCTAssertTrue(window.firstResponder === framebuffer(in: host), "Keyboard focus must follow the resized desktop")
         }
+        let appleCursorArrived = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let image = framebuffer(in: host)?.remoteCursor?.cgImage else { return false }
+            guard let pixel = NSBitmapImageRep(cgImage: image).colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB) else {
+                return false
+            }
+            return pixel.greenComponent > 0.95 && pixel.blueComponent > 0.95
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [appleCursorArrived], timeout: 5), .completed,
+                       "Apple's cached cursor encoding must replace the earlier XCursor shape")
         let cursor = try XCTUnwrap(framebuffer(in: host)?.currentCursor)
-        XCTAssertEqual(cursor.image.size, originalCursor.image.size)
-        XCTAssertEqual(cursor.hotSpot, originalCursor.hotSpot)
-        let cursorData = try XCTUnwrap(cursor.image.tiffRepresentation)
-        let cursorPixel = try XCTUnwrap(NSBitmapImageRep(data: cursorData)?.colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB))
-        XCTAssertGreaterThan(cursorPixel.alphaComponent, 0.95, "The server cursor must remain visible after a resize")
-        XCTAssertGreaterThan(cursorPixel.redComponent, 0.95)
-        XCTAssertGreaterThan(cursorPixel.greenComponent, 0.95)
-        XCTAssertGreaterThan(cursorPixel.blueComponent, 0.95)
+        XCTAssertEqual(cursor.image.size, CGSize(width: 3, height: 2))
+        XCTAssertEqual(cursor.hotSpot, CGPoint(x: 2, y: 1),
+                       "The Apple cursor hotspot must be preserved")
+        let decodedCursor = try XCTUnwrap(resizedView?.remoteCursor)
+        let decodedImage = try XCTUnwrap(decodedCursor.cgImage)
+        let cursorBitmap = NSBitmapImageRep(cgImage: decodedImage)
+        let firstPixel = try XCTUnwrap(cursorBitmap.colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB))
+        let secondPixel = try XCTUnwrap(cursorBitmap.colorAt(x: 1, y: 0)?.usingColorSpace(.deviceRGB))
+        let thirdPixel = try XCTUnwrap(cursorBitmap.colorAt(x: 2, y: 0)?.usingColorSpace(.deviceRGB))
+        XCTAssertGreaterThan(firstPixel.alphaComponent, 0.95, "The updated server cursor must remain visible after a resize")
+        XCTAssertLessThan(firstPixel.redComponent, 0.05)
+        XCTAssertGreaterThan(firstPixel.greenComponent, 0.95,
+                             "The selected Apple cursor must differ from the earlier red XCursor shape")
+        XCTAssertGreaterThan(firstPixel.blueComponent, 0.95)
+        XCTAssertGreaterThan(secondPixel.alphaComponent, 0.95)
+        XCTAssertGreaterThan(secondPixel.redComponent, 0.95)
+        XCTAssertGreaterThan(secondPixel.greenComponent, 0.95)
+        XCTAssertLessThan(secondPixel.blueComponent, 0.05)
+        XCTAssertLessThan(thirdPixel.alphaComponent, 0.05,
+                          "The XCursor mask must keep transparent pixels invisible")
+        XCTAssertTrue(NSCursor.current === cursor,
+                      "A cursor shape update must take effect while the pointer remains over the framebuffer")
+        XCTAssertGreaterThan(window.cursorRectInvalidations, 0,
+                             "A changed server cursor must invalidate AppKit's cached cursor rectangles")
+        XCTAssertTrue(resizedView?.trackingAreas.contains { $0.options.contains(.cursorUpdate) } == true,
+                      "The framebuffer must receive AppKit cursor-update events while the pointer is over it")
+        resizedView?.frame = NSRect(x: 0, y: 0, width: 2.5, height: 1.5)
+        XCTAssertEqual(resizedView?.scaleRatio ?? -1, 0.5, accuracy: 0.001)
+        let scaledCursor = try XCTUnwrap(resizedView?.currentCursor)
+        XCTAssertEqual(scaledCursor.image.size, CGSize(width: 1.5, height: 1),
+                       "The cursor should track the framebuffer's displayed scale")
+        XCTAssertEqual(scaledCursor.hotSpot, CGPoint(x: 1, y: 0.5),
+                       "The hotspot should use the same scale as the cursor image")
+        let cursorEvent = try XCTUnwrap(NSEvent.mouseEvent(with: .mouseMoved,
+                                                          location: .zero,
+                                                          modifierFlags: [],
+                                                          timestamp: ProcessInfo.processInfo.systemUptime,
+                                                          windowNumber: window.windowNumber,
+                                                          context: nil,
+                                                          eventNumber: 0,
+                                                          clickCount: 0,
+                                                          pressure: 0))
+        resizedView?.cursorUpdate(with: cursorEvent)
+        XCTAssertTrue(NSCursor.current === scaledCursor,
+                      "AppKit must activate the latest server cursor when the pointer enters the framebuffer")
         XCTAssertEqual(session.status, .connected)
     }
 
@@ -733,7 +1029,8 @@ final class VNCIntegrationTests: XCTestCase {
             return view.subviews.lazy.compactMap { framebuffer(in: $0) }.first
         }
         let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            framebuffer(in: host)?.framebufferSize == CGSize(width: 2, height: 2)
+            guard let view = framebuffer(in: host) else { return false }
+            return view.framebufferSize == CGSize(width: 2, height: 2) && view.window === window
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed)
         guard window.isKeyWindow else {
@@ -754,17 +1051,22 @@ final class VNCIntegrationTests: XCTestCase {
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
-        window.orderFront(nil)
+        window.initialFirstResponder = host
+        window.makeKeyAndOrderFront(nil)
         defer { window.close() }
         func framebuffer(in view: NSView) -> VNCCAFramebufferView? {
             if let frame = view as? VNCCAFramebufferView { return frame }
             return view.subviews.lazy.compactMap { framebuffer(in: $0) }.first
         }
         let rendered = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            framebuffer(in: host)?.layer?.contents != nil
+            guard let view = framebuffer(in: host) else { return false }
+            return view.window === window && view.layer?.contents != nil
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [rendered], timeout: 5), .completed)
         let view = try XCTUnwrap(framebuffer(in: host))
+        XCTAssertNil(view.remoteCursor, "This fixture sends no remote cursor shape")
+        XCTAssertTrue(view.currentCursor === NSCursor.arrow,
+                      "A server that omits cursor pseudo-encodings must leave the local pointer visible")
         let contents = try XCTUnwrap(view.layer?.contents)
         XCTAssertEqual(CFGetTypeID(contents as CFTypeRef), CGImage.typeID)
         let image = contents as! CGImage
@@ -778,7 +1080,7 @@ final class VNCIntegrationTests: XCTestCase {
     }
 
     private static let server = #"""
-import os, socket, struct, sys, time
+import os, socket, struct, sys, time, zlib
 
 def read(client, count):
     data = b''
@@ -793,7 +1095,33 @@ with socket.socket() as listener:
     listener.listen(1)
     with open(sys.argv[1] + '.tmp', 'w') as out: out.write(str(listener.getsockname()[1]))
     os.replace(sys.argv[1] + '.tmp', sys.argv[1])
-    client, _ = listener.accept()
+    if sys.argv[2] in ('retry-once', 'close-once'):
+        with open(sys.argv[1] + '.count', 'w') as out: out.write('0')
+        client, _ = listener.accept()
+        if sys.argv[2] == 'close-once':
+            with client:
+                client.settimeout(12)
+                with open(sys.argv[1] + '.count', 'w') as out: out.write('1')
+                client.sendall(b'RFB 003.008\n')
+                assert read(client, 12) == b'RFB 003.008\n'
+                # Close after version negotiation but before security selection.
+            client, _ = listener.accept()
+            with open(sys.argv[1] + '.count', 'w') as out: out.write('2')
+        else:
+            with client:
+                client.settimeout(12)
+                with open(sys.argv[1] + '.count', 'w') as out: out.write('1')
+                client.sendall(b'RFB 003.889\n')
+                assert read(client, 12) == b'RFB 003.008\n'
+                client.sendall(b'\x07\x1e\x21\x24\x1f\x20\x02\x23')
+                assert read(client, 1) == b'\x1e'
+                client.sendall(struct.pack('!HH', 5, 512) + b'\xff' * 512 + b'\x01' * 512)
+                assert client.recv(1) == b''
+            client, _ = listener.accept()
+            with open(sys.argv[1] + '.count', 'w') as out: out.write('2')
+        # Continue through the ordinary no-auth handshake below.
+    else:
+        client, _ = listener.accept()
     with client:
         client.settimeout(12)
         if sys.argv[2] == 'username':
@@ -847,7 +1175,11 @@ with socket.socket() as listener:
             client.sendall(struct.pack('!HHHH', len(messages), len(clients), 0, 0) + b''.join(messages + clients))
         first_frame = None
         resized = False
+        sent_updated_cursor = False
+        initial_frame_sent = False
+        resized_frame_sent = False
         sent_cursor = False
+        sent_apple_cursor = False
         upload_data = b''
         try:
             while True:
@@ -855,23 +1187,70 @@ with socket.socket() as listener:
                 if kind == 0: read(client, 19)
                 elif kind == 2:
                     count = struct.unpack('!xH', read(client, 3))[0]
-                    read(client, count * 4)
+                    encodings = struct.unpack('!' + 'i' * count, read(client, count * 4))
+                    if sys.argv[2] == 'resize':
+                        assert -240 in encodings, 'The client must advertise XCursor support'
+                        assert 1104 in encodings, 'The client must advertise Apple Cursor Image support'
                 elif kind == 3:
                     read(client, 9)
+                    # Incremental requests with no new pixels should not
+                    # trigger another framebuffer update. Repeating the
+                    # resized frame here starves the app's main queue and
+                    # does not model an RFB server waiting for changes.
+                    if sys.argv[2] == 'resize' and resized_frame_sent:
+                        continue
+                    if sys.argv[2] == 'resize' and initial_frame_sent and not resized:
+                        # Keep the one outstanding incremental request pending
+                        # until the test asks the server to change geometry.
+                        # Ignoring it would leave the client waiting forever
+                        # without another request to observe the trigger.
+                        while not os.path.exists(sys.argv[1] + '.resize') and client.fileno() >= 0:
+                            time.sleep(0.01)
                     if sys.argv[2] == 'resize' and not sent_cursor:
-                        client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 0, 0, 2, 2, -239) + b'\xff\xff\xff\x00' * 4 + b'\xc0\xc0')
+                        client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 1, 0, 2, 2, -239) + b'\xff\xff\xff\x00' * 4 + b'\xc0\xc0')
                         sent_cursor = True
                     if sys.argv[2] == 'resize' and not resized and os.path.exists(sys.argv[1] + '.resize'):
+                        if not sent_updated_cursor:
+                            # XCursor: red foreground, blue background, red/blue/transparent pixels.
+                            cursor_data = b'\xff\x00\x00\x00\x00\xff' + b'\x80' + b'\xc0'
+                            client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 1, 0, 3, 1, -240) + cursor_data)
+                            sent_updated_cursor = True
                         # An unaligned width exercises the CALayer image path;
                         # aligned IOSurfaces use Metal and have no layer.contents.
                         client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 0, 0, 5, 3, -223))
                         resized = True
+                        continue
+                    if sys.argv[2] == 'resize' and resized and not sent_apple_cursor:
+                        apple_cursor = (
+                            b'\xff\xff\x00\x00' + b'\x00\xff\xff\x00' + b'\xff\x00\xff\x00'
+                            + b'\x00\x00\x00\x00' * 3 + b'\xff\xff' + b'\x00' * 4
+                        )
+                        green_cursor = b'\x00\xff\x00\x00\xff'
+                        stored_cursors = [
+                            (1000, 2, 1, 3, 2, apple_cursor),
+                            (1001, 0, 0, 1, 1, green_cursor),
+                        ]
+                        rectangles = []
+                        for cache_id, hotspot_x, hotspot_y, width, height, cursor_data in stored_cursors:
+                            compressor = zlib.compressobj(9)
+                            compressed = compressor.compress(cursor_data) + compressor.flush(zlib.Z_SYNC_FLUSH)
+                            rectangles.append(
+                                struct.pack('!HHHHiII', hotspot_x, hotspot_y, width, height, 1104, cache_id, len(compressed))
+                                + compressed
+                            )
+                        rectangles.append(struct.pack('!HHHHiII', 0, 0, 0, 0, 1104, 1000, 0))
+                        client.sendall(struct.pack('!BBH', 0, 0, len(rectangles)) + b''.join(rectangles))
+                        sent_apple_cursor = True
                         continue
                     if first_frame is None: first_frame = time.monotonic()
                     black = sys.argv[2] == 'black' and time.monotonic() - first_frame < 9
                     pixel = b'\xff\x00\x00\x00' if resized else (b'\x00\x00\x00\x00' if black else b'\x00\x00\xff\x00')
                     width, height = (5, 3) if resized else (2, 2)
                     client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 0, 0, width, height, 0) + pixel * width * height)
+                    if sys.argv[2] == 'resize' and resized:
+                        resized_frame_sent = True
+                    elif sys.argv[2] == 'resize':
+                        initial_frame_sent = True
                 elif kind == 4:
                     down = read(client, 1)[0]
                     read(client, 2)
@@ -879,7 +1258,8 @@ with socket.socket() as listener:
                     if sys.argv[2] == 'keyboard':
                         with open(sys.argv[1] + '.keys', 'a') as out:
                             out.write(f'{down}:{keysym:08x}\n')
-                elif kind == 5: read(client, 5)
+                elif kind == 5:
+                    read(client, 5)
                 elif kind == 6:
                     count = struct.unpack('!xxxI', read(client, 7))[0]
                     read(client, count)

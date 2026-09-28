@@ -16,6 +16,12 @@ enum RDPArguments {
         // only valid for a full desktop session.
         if profile.rdp?.resizesRemoteDesktop ?? true, profile.transport == .rdp { args.append("/dynamic-resolution") }
         args.append(profile.sharesClipboard ? "+clipboard" : "-clipboard")
+        if profile.sharesClipboard && (profile.transport == .rdp || profile.transport == .remoteApp) &&
+            (profile.rdp?.sharesClipboardFiles ?? false) {
+            // Private bridge marker consumed by FCRDPView before FreeRDP parses
+            // command-line options. FreeRDP has no CLI switch for this policy.
+            args.append("/fc:clipboard-files")
+        }
         if let network = profile.rdp?.selectedNetworkProfile.freeRDPValue { args.append("/network:\(network)") }
         if let security = profile.rdp?.selectedSecurityMode.freeRDPValue { args.append("/sec:\(security)") }
         if profile.transport == .remoteApp, let remoteApp = profile.rdp?.remoteAppProgram { args.append("/app:\(remoteApp)") }

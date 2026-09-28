@@ -4,6 +4,7 @@ import XCTest
 final class RDPDiagnosticsTests: XCTestCase {
     func testServerInitiatedLogoffHasItsOwnExplanation() {
         XCTAssertEqual(RDPRemoteSession.failureLocalizationKey(for: 8), "rdp.error.serverEndedSession")
+        XCTAssertEqual(RDPRemoteSession.failureLocalizationKey(for: 9), "rdp.error.securityNegotiation")
         XCTAssertEqual(RDPRemoteSession.failureLocalizationKey(for: 3), "rdp.error.authentication")
         XCTAssertEqual(RDPRemoteSession.failureLocalizationKey(for: 99), "rdp.ended")
     }
@@ -62,6 +63,42 @@ final class RDPDiagnosticsTests: XCTestCase {
         XCTAssertTrue(report.contains("packet-loss-percent: unavailable"))
         XCTAssertTrue(report.contains("graphics-codec: RemoteFX"))
         XCTAssertFalse(report.contains(profile.host))
+    }
+
+    func testDiagnosticReportIncludesOnlyKnownRDPPhases() {
+        let profile = ConnectionProfile(name: "Remote", transport: .rdp, host: "192.0.2.4")
+        let valid = DiagnosticReport.text(profile: profile, status: .connecting,
+                                          connectionPhase: "CONNECTION_STATE_NEGO")
+        XCTAssertTrue(valid.contains("rdp-connection-phase: CONNECTION_STATE_NEGO"))
+        let unsafe = DiagnosticReport.text(profile: profile, status: .connecting,
+                                           connectionPhase: "password=private")
+        XCTAssertTrue(unsafe.contains("rdp-connection-phase: unavailable"))
+        XCTAssertFalse(unsafe.contains("private"))
+    }
+
+    func testDiagnosticReportIncludesSafeNegotiatedSecurityProtocols() {
+        let profile = ConnectionProfile(name: "Remote", transport: .rdp, host: "192.0.2.4")
+        let report = DiagnosticReport.text(profile: profile, status: .disconnected(reason: "failure"),
+                                           requestedSecurityProtocols: 0x0B,
+                                           selectedSecurityProtocol: 8)
+        XCTAssertTrue(report.contains("rdp-requested-security-protocols: 0x0000000B"))
+        XCTAssertTrue(report.contains("rdp-selected-security-protocol: NLA-Extended"))
+        XCTAssertFalse(report.contains(profile.host))
+    }
+
+    func testDiagnosticReportIncludesOnlyCredentialPresenceBits() {
+        let profile = ConnectionProfile(name: "Remote", transport: .rdp, host: "192.0.2.4", username: "private-user")
+        let report = DiagnosticReport.text(profile: profile, status: .disconnected(reason: "failure"), inputState: 7)
+        XCTAssertTrue(report.contains("rdp-arguments-parsed: yes"))
+        XCTAssertTrue(report.contains("rdp-username-configured: yes"))
+        XCTAssertTrue(report.contains("rdp-password-configured: yes"))
+        XCTAssertFalse(report.contains("private-user"))
+        XCTAssertFalse(report.contains("password="))
+
+        let missing = DiagnosticReport.text(profile: profile, status: .disconnected(reason: "failure"), inputState: 1)
+        XCTAssertTrue(missing.contains("rdp-arguments-parsed: yes"))
+        XCTAssertTrue(missing.contains("rdp-username-configured: no"))
+        XCTAssertTrue(missing.contains("rdp-password-configured: no"))
     }
 
     func testDiagnosticReportWritesToSelectedFile() throws {

@@ -132,7 +132,9 @@ public final class VNCConnection: NSObjectOrAnyObject {
 			VNCPseudoEncodingType.extendedDesktopSize.rawValue: VNCProtocol.ExtendedDesktopSizeEncoding(),
 			VNCPseudoEncodingType.desktopSize.rawValue: VNCProtocol.DesktopSizeEncoding(),
 			VNCPseudoEncodingType.desktopName.rawValue: VNCProtocol.DesktopNameEncoding(),
+			VNCPseudoEncodingType.xCursor.rawValue: VNCProtocol.XCursorEncoding(),
 			VNCPseudoEncodingType.cursor.rawValue: VNCProtocol.CursorEncoding(),
+			VNCPseudoEncodingType.appleCursorImage.rawValue: VNCProtocol.AppleCursorImageEncoding(),
 			compressionLevelEncodingType: compressionLevelEncoding,
 			jpegQualityLevelEncodingType: jpegQualityLevelEncoding
 		]
@@ -187,6 +189,8 @@ public final class VNCConnection: NSObjectOrAnyObject {
 			VNCPseudoEncodingType.desktopSize.rawValue,
 			VNCPseudoEncodingType.desktopName.rawValue,
 			VNCPseudoEncodingType.cursor.rawValue,
+			VNCPseudoEncodingType.xCursor.rawValue,
+			VNCPseudoEncodingType.appleCursorImage.rawValue,
 			VNCPseudoEncodingType.extendedClipboard.rawValue,
 
             // TODO: Make configurable

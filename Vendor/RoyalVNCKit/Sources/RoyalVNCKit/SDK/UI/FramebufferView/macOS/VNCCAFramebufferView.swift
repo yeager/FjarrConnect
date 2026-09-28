@@ -40,7 +40,13 @@ public final class VNCCAFramebufferView: NSView, VNCFramebufferView {
     @objc
 	public var currentCursor: NSCursor {
 		didSet {
-			resetCursorRects()
+			guard let window else { return }
+			window.invalidateCursorRects(for: self)
+
+			let pointerLocation = convert(window.mouseLocationOutsideOfEventStream, from: nil)
+			if window.isKeyWindow && visibleRect.contains(pointerLocation) {
+				currentCursor.set()
+			}
 		}
 	}
 
@@ -100,6 +106,9 @@ public final class VNCCAFramebufferView: NSView, VNCFramebufferView {
 
 	private var displayLink: DisplayLink?
 	private var trackingArea: NSTrackingArea?
+	private var windowResignKeyObserver: NSObjectProtocol?
+	private var applicationResignActiveObserver: NSObjectProtocol?
+	private(set) var remoteCursor: VNCCursor?
 	private var previousHotKeyMode: UnsafeMutableRawPointer?
 	private var keyEventTracker = VNCKeyEventTracker()
 	private var temporarilyReleasedModifiersByKey: [CGKeyCode: [(key: VNCKeyCode, flag: NSEvent.ModifierFlags)]] = [:]
@@ -132,7 +141,9 @@ public final class VNCCAFramebufferView: NSView, VNCFramebufferView {
 		self.framebuffer = framebuffer
 		self.connection = connection
         self.settings = connection.settings
-        self.currentCursor = VNCCursor.empty.nsCursor
+        // Keep the local pointer visible until a server sends a cursor shape.
+        // Some macOS Screen Sharing servers do not send cursor pseudo-encodings.
+        self.currentCursor = NSCursor.arrow
         self.delegate = connectionDelegate
 
         super.init(frame: frameRect)
@@ -200,10 +211,42 @@ public final class VNCCAFramebufferView: NSView, VNCFramebufferView {
 		removeDisplayLink()
 
 		deregisterHotKeys()
+		if let windowResignKeyObserver {
+			NotificationCenter.default.removeObserver(windowResignKeyObserver)
+		}
+		if let applicationResignActiveObserver {
+			NotificationCenter.default.removeObserver(applicationResignActiveObserver)
+		}
 	}
 
 	public override func viewDidMoveToWindow() {
+		super.viewDidMoveToWindow()
 		addDisplayLink()
+
+		if let windowResignKeyObserver {
+			NotificationCenter.default.removeObserver(windowResignKeyObserver)
+			self.windowResignKeyObserver = nil
+		}
+		if let applicationResignActiveObserver {
+			NotificationCenter.default.removeObserver(applicationResignActiveObserver)
+			self.applicationResignActiveObserver = nil
+		}
+
+		guard let window else { return }
+		windowResignKeyObserver = NotificationCenter.default.addObserver(
+			forName: NSWindow.didResignKeyNotification,
+			object: window,
+			queue: .main
+		) { [weak self] _ in
+			self?.releasePressedKeys()
+		}
+		applicationResignActiveObserver = NotificationCenter.default.addObserver(
+			forName: NSApplication.didResignActiveNotification,
+			object: NSApp,
+			queue: .main
+		) { [weak self] _ in
+			self?.releasePressedKeys()
+		}
 	}
 
 	func removeDisplayLink() {
@@ -243,7 +286,7 @@ public final class VNCCAFramebufferView: NSView, VNCFramebufferView {
 		}
 
 		let newTrackingArea = NSTrackingArea(rect: bounds,
-											 options: [ .activeInKeyWindow, .inVisibleRect, .mouseMoved ],
+											 options: [ .activeInKeyWindow, .inVisibleRect, .mouseMoved, .cursorUpdate ],
 											 owner: self,
 											 userInfo: nil)
 
@@ -271,6 +314,10 @@ public final class VNCCAFramebufferView: NSView, VNCFramebufferView {
 		discardCursorRects()
 
 		addCursorRect(visibleRect, cursor: currentCursor)
+	}
+
+	public override func cursorUpdate(with event: NSEvent) {
+		currentCursor.set()
 	}
 
 	public override var frame: NSRect {
@@ -568,7 +615,7 @@ extension VNCCAFramebufferView {
 		}
 	}
 
-	func releasePressedKeys() {
+	public func releasePressedKeys() {
 		if let connection {
 			for keyCode in keyEventTracker.releaseAll() {
 				connection.keyUp(keyCode)
@@ -831,6 +878,8 @@ private extension VNCCAFramebufferView {
     }
 
     func frameSizeDidChange(_ size: CGSize) {
+        updateDisplayedCursor()
+
         if isMetalActive {
             updateMetalLayerLayout()
         } else {
@@ -910,8 +959,15 @@ extension VNCCAFramebufferView: VNCConnectionDelegate {
         didUpdateCursor cursor: VNCCursor
     ) {
         DispatchQueue.main.async { [weak self] in
-            self?.currentCursor = cursor.nsCursor
+            self?.remoteCursor = cursor
+            self?.updateDisplayedCursor()
         }
+    }
+
+    private func updateDisplayedCursor() {
+        guard let remoteCursor else { return }
+        let scaleFactor = settings.isScalingEnabled ? scaleRatio : 1
+        currentCursor = remoteCursor.nsCursor(scaleFactor: scaleFactor)
     }
 
     // Passthrough
