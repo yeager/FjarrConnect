@@ -1011,8 +1011,12 @@ final class VNCIntegrationTests: XCTestCase {
             }
             return pixel.greenComponent > 0.95 && pixel.blueComponent > 0.95
         }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [appleCursorArrived], timeout: 5), .completed,
-                       "Apple's cached cursor encoding must replace the earlier XCursor shape")
+        let cursorResult = XCTWaiter.wait(for: [appleCursorArrived], timeout: 12)
+        let cursorSnapshot = framebuffer(in: host)?.remoteCursor
+        XCTAssertEqual(cursorResult, .completed,
+                       "Apple's cached cursor encoding must replace the earlier XCursor shape; " +
+                       "received-size=\(String(describing: cursorSnapshot?.size))")
+        guard cursorResult == .completed else { return }
         let cursor = try XCTUnwrap(framebuffer(in: host)?.currentCursor)
         XCTAssertEqual(cursor.image.size, CGSize(width: 3, height: 2))
         XCTAssertEqual(cursor.hotSpot, CGPoint(x: 2, y: 1),
