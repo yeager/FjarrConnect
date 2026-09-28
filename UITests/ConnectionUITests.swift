@@ -54,6 +54,35 @@ final class ConnectionUITests: XCTestCase {
                       "The main welcome view should not be covered by another view")
     }
 
+    func testAboutPanelKeepsMainWindowAndSidebarAvailable() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = directory.appendingPathComponent("profiles.json").path
+        app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        app.launch()
+        defer { app.terminate() }
+
+        let quickConnect = app.textFields["sidebar.quickConnect"]
+        XCTAssertTrue(quickConnect.waitForExistence(timeout: 15))
+        XCTAssertTrue(quickConnect.isHittable)
+
+        let appMenu = app.menuBars.menuBarItems["FjärrConnect"]
+        XCTAssertTrue(appMenu.waitForExistence(timeout: 5))
+        appMenu.click()
+        let about = app.menuItems["About FjärrConnect"]
+        XCTAssertTrue(about.waitForExistence(timeout: 5))
+        about.click()
+
+        XCTAssertTrue(quickConnect.waitForExistence(timeout: 5),
+                      "Opening About must not replace or close the main window")
+        XCTAssertGreaterThan(quickConnect.frame.width, 0,
+                             "The sidebar must retain a visible frame behind the About panel")
+        XCTAssertTrue(quickConnect.isHittable,
+                      "The main window sidebar should remain available after opening About")
+    }
+
     func testQuickConnectStaysVisibleWhenSidebarListScrollsAndIsShownAgain() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
