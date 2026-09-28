@@ -435,7 +435,7 @@ struct ContentView: View {
             DispatchQueue.main.async {
                 switch result {
                 case .success: self.continueConnect(profile, forcePrompt: forcePrompt)
-                case .failure: self.errorMessage = NSLocalizedString("profile.touchID.failed", comment: "")
+                case .failure(let error): self.errorMessage = ProfileAccessAuthenticator.failureMessage(for: error)
                 }
             }
         }

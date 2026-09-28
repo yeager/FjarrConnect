@@ -191,6 +191,21 @@ final class ConnectionTests: XCTestCase {
         XCTAssertTrue(try XCTUnwrap(ProfileStore(fileURL: directory.appendingPathComponent("profiles.json")).profiles.first).requiresBiometricUnlock)
     }
 
+    func testBiometricFailureUsesLocalizedReason() {
+        XCTAssertEqual(
+            ProfileAccessAuthenticator.failureMessage(for: ProfileAccessAuthenticator.AuthenticationFailure.unavailable),
+            NSLocalizedString("profile.touchID.unavailable", comment: "")
+        )
+        XCTAssertEqual(
+            ProfileAccessAuthenticator.failureMessage(for: ProfileAccessAuthenticator.AuthenticationFailure.cancelled),
+            NSLocalizedString("profile.touchID.failed", comment: "")
+        )
+        XCTAssertEqual(
+            ProfileAccessAuthenticator.failureMessage(for: NSError(domain: "test", code: 1)),
+            NSLocalizedString("profile.touchID.failed", comment: "")
+        )
+    }
+
     func testEncryptedProfileTransferExcludesCredentialsAndImportsNewIdentities() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }

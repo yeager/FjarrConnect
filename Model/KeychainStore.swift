@@ -63,15 +63,23 @@ enum KeychainStore {
 enum ProfileAccessAuthenticator {
     static func authenticate(reason: String, completion: @escaping (Result<Void, Error>) -> Void) {
         let context = LAContext()
-        var failure: NSError?
-        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &failure) else {
-            completion(.failure(failure ?? AuthenticationFailure.unavailable))
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil) else {
+            completion(.failure(AuthenticationFailure.unavailable))
             return
         }
-        context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, error in
+        context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, _ in
             if success { completion(.success(())) }
-            else { completion(.failure(error ?? AuthenticationFailure.cancelled)) }
+            else {
+                // Keep the UI's failure handling predictable and localized; the
+                // LocalAuthentication error can vary by OS and biometric state.
+                completion(.failure(AuthenticationFailure.cancelled))
+            }
         }
+    }
+
+    static func failureMessage(for error: Error) -> String {
+        (error as? AuthenticationFailure)?.errorDescription
+            ?? NSLocalizedString("profile.touchID.failed", comment: "")
     }
 
     enum AuthenticationFailure: LocalizedError {
