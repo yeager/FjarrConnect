@@ -121,19 +121,22 @@ final class VNCKeyboardLayoutTests: XCTestCase {
         let keyUp = VNCProtocol.KeyEvent(isDown: false, key: 0x2D)
 
         queue.enqueueKeyEvent(initialDown)
-        queue.enqueueKeyRepeat(repeatDown)
-        queue.enqueueKeyRepeat(repeatDown)
-        queue.enqueueKeyRepeat(repeatDown)
+        for _ in 0..<10_000 {
+            queue.enqueueKeyRepeat(repeatDown)
+        }
 
         XCTAssertNotNil(queue.dequeue() as? VNCProtocol.KeyEvent, "The initial press is preserved")
         XCTAssertNil(queue.dequeue(), "Repeats coalesce while the initial key-down is still pending")
 
-        queue.enqueueKeyRepeat(repeatDown)
-        queue.enqueueKeyRepeat(repeatDown)
+        for _ in 0..<10_000 {
+            queue.enqueueKeyRepeat(repeatDown)
+        }
         XCTAssertNotNil(queue.dequeue() as? VNCProtocol.KeyEvent, "One pending repeat is preserved after the initial press drains")
         XCTAssertNil(queue.dequeue(), "Further repeats coalesce until that pending repeat drains")
 
-        queue.enqueueKeyRepeat(repeatDown)
+        for _ in 0..<10_000 {
+            queue.enqueueKeyRepeat(repeatDown)
+        }
         queue.enqueueKeyEvent(keyUp)
         XCTAssertEqual((queue.dequeue() as? VNCProtocol.KeyEvent)?.isDown, false,
                        "Key-up discards a repeat that had not reached the server")
