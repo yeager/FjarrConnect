@@ -22,7 +22,7 @@ extension VNCConnection {
 
 		logger.logDebug("Enqueuing Key \(keyEvent.description)")
 
-		enqueueClientToServerMessage(keyEvent)
+		clientToServerMessageQueue.enqueueKeyEvent(keyEvent)
 	}
 
 	/// Keeps at most one unsent autorepeat per key. If the network send loop
