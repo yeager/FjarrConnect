@@ -3,6 +3,8 @@
 "quickconnect.placeholder" = "vnc://servidor o usuario@servidor";
 "sidebar.saved" = "Conexiones guardadas";
 "sidebar.saved.empty" = "No hay conexiones guardadas";
+"sidebar.show" = "Mostrar barra lateral";
+"sidebar.hide" = "Ocultar barra lateral";
 "sidebar.discovered" = "En tu red";
 "sidebar.discovered.empty" = "Todavía no hay servicios anunciados. Usa Buscar servidores para explorar la red.";
 "profile.new" = "Nueva conexión";
@@ -14,6 +16,7 @@
 "action.save" = "Guardar";
 "about.menu" = "Acerca de FjärrConnect";
 "about.author" = "Creado por Daniel Nylander";
+"about.openSource" = "Basado en software de código abierto";
 "about.repository" = "FjärrConnect en GitHub";
 "detail.empty.title" = "No hay sesiones activas";
 "detail.empty.description" = "Haz doble clic en una conexión guardada, busca un servidor en la red o introduce una dirección para conectarte.";
@@ -66,6 +69,7 @@
 "ssh.authentication" = "SSH usa las claves, ssh-agent y la configuración SSH del Mac. Introduce las contraseñas y verifica las nuevas claves del servidor en el terminal.";
 "ssh.ended" = "SSH ha finalizado. Lee el mensaje del terminal antes de volver a conectarte.";
 "rdp.install" = "Falta el componente RDP integrado o no se pudo cargar. Reinstale FjärrConnect para la arquitectura de su Mac.";
+"rdp.loading" = "Cargando el componente RDP integrado…";
 "rdp.waitingForDesktop" = "Esperando al escritorio remoto…";
 "rdp.invalid" = "Las credenciales RDP no pueden contener saltos de línea.";
 "rdp.ended" = "RDP ha finalizado. Comprueba el servidor, las credenciales y el certificado y vuelve a conectarte.";

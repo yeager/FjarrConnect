@@ -4,6 +4,8 @@
 
 "sidebar.saved"              = "Gemte forbindelser";
 "sidebar.saved.empty"        = "Ingen gemte forbindelser endnu";
+"sidebar.show" = "Vis sidepanel";
+"sidebar.hide" = "Skjul sidepanel";
 "sidebar.discovered"         = "På dit netværk";
 "sidebar.discovered.empty" = "Ingen annoncerede tjenester endnu. Brug Find servere til at søge på netværket.";
 
@@ -17,6 +19,7 @@
 "action.save"                = "Gem";
 "about.menu" = "Om FjärrConnect";
 "about.author" = "Skabt af Daniel Nylander";
+"about.openSource" = "Baseret på open source-software";
 "about.repository" = "FjärrConnect på GitHub";
 
 "detail.empty.title"         = "Ingen aktiv session";
@@ -74,6 +77,7 @@
 "ssh.authentication" = "SSH bruger din Macs nøgler, ssh-agent og SSH-indstillinger. Indtast adgangskoder og bekræft nye værtsnøgler i terminalen.";
 "ssh.ended" = "SSH blev afsluttet. Læs terminalmeddelelsen, før du forbinder igen.";
 "rdp.install" = "Den indbyggede RDP-komponent mangler eller kunne ikke indlæses. Geninstaller FjärrConnect til din Mac-arkitektur.";
+"rdp.loading" = "Indlæser den indbyggede RDP-komponent…";
 "rdp.waitingForDesktop" = "Venter på fjernskrivebordet…";
 "rdp.invalid" = "RDP-loginoplysninger må ikke indeholde linjeskift.";
 "rdp.ended" = "RDP blev afsluttet. Kontrollér server, login og certifikat, og forbind igen.";

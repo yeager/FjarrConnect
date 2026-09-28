@@ -40,6 +40,22 @@ final class RDPRuntime {
         return RDPRuntime(path: bundled)
     }()
 
+    /// Resolve the embedded runtime away from AppKit's main thread. Loading the
+    /// FreeRDP dylib can trigger dyld path and code-signature work that stalls
+    /// the UI when a profile is selected for the first time.
+    static func load(completion: @escaping (Bool) -> Void) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            #if DEBUG
+            if let delay = ProcessInfo.processInfo.environment["FJARRCONNECT_TEST_RDP_LOAD_DELAY"]
+                .flatMap(Double.init), delay > 0 {
+                Thread.sleep(forTimeInterval: min(delay, 30))
+            }
+            #endif
+            let available = shared != nil
+            DispatchQueue.main.async { completion(available) }
+        }
+    }
+
     init?(path: String) {
         guard let library = dlopen(path, RTLD_NOW | RTLD_LOCAL) else { return nil }
         func function<T>(_ name: String, _: T.Type) -> T? {

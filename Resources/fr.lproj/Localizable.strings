@@ -3,6 +3,8 @@
 "quickconnect.placeholder" = "vnc://hôte ou utilisateur@hôte";
 "sidebar.saved" = "Connexions enregistrées";
 "sidebar.saved.empty" = "Aucune connexion enregistrée";
+"sidebar.show" = "Afficher la barre latérale";
+"sidebar.hide" = "Masquer la barre latérale";
 "sidebar.discovered" = "Sur votre réseau";
 "sidebar.discovered.empty" = "Aucun service annoncé pour le moment. Utilisez Rechercher des serveurs pour explorer le réseau.";
 "profile.new" = "Nouvelle connexion";
@@ -14,6 +16,7 @@
 "action.save" = "Enregistrer";
 "about.menu" = "À propos de FjärrConnect";
 "about.author" = "Créé par Daniel Nylander";
+"about.openSource" = "Basé sur des logiciels open source";
 "about.repository" = "FjärrConnect sur GitHub";
 "detail.empty.title" = "Aucune session active";
 "detail.empty.description" = "Double-cliquez sur une connexion enregistrée, recherchez un serveur sur le réseau ou saisissez une adresse pour vous connecter.";
@@ -66,6 +69,7 @@
 "ssh.authentication" = "SSH utilise les clés, ssh-agent et la configuration SSH de votre Mac. Saisissez les mots de passe et vérifiez les nouvelles clés d’hôte dans le terminal.";
 "ssh.ended" = "SSH s’est arrêté. Consultez le message du terminal avant de vous reconnecter.";
 "rdp.install" = "Le composant RDP intégré est absent ou n’a pas pu être chargé. Réinstallez FjärrConnect pour l’architecture de votre Mac.";
+"rdp.loading" = "Chargement du composant RDP intégré…";
 "rdp.waitingForDesktop" = "En attente du bureau distant…";
 "rdp.invalid" = "Les identifiants RDP ne peuvent pas contenir de sauts de ligne.";
 "rdp.ended" = "RDP s’est arrêté. Vérifiez le serveur, les identifiants et le certificat, puis reconnectez-vous.";

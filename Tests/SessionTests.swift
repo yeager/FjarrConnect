@@ -181,6 +181,29 @@ final class SessionTests: XCTestCase {
         manager.disconnectAll()
     }
 
+    func testManualReconnectRestartsFailedSessionInTheSameTab() throws {
+        var sessions: [TestSession] = []
+        let manager = ConnectionManager { profile, _ in
+            let session = TestSession(profile: profile)
+            sessions.append(session)
+            return session
+        }
+        let profile = ConnectionProfile(name: "Reconnect test", transport: .rdp, host: "rdp.invalid")
+        manager.connect(profile)
+        let originalTab = try XCTUnwrap(manager.selected)
+        sessions[0].status = .disconnected(reason: "network")
+
+        manager.reconnect(originalTab.id, with: profile, password: nil, gatewayPassword: nil)
+
+        XCTAssertEqual(manager.tabs.count, 1)
+        XCTAssertTrue(manager.selected === originalTab)
+        XCTAssertEqual(manager.selected?.backend.profile.name, "Reconnect test")
+        XCTAssertEqual(sessions.count, 2)
+        XCTAssertEqual(sessions[0].stopCount, 0)
+        XCTAssertEqual(sessions[1].startCount, 1)
+        manager.disconnectAll()
+    }
+
     func testOptedInReconnectRestartsTheSameTabWithBoundedRetry() throws {
         var sessions: [TestSession] = []
         let manager = ConnectionManager { profile, _ in

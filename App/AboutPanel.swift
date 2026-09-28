@@ -5,8 +5,9 @@ enum AboutPanel {
 
     static func credits(bundle: Bundle = .main) -> NSAttributedString {
         let author = bundle.localizedString(forKey: "about.author", value: nil, table: nil)
+        let openSource = bundle.localizedString(forKey: "about.openSource", value: nil, table: nil)
         let repository = bundle.localizedString(forKey: "about.repository", value: nil, table: nil)
-        let result = NSMutableAttributedString(string: author + "\n\n" + repository)
+        let result = NSMutableAttributedString(string: author + "\n\n" + openSource + "\n\n" + repository)
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .center
         result.addAttribute(
@@ -14,7 +15,7 @@ enum AboutPanel {
             value: paragraphStyle,
             range: NSRange(location: 0, length: result.length)
         )
-        let range = NSRange(location: author.utf16.count + 2, length: repository.utf16.count)
+        let range = NSRange(location: author.utf16.count + openSource.utf16.count + 4, length: repository.utf16.count)
         result.addAttribute(.link, value: repositoryURL, range: range)
         return result
     }

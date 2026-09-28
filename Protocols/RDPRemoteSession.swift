@@ -141,23 +141,49 @@ private struct RDPDesktopView: NSViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
-    func makeNSView(context: Context) -> NSView {
-        requestInitialFocus(for: screen, coordinator: context.coordinator)
-        return screen
+    func makeNSView(context: Context) -> RDPDesktopContainer {
+        let container = RDPDesktopContainer()
+        container.show(screen)
+        requestInitialFocus(for: container, coordinator: context.coordinator)
+        return container
     }
-    func updateNSView(_ view: NSView, context: Context) {
+    func updateNSView(_ view: RDPDesktopContainer, context: Context) {
+        view.show(screen)
         requestInitialFocus(for: view, coordinator: context.coordinator)
     }
-    private func requestInitialFocus(for view: NSView, coordinator: Coordinator) {
+    private func requestInitialFocus(for container: RDPDesktopContainer, coordinator: Coordinator) {
         guard shouldFocus, !coordinator.requestedInitialFocus else { return }
         func focus(_ attempt: Int) {
             guard !coordinator.requestedInitialFocus else { return }
-            guard let window = view.window else {
+            guard let window = container.window, let screen = container.screenView else {
                 if attempt < 5 { DispatchQueue.main.async { focus(attempt + 1) } }
                 return
             }
-            coordinator.requestedInitialFocus = window.makeFirstResponder(view)
+            coordinator.requestedInitialFocus = window.makeFirstResponder(screen)
         }
         DispatchQueue.main.async { focus(0) }
+    }
+}
+
+/// Keep the FreeRDP NSView as a child of a host owned by SwiftUI. This mirrors
+/// the VNC framebuffer bridge and lets a reconnect replace the native surface
+/// without replacing a view that participates in SwiftUI's own layout tree.
+private final class RDPDesktopContainer: NSView {
+    private(set) var screenView: NSView?
+
+    func show(_ view: NSView) {
+        guard screenView !== view else { return }
+        let restoreFocus = screenView != nil && window?.firstResponder === screenView
+        screenView?.removeFromSuperview()
+        screenView = view
+        view.autoresizingMask = [.width, .height]
+        addSubview(view)
+        layoutSubtreeIfNeeded()
+        if restoreFocus { window?.makeFirstResponder(view) }
+    }
+
+    override func layout() {
+        super.layout()
+        screenView?.frame = bounds
     }
 }

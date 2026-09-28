@@ -4,6 +4,8 @@
 
 "sidebar.saved"              = "Saved Connections";
 "sidebar.saved.empty"        = "No saved connections yet";
+"sidebar.show" = "Show Sidebar";
+"sidebar.hide" = "Hide Sidebar";
 "sidebar.discovered"         = "On Your Network";
 "sidebar.discovered.empty" = "No advertised services yet. Use Find servers to search the network.";
 
@@ -17,6 +19,7 @@
 "action.save"                = "Save";
 "about.menu" = "About FjärrConnect";
 "about.author" = "Created by Daniel Nylander";
+"about.openSource" = "Based on open source software";
 "about.repository" = "FjärrConnect on GitHub";
 
 "detail.empty.title"         = "No Active Session";
@@ -74,6 +77,7 @@
 "ssh.authentication" = "SSH uses your Mac’s keys, ssh-agent and SSH configuration. Enter passwords and verify new host keys in the terminal.";
 "ssh.ended" = "SSH ended. Read the terminal message for details before reconnecting.";
 "rdp.install" = "The embedded RDP component is missing or could not be loaded. Reinstall FjärrConnect for your Mac architecture.";
+"rdp.loading" = "Loading the embedded RDP component…";
 "rdp.waitingForDesktop" = "Waiting for the remote desktop…";
 "rdp.invalid" = "RDP credentials cannot contain line breaks.";
 "rdp.ended" = "RDP ended. Check the server, credentials and certificate, then reconnect.";

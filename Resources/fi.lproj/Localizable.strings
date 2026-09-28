@@ -3,6 +3,8 @@
 "quickconnect.placeholder" = "vnc://palvelin tai käyttäjä@palvelin";
 "sidebar.saved" = "Tallennetut yhteydet";
 "sidebar.saved.empty" = "Ei vielä tallennettuja yhteyksiä";
+"sidebar.show" = "Näytä sivupalkki";
+"sidebar.hide" = "Kätke sivupalkki";
 "sidebar.discovered" = "Lähiverkossa";
 "sidebar.discovered.empty" = "Ilmoitettuja palveluja ei vielä näy. Etsi verkosta toiminnolla Etsi palvelimia.";
 "profile.new" = "Uusi yhteys";
@@ -14,6 +16,7 @@
 "action.save" = "Tallenna";
 "about.menu" = "Tietoja FjärrConnectista";
 "about.author" = "Tekijä Daniel Nylander";
+"about.openSource" = "Perustuu avoimen lähdekoodin ohjelmistoihin";
 "about.repository" = "FjärrConnect GitHubissa";
 "detail.empty.title" = "Ei aktiivista istuntoa";
 "detail.empty.description" = "Kaksoisklikkaa tallennettua yhteyttä, etsi palvelin verkosta tai muodosta yhteys kirjoittamalla osoite.";
@@ -66,6 +69,7 @@
 "ssh.authentication" = "SSH käyttää Macin avaimia, ssh-agentia ja SSH-asetuksia. Kirjoita salasanat ja vahvista uudet palvelinavaimet päätteessä.";
 "ssh.ended" = "SSH päättyi. Lue päätteen ilmoitus ennen kuin yhdistät uudelleen.";
 "rdp.install" = "Sisäinen RDP-komponentti puuttuu tai sitä ei voitu ladata. Asenna FjärrConnect uudelleen Macisi arkkitehtuurille.";
+"rdp.loading" = "Ladataan sisäistä RDP-komponenttia…";
 "rdp.waitingForDesktop" = "Odotetaan etätyöpöytää…";
 "rdp.invalid" = "RDP-kirjautumistiedoissa ei saa olla rivinvaihtoja.";
 "rdp.ended" = "RDP päättyi. Tarkista palvelin, kirjautumistiedot ja varmenne ja yhdistä uudelleen.";

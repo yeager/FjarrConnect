@@ -1,6 +1,17 @@
 import XCTest
 
 final class ConnectionUITests: XCTestCase {
+    private func assertVisible(_ element: XCUIElement, inside window: XCUIElement,
+                               file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(element.isHittable, "Expected element to remain hittable", file: file, line: line)
+        let frame = element.frame
+        let bounds = window.frame
+        XCTAssertGreaterThanOrEqual(frame.minX - bounds.minX, -4, "Element moved past the left edge", file: file, line: line)
+        XCTAssertGreaterThanOrEqual(frame.minY - bounds.minY, -4, "Element moved above the window", file: file, line: line)
+        XCTAssertLessThanOrEqual(frame.maxX - bounds.maxX, 4, "Element moved past the right edge", file: file, line: line)
+        XCTAssertLessThanOrEqual(frame.maxY - bounds.maxY, 4, "Element moved below the window", file: file, line: line)
+    }
+
     func testSessionNavigationMenuIsAccessibleWithoutOpenSessions() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -17,6 +28,30 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertTrue(app.menuItems["Next session"].exists)
         XCTAssertFalse(app.menuItems["Previous session"].isEnabled)
         XCTAssertFalse(app.menuItems["Next session"].isEnabled)
+    }
+
+    func testEmptyHomeShowsSidebarAndWelcomeContent() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = directory.appendingPathComponent("profiles.json").path
+        app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
+        app.launch()
+        defer { app.terminate() }
+
+        let quickConnect = app.textFields["sidebar.quickConnect"]
+        let welcome = app.staticTexts["welcome.title"]
+        XCTAssertTrue(quickConnect.waitForExistence(timeout: 15),
+                      "The sidebar quick-connect field should render with no saved profiles")
+        XCTAssertTrue(quickConnect.isHittable,
+                      "The sidebar should be visible and usable with no saved profiles")
+        XCTAssertTrue(app.staticTexts["sidebar.quickConnect.title"].exists,
+                      "The sidebar heading should render with no saved profiles")
+        XCTAssertTrue(welcome.waitForExistence(timeout: 5),
+                      "The main welcome view should render with no selected session")
+        XCTAssertTrue(welcome.isHittable,
+                      "The main welcome view should not be covered by another view")
     }
 
     func testQuickConnectStaysVisibleWhenSidebarListScrollsAndIsShownAgain() throws {
@@ -122,7 +157,7 @@ final class ConnectionUITests: XCTestCase {
         let file = directory.appendingPathComponent("profiles.json")
         let profile: [String: Any] = [
             "id": UUID().uuidString, "name": "VNC layout test", "transport": "vnc",
-            "host": "127.0.0.1", "port": 45905, "clipboardEnabled": false
+            "host": "127.0.0.1", "port": 45906, "clipboardEnabled": false
         ]
         try JSONSerialization.data(withJSONObject: [profile]).write(to: file)
         let app = XCUIApplication()
@@ -146,12 +181,18 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertTrue(reconnect.waitForExistence(timeout: 25),
                       "The closed VNC test connection should reach its disconnected state")
         let window = app.windows.firstMatch
+        let quickConnect = app.textFields["sidebar.quickConnect"]
+        assertVisible(quickConnect, inside: window)
+        XCTAssertGreaterThanOrEqual(quickConnect.frame.minY - window.frame.minY, -4,
+                                    "A failed VNC connection must keep the sidebar inside the window")
+        assertVisible(tab, inside: window)
         XCTAssertLessThan(tab.frame.minY - window.frame.minY, 180,
                           "A failed VNC session should not push the session menu down the window")
-        XCTAssertTrue(app.textFields["sidebar.quickConnect"].exists,
+        XCTAssertTrue(quickConnect.exists,
                       "A failed VNC session should preserve the visible sidebar preference")
         XCTAssertGreaterThan(tab.frame.height, 0,
                              "The failed session's tab should retain a visible frame after disconnection")
+        assertVisible(reconnect, inside: window)
         XCTAssertLessThan(reconnect.frame.minY - window.frame.minY, 240,
                           "The session controls should stay directly below the tab bar after a connection error")
     }
@@ -166,6 +207,7 @@ final class ConnectionUITests: XCTestCase {
         throw XCTSkip("No matching embedded FreeRDP runtime for this test architecture")
 #endif
         let runtimeCandidates = [
+            root.appendingPathComponent("build/debug-\(architecture)/Build/Products/Debug/FjarrConnect.app/Contents/Frameworks/libFjarrRDP.dylib"),
             root.appendingPathComponent("build/rdp-\(architecture)/FreeRDP-build/libFjarrRDP.dylib"),
             root.appendingPathComponent("build/rdp-output/\(architecture)/libFjarrRDP.dylib"),
             root.appendingPathComponent("build/verify-release-\(architecture)/Build/Products/Release/FjarrConnect.app/Contents/Frameworks/libFjarrRDP.dylib")
@@ -187,14 +229,25 @@ final class ConnectionUITests: XCTestCase {
         app.launchEnvironment["FJARRCONNECT_TEST_PROFILE_PATH"] = file.path
         app.launchEnvironment["FJARRCONNECT_DISABLE_DISCOVERY"] = "1"
         app.launchEnvironment["FJARRCONNECT_RDP_LIBRARY"] = runtime.path
+        app.launchEnvironment["FJARRCONNECT_TEST_RDP_LOAD_DELAY"] = "15"
         app.launch()
         defer { app.terminate() }
 
         let profileRow = app.buttons["connect.RDP layout test"].firstMatch
         XCTAssertTrue(profileRow.waitForExistence(timeout: 15))
+        let window = app.windows.firstMatch
+        let quickConnect = app.textFields["sidebar.quickConnect"]
+        assertVisible(quickConnect, inside: window)
         profileRow.doubleClick()
+        let runtimeLoading = app.descendants(matching: .any)["rdp.runtimeLoading"]
+        XCTAssertTrue(runtimeLoading.waitForExistence(timeout: 5),
+                      "The app should show RDP runtime loading while it prepares a first connection")
+        XCTAssertTrue(quickConnect.isHittable,
+                      "Loading FreeRDP must not block the sidebar or the main event loop")
+        XCTAssertTrue(app.buttons["newConnection"].isHittable,
+                      "The toolbar should remain responsive while FreeRDP loads")
         let password = app.secureTextFields["auth.password"]
-        XCTAssertTrue(password.waitForExistence(timeout: 5))
+        XCTAssertTrue(password.waitForExistence(timeout: 30))
         password.click()
         password.typeText("ui-test-only")
         app.buttons["auth.connect"].click()
@@ -203,14 +256,41 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertTrue(tab.waitForExistence(timeout: 10))
         let reconnect = app.buttons["Reconnect"].firstMatch
         XCTAssertTrue(reconnect.waitForExistence(timeout: 20), "The closed RDP test port should fail promptly")
-        let window = app.windows.firstMatch
-        let quickConnect = app.textFields["sidebar.quickConnect"]
+        assertVisible(quickConnect, inside: window)
         XCTAssertLessThan(quickConnect.frame.minY - window.frame.minY, 180,
                           "A failed RDP connection must not push the sidebar down")
+        assertVisible(tab, inside: window)
         XCTAssertLessThan(tab.frame.minY - window.frame.minY, 180,
                           "A failed RDP connection must keep session tabs under the window toolbar")
+        assertVisible(reconnect, inside: window)
         XCTAssertLessThan(reconnect.frame.minY - window.frame.minY, 260,
                           "A multiline RDP error must keep session controls near the tab bar")
+        XCTAssertTrue(reconnect.isHittable, "The reconnect action must remain reachable after a failed connection")
+
+        reconnect.click()
+        let retryPassword = app.secureTextFields["auth.password"]
+        XCTAssertTrue(retryPassword.waitForExistence(timeout: 5),
+                      "Manual RDP reconnect should ask for credentials before restarting the session")
+        retryPassword.click()
+        retryPassword.typeText("ui-test-only")
+        app.buttons["auth.connect"].click()
+        XCTAssertTrue(app.staticTexts["Disconnected"].waitForExistence(timeout: 20),
+                      "The retry should finish in its disconnected state")
+        XCTAssertTrue(reconnect.waitForExistence(timeout: 5),
+                      "The closed RDP test port should fail again and restore the reconnect action")
+        XCTAssertEqual(app.buttons.matching(identifier: "session.select.RDP layout test").count, 1,
+                       "A failed retry should reuse the original session tab instead of creating a duplicate")
+        assertVisible(quickConnect, inside: window)
+        XCTAssertLessThan(quickConnect.frame.minY - window.frame.minY, 180,
+                          "Retrying a failed RDP connection must not push the sidebar down")
+        assertVisible(tab, inside: window)
+        XCTAssertLessThan(tab.frame.minY - window.frame.minY, 180,
+                          "Retrying a failed RDP connection must keep session tabs under the window toolbar")
+        assertVisible(reconnect, inside: window)
+        XCTAssertLessThan(reconnect.frame.minY - window.frame.minY, 260,
+                          "After a retry fails, the session controls must remain near the tab bar")
+        XCTAssertTrue(app.staticTexts["Disconnected"].exists,
+                      "The failed retry should render the disconnected placeholder in the session view")
     }
 
     func testMacScreenSharingProfileRequiresUsernameBeforeSave() throws {

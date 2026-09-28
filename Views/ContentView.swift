@@ -13,11 +13,14 @@ struct ContentView: View {
     @State private var editing: ConnectionProfile?
     @State private var showingNew = false
     @State private var credentials: ConnectionProfile?
+    @State private var reconnectingSessionID: UUID?
     @State private var deleting: ConnectionProfile?
     @State private var commandLog: ConnectionProfile?
     @State private var errorMessage: String?
+    @State private var loadingRDPProfiles = Set<UUID>()
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var manualSidebarVisibility: NavigationSplitViewVisibility?
+    @State private var isSyncingSidebarVisibility = false
     @AppStorage(AppSettings.showSidebar) private var showSidebar = true
     @AppStorage(AppSettings.useLargeControls) private var useLargeControls = false
     @AppStorage(AppSettings.autoHideSidebarWhileConnected) private var autoHideSidebarWhileConnected = false
@@ -27,6 +30,10 @@ struct ContentView: View {
     var body: some View {
         navigationView
         .onAppear(perform: syncSidebarVisibility)
+        .onChange(of: columnVisibility) { _, visibility in
+            guard !isSyncingSidebarVisibility else { return }
+            sidebarVisibilityDidChange(visibility)
+        }
         .onChange(of: showSidebar) { _, _ in
             manualSidebarVisibility = nil
             syncSidebarVisibility()
@@ -35,7 +42,6 @@ struct ContentView: View {
             manualSidebarVisibility = nil
             syncSidebarVisibility()
         }
-        .onChange(of: columnVisibility) { _, visibility in sidebarVisibilityDidChange(visibility) }
         .onChange(of: connection.selectedID) { _, _ in
             manualSidebarVisibility = nil
             syncSidebarVisibility()
@@ -72,11 +78,17 @@ struct ContentView: View {
                 session.updateLoggingPreference(saved.first { $0.id == session.profile.id }?.logsSSHCommands ?? false)
             }
         }
-        .sheet(item: $credentials) { profile in
+        .sheet(item: $credentials, onDismiss: { reconnectingSessionID = nil }) { profile in
             CredentialsView(profile: profile, saved: profiles.profiles.contains { $0.id == profile.id }) { candidate, password, gatewayPassword, remember in
                 do {
                     if remember { try profiles.save(candidate, password: password, gatewayPassword: gatewayPassword) }
-                    connection.connect(candidate, password: password, gatewayPassword: gatewayPassword)
+                    if let reconnectingSessionID {
+                        connection.reconnect(reconnectingSessionID, with: candidate,
+                                             password: password, gatewayPassword: gatewayPassword)
+                        self.reconnectingSessionID = nil
+                    } else {
+                        connection.connect(candidate, password: password, gatewayPassword: gatewayPassword)
+                    }
                 } catch { errorMessage = error.localizedDescription }
             }
         }
@@ -96,7 +108,8 @@ struct ContentView: View {
 
     private var navigationView: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            sidebar.navigationSplitViewColumnWidth(min: 250, ideal: 290, max: 400)
+            sidebar
+                .navigationSplitViewColumnWidth(min: 250, ideal: 290, max: 400)
         } detail: {
             VStack(spacing: 0) {
                 if !connection.tabs.isEmpty,
@@ -120,13 +133,14 @@ struct ContentView: View {
                         if (tab.backend as? VNCRemoteSession)?.serverRequiresMacAccount == true {
                             current.usesMacScreenSharingAuthentication = true
                         }
-                        requestConnect(current, forcePrompt: true)
+                        reconnectingSessionID = tab.id
+                        credentials = current
                     },
                                       close: { connection.requestClose(tab.id) },
                                       openFiles: { urls in
                                           connection.connect(tab.backend.profile.fileProfile, initialFileUploads: urls)
                                       })
-                    .id(tab.id)
+                    .id(ObjectIdentifier(tab.backend))
                 } else {
                     welcome
                 }
@@ -135,8 +149,21 @@ struct ContentView: View {
         }
         .navigationTitle("FjärrConnect")
         .controlSize(useLargeControls ? .large : .regular)
+        .toolbar(removing: .sidebarToggle)
         .toolbar {
             ToolbarItemGroup {
+                if !loadingRDPProfiles.isEmpty {
+                    ProgressView()
+                        .controlSize(.small)
+                        .accessibilityLabel(Text("rdp.loading"))
+                        .accessibilityIdentifier("rdp.runtimeLoading")
+                }
+                Button(action: toggleSidebar) {
+                    Image(systemName: columnVisibility == .detailOnly ? "sidebar.right" : "sidebar.left")
+                }
+                .help(columnVisibility == .detailOnly ? "sidebar.show" : "sidebar.hide")
+                .accessibilityLabel(Text(columnVisibility == .detailOnly ? "sidebar.show" : "sidebar.hide"))
+                .accessibilityIdentifier("sidebar.toggle")
                 Button { quickFocused = true } label: { Image(systemName: "bolt") }
                     .help("action.quickConnect").keyboardShortcut("k")
                     .accessibilityLabel(Text("action.quickConnect"))
@@ -160,22 +187,31 @@ struct ContentView: View {
     private func syncSidebarVisibility() {
         let target = shouldAutoHideSidebar ? (manualSidebarVisibility ?? .detailOnly) :
             (keepsSidebarVisible ? .all : .detailOnly)
-        if columnVisibility != target { columnVisibility = target }
+        guard columnVisibility != target else { return }
+        isSyncingSidebarVisibility = true
+        columnVisibility = target
+        DispatchQueue.main.async {
+            isSyncingSidebarVisibility = false
+        }
     }
 
     private func sidebarVisibilityDidChange(_ visibility: NavigationSplitViewVisibility) {
-        let target = shouldAutoHideSidebar ? (manualSidebarVisibility ?? .detailOnly) :
-            (keepsSidebarVisible ? .all : .detailOnly)
-        guard visibility != target else { return }
+        if shouldAutoHideSidebar {
+            manualSidebarVisibility = visibility
+            return
+        }
+        let shouldShow = visibility != .detailOnly
+        guard showSidebar != shouldShow else { return }
+        showSidebar = shouldShow
+    }
 
+    private func toggleSidebar() {
         if shouldAutoHideSidebar {
             // Auto-hide is a connection-time default, while the toolbar remains
             // available for a temporary manual override during that session.
-            manualSidebarVisibility = visibility
+            manualSidebarVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
         } else {
-            // Persist an explicit toolbar choice so the sidebar stays hidden
-            // after selection, status, or window layout updates.
-            showSidebar = visibility != .detailOnly
+            showSidebar.toggle()
         }
         syncSidebarVisibility()
     }
@@ -187,24 +223,31 @@ struct ContentView: View {
     }
 
     private var sidebar: some View {
-        VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("action.quickConnect")
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
-                HStack(spacing: 8) {
-                    TextField("quickconnect.placeholder", text: $quickConnect)
-                        .textFieldStyle(.roundedBorder).focused($quickFocused).onSubmit(runQuickConnect)
-                        .accessibilityIdentifier("sidebar.quickConnect")
-                    Button(action: runQuickConnect) { Image(systemName: "arrow.right.circle.fill").font(.title3) }
-                        .buttonStyle(.borderless).help("action.connect")
-                        .disabled(quickConnect.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        profileList
+            .safeAreaInset(edge: .top, spacing: 0) {
+                VStack(spacing: 0) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("action.quickConnect")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("sidebar.quickConnect.title")
+                        HStack(spacing: 8) {
+                            TextField("quickconnect.placeholder", text: $quickConnect)
+                                .textFieldStyle(.roundedBorder).focused($quickFocused).onSubmit(runQuickConnect)
+                                .accessibilityIdentifier("sidebar.quickConnect")
+                            Button(action: runQuickConnect) { Image(systemName: "arrow.right.circle.fill").font(.title3) }
+                                .buttonStyle(.borderless).help("action.connect")
+                                .disabled(quickConnect.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    Divider()
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            Divider()
+    }
 
+    private var profileList: some View {
           List(selection: $selectedProfileID) {
             if !profiles.favorites.isEmpty {
                 Section("sidebar.favorites") {
@@ -270,7 +313,6 @@ struct ContentView: View {
           }
           .listStyle(.sidebar)
           .searchable(text: $search, prompt: Text("search.placeholder"))
-        }
     }
 
     private func profileRow(_ profile: ConnectionProfile) -> some View {
@@ -355,6 +397,7 @@ struct ContentView: View {
             Image(nsImage: NSApplication.shared.applicationIconImage).resizable().frame(width: 108, height: 108)
             VStack(spacing: 10) {
                 Text("welcome.title").font(.system(size: 30, weight: .bold, design: .rounded))
+                    .accessibilityIdentifier("welcome.title")
                 Text("detail.empty.description").foregroundStyle(.secondary).multilineTextAlignment(.center).frame(maxWidth: 430)
             }
             HStack(spacing: 12) {
@@ -387,9 +430,22 @@ struct ContentView: View {
     private func requestConnect(_ profile: ConnectionProfile, forcePrompt: Bool, persistUsage: Bool) {
         if persistUsage { profiles.markUsed(profile.id) }
         if profile.transport == .ssh || profile.transport == .sftp { connection.connect(profile); return }
-        if (profile.transport == .rdp || profile.transport == .remoteApp) && !RDPRemoteSession.isAvailable {
-            errorMessage = NSLocalizedString("rdp.install", comment: ""); return
+        if profile.transport == .rdp || profile.transport == .remoteApp {
+            guard loadingRDPProfiles.insert(profile.id).inserted else { return }
+            RDPRuntime.load { available in
+                self.loadingRDPProfiles.remove(profile.id)
+                guard available else {
+                    self.errorMessage = NSLocalizedString("rdp.install", comment: "")
+                    return
+                }
+                self.authorizeAndContinueConnect(profile, forcePrompt: forcePrompt)
+            }
+            return
         }
+        authorizeAndContinueConnect(profile, forcePrompt: forcePrompt)
+    }
+
+    private func authorizeAndContinueConnect(_ profile: ConnectionProfile, forcePrompt: Bool) {
         guard profile.requiresBiometricUnlock else {
             continueConnect(profile, forcePrompt: forcePrompt)
             return
@@ -513,7 +569,9 @@ private struct SessionDetailView: View {
             if let error = tab.backend.status.error, tab.backend.notice == nil {
                 HStack(alignment: .top) {
                     Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
-                        .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                        .textSelection(.enabled)
+                        .lineLimit(4)
+                        .frame(maxHeight: 120, alignment: .topLeading)
                     Spacer()
                     Button("diagnostics.save") {
                         do {

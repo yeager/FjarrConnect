@@ -6,6 +6,7 @@ final class AboutPanelTests: XCTestCase {
         let bundle = localizedAppBundle
         let credits = AboutPanel.credits(bundle: bundle)
         XCTAssertTrue(credits.string.contains("Daniel Nylander"))
+        XCTAssertTrue(credits.string.contains(bundle.localizedString(forKey: "about.openSource", value: nil, table: nil)))
         let repository = bundle.localizedString(forKey: "about.repository", value: nil, table: nil)
         let range = try XCTUnwrap(credits.string.range(of: repository))
         let location = credits.string.distance(from: credits.string.startIndex, to: range.lowerBound)

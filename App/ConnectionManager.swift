@@ -10,7 +10,7 @@ final class SessionTab: ObservableObject, Identifiable {
     let recorder = SessionRecordingController()
     private var subscriptions = Set<AnyCancellable>()
     private var backendSubscription: AnyCancellable?
-    private let credentials: SessionCredentials
+    private var credentials: SessionCredentials
     private let makeSession: (ConnectionProfile, SessionCredentials) -> any RemoteSession
     private var reconnectWork: DispatchWorkItem?
     private var healthTimer: DispatchSourceTimer?
@@ -66,6 +66,18 @@ final class SessionTab: ObservableObject, Identifiable {
     func stopRecording() { recorder.stop() }
 
     func start() { backend.start() }
+
+    func reconnect(with profile: ConnectionProfile, password: String?, gatewayPassword: String?) {
+        guard backend.status.isFinished else { return }
+        manuallyStopped = false
+        reconnectWork?.cancel()
+        reconnectWork = nil
+        reconnectAttempt = nil
+        reconnectAttempts = 0
+        credentials = SessionCredentials(password: password, gatewayPassword: gatewayPassword)
+        stopHealthMonitoring()
+        startBackend(profile: profile, credentials: credentials)
+    }
 
     func setActive(_ active: Bool) {
         self.active = active
@@ -151,7 +163,11 @@ final class SessionTab: ObservableObject, Identifiable {
     private func restart() {
         guard !manuallyStopped, reconnectAttempt != nil else { return }
         reconnectWork = nil
-        let next = makeSession(backend.profile, credentials)
+        startBackend(profile: backend.profile, credentials: credentials)
+    }
+
+    private func startBackend(profile: ConnectionProfile, credentials: SessionCredentials) {
+        let next = makeSession(profile, credentials)
         backend = next
         bind(next)
         next.setActive(active)
@@ -217,6 +233,12 @@ final class ConnectionManager: ObservableObject {
         tabs.append(tab)
         selectedID = tab.id
         tab.start()
+    }
+
+    func reconnect(_ id: UUID, with profile: ConnectionProfile, password: String?, gatewayPassword: String?) {
+        guard let tab = tabs.first(where: { $0.id == id }) else { return }
+        selectedID = id
+        tab.reconnect(with: profile, password: password, gatewayPassword: gatewayPassword)
     }
 
     func close(_ id: UUID) {
