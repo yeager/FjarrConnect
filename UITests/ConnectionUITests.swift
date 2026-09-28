@@ -68,7 +68,8 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertTrue(quickConnect.waitForExistence(timeout: 15))
         XCTAssertTrue(quickConnect.isHittable)
 
-        let appMenu = app.menuBars.menuBarItems["FjärrConnect"]
+        // macOS uses the bundle name without the UI's diacritic in the app menu.
+        let appMenu = app.menuBars.menuBarItems["FjarrConnect"]
         XCTAssertTrue(appMenu.waitForExistence(timeout: 5))
         appMenu.click()
         let about = app.menuItems["About FjärrConnect"]
