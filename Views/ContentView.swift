@@ -20,7 +20,6 @@ struct ContentView: View {
     @State private var loadingRDPProfiles = Set<UUID>()
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var manualSidebarVisibility: NavigationSplitViewVisibility?
-    @State private var isSyncingSidebarVisibility = false
     @AppStorage(AppSettings.showSidebar) private var showSidebar = true
     @AppStorage(AppSettings.useLargeControls) private var useLargeControls = false
     @AppStorage(AppSettings.autoHideSidebarWhileConnected) private var autoHideSidebarWhileConnected = false
@@ -30,10 +29,6 @@ struct ContentView: View {
     var body: some View {
         navigationView
         .onAppear(perform: syncSidebarVisibility)
-        .onChange(of: columnVisibility) { _, visibility in
-            guard !isSyncingSidebarVisibility else { return }
-            sidebarVisibilityDidChange(visibility)
-        }
         .onChange(of: showSidebar) { _, _ in
             manualSidebarVisibility = nil
             syncSidebarVisibility()
@@ -188,21 +183,7 @@ struct ContentView: View {
         let target = shouldAutoHideSidebar ? (manualSidebarVisibility ?? .detailOnly) :
             (keepsSidebarVisible ? .all : .detailOnly)
         guard columnVisibility != target else { return }
-        isSyncingSidebarVisibility = true
         columnVisibility = target
-        DispatchQueue.main.async {
-            isSyncingSidebarVisibility = false
-        }
-    }
-
-    private func sidebarVisibilityDidChange(_ visibility: NavigationSplitViewVisibility) {
-        if shouldAutoHideSidebar {
-            manualSidebarVisibility = visibility
-            return
-        }
-        let shouldShow = visibility != .detailOnly
-        guard showSidebar != shouldShow else { return }
-        showSidebar = shouldShow
     }
 
     private func toggleSidebar() {

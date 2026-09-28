@@ -78,13 +78,14 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertTrue(quickConnect.isHittable,
                       "Quick Connect should stay above the scrolling list of saved connections")
 
-        let hideSidebarButtons = app.buttons.matching(identifier: "Hide Sidebar")
-        XCTAssertTrue(hideSidebarButtons.firstMatch.waitForExistence(timeout: 5))
-        let hideSidebar = try XCTUnwrap(hideSidebarButtons.allElementsBoundByIndex.first(where: \.isHittable))
-        hideSidebar.click()
-        let showSidebarButtons = app.buttons.matching(identifier: "Show Sidebar")
-        XCTAssertTrue(showSidebarButtons.firstMatch.waitForExistence(timeout: 5))
-        let showSidebar = try XCTUnwrap(showSidebarButtons.allElementsBoundByIndex.first(where: \.isHittable))
+        let sidebarToggle = app.buttons["sidebar.toggle"]
+        XCTAssertTrue(sidebarToggle.waitForExistence(timeout: 5))
+        XCTAssertEqual(sidebarToggle.label, "Hide Sidebar")
+        sidebarToggle.click()
+        let showSidebar = app.buttons["sidebar.toggle"]
+        let showSidebarLabel = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "Show Sidebar"),
+                                                         object: showSidebar)
+        XCTAssertEqual(XCTWaiter.wait(for: [showSidebarLabel], timeout: 5), .completed)
         showSidebar.click()
 
         XCTAssertTrue(quickConnect.waitForExistence(timeout: 5))
