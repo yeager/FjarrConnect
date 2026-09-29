@@ -77,6 +77,12 @@
 "ssh.authentication" = "SSH uses your Mac’s keys, ssh-agent and SSH configuration. Enter passwords and verify new host keys in the terminal.";
 "ssh.ended" = "SSH ended. Read the terminal message for details before reconnecting.";
 "rdp.install" = "The embedded RDP component is missing or could not be loaded. Reinstall FjärrConnect for your Mac architecture.";
+"rdp.install.reason.missing" = "The RDP library file is missing from this app bundle.";
+"rdp.install.reason.architecture" = "The RDP library does not match this Mac’s processor architecture. Install the arm64 or Intel version that matches your Mac.";
+"rdp.install.reason.signature" = "macOS rejected the RDP component’s code signature. Download a fresh copy of FjärrConnect.";
+"rdp.install.reason.dependency" = "macOS could not load a library required by the RDP component. Reinstall FjärrConnect.";
+"rdp.install.reason.abi" = "The RDP component is incompatible with this app version. Reinstall FjärrConnect.";
+"rdp.install.reason.other" = "The RDP component could not be loaded. Reinstall FjärrConnect; if this continues, save a diagnostic report.";
 "rdp.loading" = "Loading the embedded RDP component…";
 "rdp.waitingForDesktop" = "Waiting for the remote desktop…";
 "rdp.invalid" = "RDP credentials cannot contain line breaks.";

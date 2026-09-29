@@ -69,6 +69,12 @@
 "ssh.authentication" = "SSHはこのMacの鍵、ssh-agent、SSH設定を使用します。パスワードの入力と新しいホスト鍵の確認は、ターミナルで行ってください。";
 "ssh.ended" = "SSHが終了しました。再接続する前に、ターミナルのメッセージで詳細を確認してください。";
 "rdp.install" = "内蔵RDPコンポーネントがないか、読み込めませんでした。お使いのMacのアーキテクチャに対応するFjärrConnectを再インストールしてください。";
+"rdp.install.reason.missing" = "アプリ内にRDPライブラリファイルがありません。";
+"rdp.install.reason.architecture" = "RDPライブラリがこのMacのプロセッサアーキテクチャに対応していません。Macに合ったarm64版またはIntel版をインストールしてください。";
+"rdp.install.reason.signature" = "macOSがRDPコンポーネントのコード署名を拒否しました。FjärrConnectを再ダウンロードしてください。";
+"rdp.install.reason.dependency" = "macOSがRDPコンポーネントに必要なライブラリを読み込めませんでした。FjärrConnectを再インストールしてください。";
+"rdp.install.reason.abi" = "RDPコンポーネントはこのアプリのバージョンと互換性がありません。FjärrConnectを再インストールしてください。";
+"rdp.install.reason.other" = "RDPコンポーネントを読み込めませんでした。FjärrConnectを再インストールし、問題が続く場合は診断レポートを保存してください。";
 "rdp.loading" = "内蔵RDPコンポーネントを読み込み中…";
 "rdp.waitingForDesktop" = "リモートデスクトップを待機中…";
 "rdp.invalid" = "RDPの認証情報に改行を含めることはできません。";

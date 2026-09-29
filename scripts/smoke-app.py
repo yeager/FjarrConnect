@@ -81,7 +81,7 @@ def stop_launched_application(executable, token):
         pass
 
 
-def launch(app, should_start=True):
+def launch(app, should_start=True, check_rdp_runtime=False):
     environment = {k: v for k, v in os.environ.items()
                    if not k.startswith(('DYLD_', 'XCTest', 'XCInject'))}
     with tempfile.TemporaryDirectory(prefix='fjarrconnect-launch-bundle-') as bundle_directory:
@@ -106,13 +106,19 @@ def launch(app, should_start=True):
             # directory instead of preserving the isolated launch environment.
             markers = [Path(directory) / marker_name,
                        Path(tempfile.gettempdir()) / marker_name]
+            runtime_marker_name = f'fjarrconnect-rdp-smoke-{token.upper()}'
+            runtime_markers = [Path(directory) / runtime_marker_name,
+                               Path(tempfile.gettempdir()) / runtime_marker_name]
             if should_start:
                 # Launch through Launch Services. Executing an app-bundle binary
                 # directly can fail macOS's app-to-process sandbox extension
                 # checks even when the bundle itself is valid and signed.
+                arguments = ['/usr/bin/open', '-n', '-W', str(runnable_app), '--args',
+                             '--fc-smoke-ready', token]
+                if check_rdp_runtime:
+                    arguments.append('--fc-smoke-rdp-runtime')
                 process = subprocess.Popen(
-                    ['/usr/bin/open', '-n', '-W', str(runnable_app), '--args',
-                     '--fc-smoke-ready', token], cwd=directory, env=environment,
+                    arguments, cwd=directory, env=environment,
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             else:
                 process = subprocess.Popen([str(executable)], cwd=directory, env=environment,
@@ -123,6 +129,17 @@ def launch(app, should_start=True):
                     while not any(marker.exists() for marker in markers) and process.poll() is None and time.monotonic() < deadline:
                         time.sleep(0.05)
                     if any(marker.exists() for marker in markers):
+                        if check_rdp_runtime:
+                            deadline = time.monotonic() + 15
+                            while not any(marker.exists() for marker in runtime_markers) and process.poll() is None and time.monotonic() < deadline:
+                                time.sleep(0.05)
+                            runtime_results = [marker.read_text() for marker in runtime_markers if marker.exists()]
+                            if runtime_results != ['loaded']:
+                                stop_launched_application(executable, token)
+                                raise AssertionError(
+                                    'Packaged app did not load its embedded RDP runtime through RDPRuntime: '
+                                    f'{runtime_results or "no completion marker"}')
+                            print('Packaged app loaded the embedded RDP runtime through its Swift loader and resolved its ABI.')
                         # Find only the app process started with this unique
                         # marker token; never terminate another FjarrConnect.
                         launched_pid = launched_application_pid(executable, token)
@@ -196,4 +213,4 @@ if '--check-missing-framework' in sys.argv[2:]:
         subprocess.run(['codesign', '--force', '--deep', '--sign', '-', str(broken)], check=True,
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         launch(broken, should_start=False)
-launch(app)
+launch(app, check_rdp_runtime=True)

@@ -77,6 +77,12 @@
 "ssh.authentication" = "SSH bruker Macens nøkler, ssh-agent og SSH-innstillinger. Skriv passord og bekreft nye vertsnøkler i terminalen.";
 "ssh.ended" = "SSH ble avsluttet. Les meldingen i terminalen før du kobler til igjen.";
 "rdp.install" = "Den innebygde RDP-komponenten mangler eller kunne ikke lastes. Installer FjärrConnect på nytt for din Mac-arkitektur.";
+"rdp.install.reason.missing" = "RDP-bibliotekfilen mangler i appen.";
+"rdp.install.reason.architecture" = "RDP-biblioteket passer ikke til prosessorarkitekturen på denne Macen. Installer arm64- eller Intel-versjonen som passer til Macen din.";
+"rdp.install.reason.signature" = "macOS avviste kodesignaturen til RDP-komponenten. Last ned en ny kopi av FjärrConnect.";
+"rdp.install.reason.dependency" = "macOS kunne ikke laste inn et bibliotek som RDP-komponenten trenger. Installer FjärrConnect på nytt.";
+"rdp.install.reason.abi" = "RDP-komponenten er ikke kompatibel med denne appversjonen. Installer FjärrConnect på nytt.";
+"rdp.install.reason.other" = "RDP-komponenten kunne ikke lastes inn. Installer FjärrConnect på nytt, og lagre en diagnoserapport hvis problemet fortsetter.";
 "rdp.loading" = "Laster inn den innebygde RDP-komponenten…";
 "rdp.waitingForDesktop" = "Venter på det eksterne skrivebordet…";
 "rdp.invalid" = "RDP-innloggingsopplysninger kan ikke inneholde linjeskift.";

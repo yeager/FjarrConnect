@@ -1,5 +1,7 @@
-FjärrConnect 0.2.32
+FjärrConnect 0.2.33
 
+- Explain when the embedded RDP component is missing, built for the wrong Mac
+  architecture, incompatible with the app, or rejected by macOS.
 - Forward Swedish Command+2 as `@` in a focused VNC session, including when
   AppKit routes the key equivalent through the window instead of the framebuffer.
 - Add regression coverage for rapid VNC input, repeated characters, and key release
@@ -10,8 +12,12 @@ Known limitation: live testing against the Mac Screen Sharing host was unavailab
 for this release because the server stopped responding after authentication. Local
 VNC protocol and keyboard tests pass.
 
-Download `FjarrConnect-0.2.32-macOS-arm64.zip` for Apple Silicon or
-`FjarrConnect-0.2.32-macOS-x86_64.zip` for Intel. Each app contains only its target
+Live RDP testing also remains incomplete: the test server reset the connection
+during security negotiation, before authentication. Local runtime and protocol
+smoke tests pass, but a live Windows desktop session has not been verified.
+
+Download `FjarrConnect-0.2.33-macOS-arm64.zip` for Apple Silicon or
+`FjarrConnect-0.2.33-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture and requires macOS 14 or later. `SHA256SUMS.txt` contains both download
 checksums.
 

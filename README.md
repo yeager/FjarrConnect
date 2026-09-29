@@ -16,27 +16,28 @@ It supports macOS 14 or later on Apple Silicon (arm64) and Intel (x86_64).
 
 **[GitHub repository](https://github.com/yeager/FjarrConnect)**
 
-## Latest release: version 0.2.30
+## Latest release: version 0.2.31
 
-**[Download version 0.2.30](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.30)**
-for Apple Silicon and Intel. Choose `FjarrConnect-0.2.30-macOS-arm64.zip` for Apple Silicon, or
-`FjarrConnect-0.2.30-macOS-x86_64.zip` for Intel. Each app contains only its target
+**[Download version 0.2.31](https://github.com/yeager/FjarrConnect/releases/tag/v0.2.31)**
+for Apple Silicon and Intel. Choose `FjarrConnect-0.2.31-macOS-arm64.zip` for Apple Silicon, or
+`FjarrConnect-0.2.31-macOS-x86_64.zip` for Intel. Each app contains only its target
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-This checkout contains unreleased 0.2.31 work; it is not included in the 0.2.30 downloads.
-The changes add optional, bidirectional file clipboard transfer to RDP profiles. It remains off until
-enabled in that profile and requires a Windows RDP server that advertises file clipboard
-support. Local protocol tests cover both directions; Windows server integration remains unverified.
-Failed RDP sessions now identify the FreeRDP negotiation phase in the error and
-optional diagnostic report, without including backend logs or credentials. A server that
-answers but cannot agree on an RDP security method is distinguished from an unreachable host.
-Version 0.2.30 added the optional stable-release check, fixes Backspace, Return and Tab
-input to VNC, supports VNC Tight file uploads when offered by the server, and adds
-RDP security selection and a Ctrl+Alt+End action. It also improves RemoteApp tab labels,
-supports certificate-verified VeNCrypt `X509Plain`, and fixes saved-password removal.
-The Settings switch disables both automatic and manual update checks. The app opens the
-release page; it does not download or install updates.
+The current checkout contains unreleased changes for 0.2.33. They add clearer, localized
+messages when the embedded RDP component is missing, incompatible with the Mac or app,
+or rejected by macOS. RDP file clipboard remains an explicit per-profile opt-in and
+requires a Windows server that advertises file clipboard support. Local protocol tests
+cover both directions; the live RDP test host currently resets the connection during
+security negotiation, so an authenticated desktop session has not been verified.
+
+Version 0.2.31 fixed Swedish Command+2 input (`@`) in VNC. Version 0.2.30 added the
+optional stable-release check, fixes Backspace, Return and Tab input to VNC, supports
+VNC Tight file uploads when offered by the server, and adds RDP security selection and
+a Ctrl+Alt+End action. It also improves RemoteApp tab labels, supports
+certificate-verified VeNCrypt `X509Plain`, and fixes saved-password removal. The Settings
+switch disables both automatic and manual update checks. The app opens the release page;
+it does not download or install updates.
 
 H.264 recordings are available for embedded RDP and VNC tabs, with a red indicator while
 recording. Recordings contain the remote desktop only, without audio.

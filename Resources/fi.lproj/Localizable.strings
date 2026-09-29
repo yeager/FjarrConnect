@@ -69,6 +69,12 @@
 "ssh.authentication" = "SSH käyttää Macin avaimia, ssh-agentia ja SSH-asetuksia. Kirjoita salasanat ja vahvista uudet palvelinavaimet päätteessä.";
 "ssh.ended" = "SSH päättyi. Lue päätteen ilmoitus ennen kuin yhdistät uudelleen.";
 "rdp.install" = "Sisäinen RDP-komponentti puuttuu tai sitä ei voitu ladata. Asenna FjärrConnect uudelleen Macisi arkkitehtuurille.";
+"rdp.install.reason.missing" = "RDP-kirjastotiedosto puuttuu sovelluspaketista.";
+"rdp.install.reason.architecture" = "RDP-kirjasto ei vastaa tämän Macin prosessoriarkkitehtuuria. Asenna Macillesi sopiva arm64- tai Intel-versio.";
+"rdp.install.reason.signature" = "macOS hylkäsi RDP-komponentin koodiallekirjoituksen. Lataa FjärrConnect uudelleen.";
+"rdp.install.reason.dependency" = "macOS ei voinut ladata RDP-komponentin tarvitsemaa kirjastoa. Asenna FjärrConnect uudelleen.";
+"rdp.install.reason.abi" = "RDP-komponentti ei ole yhteensopiva tämän sovellusversion kanssa. Asenna FjärrConnect uudelleen.";
+"rdp.install.reason.other" = "RDP-komponenttia ei voitu ladata. Asenna FjärrConnect uudelleen ja tallenna vianmääritysraportti, jos ongelma jatkuu.";
 "rdp.loading" = "Ladataan sisäistä RDP-komponenttia…";
 "rdp.waitingForDesktop" = "Odotetaan etätyöpöytää…";
 "rdp.invalid" = "RDP-kirjautumistiedoissa ei saa olla rivinvaihtoja.";

@@ -418,10 +418,12 @@ struct ContentView: View {
         if profile.transport == .ssh || profile.transport == .sftp { connection.connect(profile); return }
         if profile.transport == .rdp || profile.transport == .remoteApp {
             guard loadingRDPProfiles.insert(profile.id).inserted else { return }
-            RDPRuntime.load { available in
+            RDPRuntime.load { result in
                 self.loadingRDPProfiles.remove(profile.id)
-                guard available else {
-                    self.errorMessage = NSLocalizedString("rdp.install", comment: "")
+                if case .failure(let failure) = result {
+                    self.errorMessage = ["rdp.install", failure.localizationKey]
+                        .map { NSLocalizedString($0, comment: "") }
+                        .joined(separator: "\n")
                     return
                 }
                 self.authorizeAndContinueConnect(profile, forcePrompt: forcePrompt)

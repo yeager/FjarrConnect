@@ -107,9 +107,20 @@ struct FjarrConnectApp: App {
         guard let index = arguments.firstIndex(of: "--fc-smoke-ready"),
               arguments.indices.contains(index + 1),
               let token = UUID(uuidString: arguments[index + 1]) else { return }
-        let marker = FileManager.default.temporaryDirectory
+        let temporaryDirectory = FileManager.default.temporaryDirectory
+        let marker = temporaryDirectory
             .appendingPathComponent("fjarrconnect-smoke-\(token.uuidString)")
         try? Data("ready".utf8).write(to: marker, options: .atomic)
+
+        guard arguments.contains("--fc-smoke-rdp-runtime") else { return }
+        let runtimeMarker = temporaryDirectory
+            .appendingPathComponent("fjarrconnect-rdp-smoke-\(token.uuidString)")
+        RDPRuntime.load { result in
+            let status: String
+            if case .success = result { status = "loaded" } else { status = "failed" }
+            try? Data(status.utf8)
+                .write(to: runtimeMarker, options: .atomic)
+        }
     }
 }
 

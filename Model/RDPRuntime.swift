@@ -4,6 +4,46 @@ import Darwin
 /// The decoder is packaged separately for each Mac architecture. Its C ABI
 /// returns an NSView owned by the session; it never launches another app.
 final class RDPRuntime {
+    enum LoadFailure: Error, Equatable {
+        case missingFile
+        case architectureMismatch
+        case signatureRejected
+        case dependencyUnavailable
+        case incompatibleABI
+        case loadFailed
+
+        var localizationKey: String {
+            switch self {
+            case .missingFile: "rdp.install.reason.missing"
+            case .architectureMismatch: "rdp.install.reason.architecture"
+            case .signatureRejected: "rdp.install.reason.signature"
+            case .dependencyUnavailable: "rdp.install.reason.dependency"
+            case .incompatibleABI: "rdp.install.reason.abi"
+            case .loadFailed: "rdp.install.reason.other"
+            }
+        }
+
+        static func classifyDyldError(_ message: String) -> LoadFailure {
+            let message = message.lowercased()
+            if message.contains("wrong architecture") || message.contains("incompatible architecture") ||
+                message.contains("no suitable image") {
+                return .architectureMismatch
+            }
+            if message.contains("code signature") || message.contains("signature is invalid") {
+                return .signatureRejected
+            }
+            if message.contains("library not loaded") || message.contains("image not found") {
+                return .dependencyUnavailable
+            }
+            return .loadFailed
+        }
+    }
+
+    private enum LoadState {
+        case available(RDPRuntime)
+        case failed(LoadFailure)
+    }
+
     typealias Create = @convention(c) (UnsafePointer<CChar>, UnsafePointer<CChar>) -> UnsafeMutableRawPointer?
     typealias Action = @convention(c) (UnsafeMutableRawPointer) -> Void
     typealias Activate = @convention(c) (UnsafeMutableRawPointer, Int32) -> Void
@@ -30,20 +70,34 @@ final class RDPRuntime {
     let inputState: InputState
     private let library: UnsafeMutableRawPointer
 
-    static let shared: RDPRuntime? = {
+    private static let loadState: LoadState = {
         let bundled = Bundle.main.bundleURL.appendingPathComponent("Contents/Frameworks/libFjarrRDP.dylib").path
         #if DEBUG
         if let path = ProcessInfo.processInfo.environment["FJARRCONNECT_RDP_LIBRARY"], path.hasPrefix("/") {
-            return RDPRuntime(path: path)
+            return resolve(path: path)
         }
         #endif
-        return RDPRuntime(path: bundled)
+        return resolve(path: bundled)
     }()
+
+    static var shared: RDPRuntime? {
+        guard case .available(let runtime) = loadState else { return nil }
+        return runtime
+    }
+
+    private static func resolve(path: String) -> LoadState {
+        guard FileManager.default.fileExists(atPath: path) else { return .failed(.missingFile) }
+        var failure = LoadFailure.loadFailed
+        guard let runtime = RDPRuntime(path: path, onFailure: { failure = $0 }) else {
+            return .failed(failure)
+        }
+        return .available(runtime)
+    }
 
     /// Resolve the embedded runtime away from AppKit's main thread. Loading the
     /// FreeRDP dylib can trigger dyld path and code-signature work that stalls
     /// the UI when a profile is selected for the first time.
-    static func load(completion: @escaping (Bool) -> Void) {
+    static func load(completion: @escaping (Result<Void, LoadFailure>) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async {
             #if DEBUG
             if let delay = ProcessInfo.processInfo.environment["FJARRCONNECT_TEST_RDP_LOAD_DELAY"]
@@ -51,13 +105,26 @@ final class RDPRuntime {
                 Thread.sleep(forTimeInterval: min(delay, 30))
             }
             #endif
-            let available = shared != nil
-            DispatchQueue.main.async { completion(available) }
+            let result: Result<Void, LoadFailure>
+            switch loadState {
+            case .available: result = .success(())
+            case .failed(let failure): result = .failure(failure)
+            }
+            DispatchQueue.main.async { completion(result) }
         }
     }
 
-    init?(path: String) {
-        guard let library = dlopen(path, RTLD_NOW | RTLD_LOCAL) else { return nil }
+    init?(path: String, onFailure: ((LoadFailure) -> Void)? = nil) {
+        guard FileManager.default.fileExists(atPath: path) else {
+            onFailure?(.missingFile)
+            return nil
+        }
+        _ = dlerror()
+        guard let library = dlopen(path, RTLD_NOW | RTLD_LOCAL) else {
+            let message = dlerror().map { String(cString: $0) } ?? ""
+            onFailure?(LoadFailure.classifyDyldError(message))
+            return nil
+        }
         func function<T>(_ name: String, _: T.Type) -> T? {
             guard let symbol = dlsym(library, name) else { return nil }
             return unsafeBitCast(symbol, to: T.self)
@@ -76,7 +143,11 @@ final class RDPRuntime {
               let phase = function("fc_rdp_connection_phase", Phase.self),
               let requestedProtocols = function("fc_rdp_requested_protocols", ProtocolFlags.self),
               let selectedProtocol = function("fc_rdp_selected_protocol", ProtocolFlags.self),
-              let inputState = function("fc_rdp_input_state", InputState.self) else { dlclose(library); return nil }
+              let inputState = function("fc_rdp_input_state", InputState.self) else {
+            dlclose(library)
+            onFailure?(.incompatibleABI)
+            return nil
+        }
         self.library = library
         self.create = create; self.start = start; self.stop = stop
         self.activate = activate; self.secureAttention = secureAttention
