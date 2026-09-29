@@ -84,24 +84,26 @@ final class VNCKeyboardLayoutTests: XCTestCase {
         }
     }
 
-    func testSwedishOptionTwoSendsAndReleasesBothKeys() {
+    func testSwedishRightOptionTwoSendsAtAndReleasesBothKeys() {
         var tracker = VNCKeyEventTracker()
-        let optionDown = KeyboardModifiers(currentFlags: [.leftOption], lastFlags: []).events
+        let optionDown = KeyboardModifiers(currentFlags: [.rightOption], lastFlags: []).events
         XCTAssertEqual(optionDown.count, 1)
         let optionKey = optionDown[0]
         let optionKeys = tracker.keyDown(for: CGKeyCode(optionKey.keyCode),
                                          characters: optionKey.charactersIgnoringModifiers)
 
-        let numberKeys = tracker.keyDown(for: CGKeyCode(19), characters: "2")
-        let releasedNumberKeys = tracker.keyUp(for: CGKeyCode(19))
+        // AppKit resolves Swedish right Option+2 to "@". Send that character
+        // directly, with Option temporarily released by the framebuffer view.
+        let atKeys = tracker.keyDown(for: CGKeyCode(19), characters: "@")
+        let releasedAtKeys = tracker.keyUp(for: CGKeyCode(19))
 
-        let optionUp = KeyboardModifiers(currentFlags: [], lastFlags: [.leftOption]).events
+        let optionUp = KeyboardModifiers(currentFlags: [], lastFlags: [.rightOption]).events
         XCTAssertEqual(optionUp.count, 1)
         let releasedOptionKeys = tracker.keyUp(for: CGKeyCode(optionUp[0].keyCode))
 
-        XCTAssertEqual(optionKeys.map(\.rawValue), [0xFFE9])
-        XCTAssertEqual(numberKeys.map(\.rawValue), [0x32])
-        XCTAssertEqual(releasedNumberKeys, numberKeys)
+        XCTAssertEqual(optionKeys.map(\.rawValue), [0xFFEA])
+        XCTAssertEqual(atKeys.map(\.rawValue), [0x40])
+        XCTAssertEqual(releasedAtKeys, atKeys)
         XCTAssertEqual(releasedOptionKeys, optionKeys)
     }
 
