@@ -243,7 +243,9 @@ final class VNCIntegrationTests: XCTestCase {
             print("[VNC live] server cursor shape=\(cursor.size.width)x\(cursor.size.height); hotspot=\(cursor.hotspot.x),\(cursor.hotspot.y)")
             XCTAssertTrue(receivedRemoteCursor)
         } else if framebuffer?.remoteCursor?.isEmpty == true {
-            print("[VNC live] server requested a hidden cursor")
+            print("[VNC live] server sent an empty cursor shape; client uses the dot fallback")
+            XCTAssertEqual(framebuffer?.currentCursor.image.size, CGSize(width: 9, height: 9),
+                           "An empty server cursor shape should use the centered dot fallback")
         } else {
             print("[VNC live] server cursor shape=not-sent; local arrow remains visible")
             XCTAssertTrue(framebuffer?.currentCursor === NSCursor.arrow)
@@ -404,6 +406,10 @@ final class VNCIntegrationTests: XCTestCase {
         try exerciseServer(requiresUsername: false, resize: true)
     }
 
+    func testEmptyRemoteCursorUsesDotFallbackInRenderedSession() throws {
+        try exerciseServer(requiresUsername: false, emptyCursor: true)
+    }
+
     func testConnectedVNCDesktopReceivesInitialKeyboardFocus() throws {
         try exerciseServer(requiresUsername: false, verifyInitialFocus: true)
     }
@@ -537,7 +543,8 @@ final class VNCIntegrationTests: XCTestCase {
     }
 
     private func exerciseServer(requiresUsername: Bool, requiresPassword: Bool = false,
-                                blackInitially: Bool = false, resize: Bool = false, keyboard: Bool = false,
+                                blackInitially: Bool = false, resize: Bool = false,
+                                emptyCursor: Bool = false, keyboard: Bool = false,
                                 verifyInitialFocus: Bool = false,
                                 unsupportedSecurity: Bool = false, tightFileTransfer: Bool = false,
                                 tightDownloadOnly: Bool = false, uploadFile: URL? = nil,
@@ -559,6 +566,7 @@ final class VNCIntegrationTests: XCTestCase {
         else if tightFileTransfer { mode = "tight-files" }
         else if tightDownloadOnly { mode = "tight-download" }
         else if blackInitially { mode = "black" }
+        else if emptyCursor { mode = "empty-cursor" }
         else if resize { mode = "resize" }
         else if keyboard { mode = "keyboard" }
         else { mode = "none" }
@@ -610,7 +618,8 @@ final class VNCIntegrationTests: XCTestCase {
             XCTAssertTrue(session.status.isFinished)
             XCTAssertTrue(session.savedCredentialsRejected)
         } else {
-            XCTAssertEqual(session.status, .connected)
+            XCTAssertEqual(session.status, .connected,
+                           "RFB fixture diagnostics: " + ((try? String(contentsOf: diagnostics, encoding: .utf8)) ?? "unavailable"))
             let hasUploads = uploadFile != nil || uploadFiles?.isEmpty == false
             XCTAssertEqual(session.fileTransferAvailable, tightFileTransfer || tightDownloadOnly || hasUploads,
                             "A server advertising file-list and download messages should expose the read-only file browser.")
@@ -655,7 +664,7 @@ final class VNCIntegrationTests: XCTestCase {
             if resize {
                 try assertResize(session, trigger: URL(fileURLWithPath: portFile.path + ".resize"))
             } else {
-                try assertRenderedDesktop(session, isBlack: blackInitially)
+                try assertRenderedDesktop(session, isBlack: blackInitially, expectsEmptyCursor: emptyCursor)
             }
             if keyboard { try assertKeyboardCharacters(session, receivedKeys: URL(fileURLWithPath: portFile.path + ".keys")) }
             if verifyInitialFocus { try assertInitialFocus(session) }
@@ -1063,6 +1072,7 @@ final class VNCIntegrationTests: XCTestCase {
         resizedView?.cursorUpdate(with: cursorEvent)
         XCTAssertTrue(NSCursor.current === scaledCursor,
                       "AppKit must activate the latest server cursor when the pointer enters the framebuffer")
+
         XCTAssertEqual(session.status, .connected)
     }
 
@@ -1094,7 +1104,8 @@ final class VNCIntegrationTests: XCTestCase {
                        "A connected VNC desktop should receive keyboard focus without a click")
     }
 
-    private func assertRenderedDesktop(_ session: VNCRemoteSession, isBlack: Bool) throws {
+    private func assertRenderedDesktop(_ session: VNCRemoteSession, isBlack: Bool,
+                                       expectsEmptyCursor: Bool = false) throws {
         // A successful handshake alone does not prove that the app shows pixels.
         let host = NSHostingView(rootView: VNCSessionScreenView(session: session))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
@@ -1114,9 +1125,19 @@ final class VNCIntegrationTests: XCTestCase {
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [rendered], timeout: 5), .completed)
         let view = try XCTUnwrap(framebuffer(in: host))
-        XCTAssertNil(view.remoteCursor, "This fixture sends no remote cursor shape")
-        XCTAssertTrue(view.currentCursor === NSCursor.arrow,
-                      "A server that omits cursor pseudo-encodings must leave the local pointer visible")
+        if expectsEmptyCursor {
+            let fallback = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                guard view.remoteCursor?.isEmpty == true else { return false }
+                return view.currentCursor.image.size == CGSize(width: 9, height: 9)
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [fallback], timeout: 5), .completed,
+                           "An empty RFB cursor shape should activate the centered dot fallback")
+            XCTAssertEqual(view.currentCursor.hotSpot, CGPoint(x: 4.5, y: 4.5))
+        } else {
+            XCTAssertNil(view.remoteCursor, "This fixture sends no remote cursor shape")
+            XCTAssertTrue(view.currentCursor === NSCursor.arrow,
+                          "A server that omits cursor pseudo-encodings must leave the local pointer visible")
+        }
         let contents = try XCTUnwrap(view.layer?.contents)
         XCTAssertEqual(CFGetTypeID(contents as CFTypeRef), CGImage.typeID)
         let image = contents as! CGImage
@@ -1230,6 +1251,7 @@ with socket.socket() as listener:
         resized_frame_sent = False
         sent_cursor = False
         sent_apple_cursor = False
+        sent_empty_cursor = False
         upload_data = b''
         try:
             while True:
@@ -1243,6 +1265,12 @@ with socket.socket() as listener:
                         assert 1104 in encodings, 'The client must advertise Apple Cursor Image support'
                 elif kind == 3:
                     read(client, 9)
+                    if sys.argv[2] == 'empty-cursor' and not sent_empty_cursor:
+                        empty_cursor = struct.pack('!HHHHi', 0, 0, 0, 0, -240)
+                        desktop = struct.pack('!HHHHi', 0, 0, 2, 2, 0) + b'\x00\x00\xff\x00' * 4
+                        client.sendall(struct.pack('!BBH', 0, 0, 2) + empty_cursor + desktop)
+                        sent_empty_cursor = True
+                        continue
                     # Incremental requests with no new pixels should not
                     # trigger another framebuffer update. Repeating the
                     # resized frame here starves the app's main queue and
