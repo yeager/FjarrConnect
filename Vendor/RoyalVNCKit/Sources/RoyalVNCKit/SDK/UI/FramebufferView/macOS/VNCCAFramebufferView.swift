@@ -623,10 +623,10 @@ extension VNCCAFramebufferView {
 		if event.modifierFlags.contains(.rightOption) {
 			modifiers.append((.rightOption, .rightOption))
 		}
-		if includeCommand && event.modifierFlags.contains(.leftCommand) {
+		if includeCommand && event.modifierFlags.contains(.leftCommand) && lastModifierFlags.contains(.leftCommand) {
 			modifiers.append((.command, .leftCommand))
 		}
-		if includeCommand && event.modifierFlags.contains(.rightCommand) {
+		if includeCommand && event.modifierFlags.contains(.rightCommand) && lastModifierFlags.contains(.rightCommand) {
 			modifiers.append((.rightCommand, .rightCommand))
 		}
 		return modifiers
