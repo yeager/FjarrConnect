@@ -238,10 +238,9 @@ final class VNCIntegrationTests: XCTestCase {
             guard let cursor = framebuffer?.remoteCursor else { return false }
             return !cursor.isEmpty
         }, object: nil)
-        let receivedRemoteCursor = XCTWaiter.wait(for: [cursorReceived], timeout: 8) == .completed
+        await fulfillment(of: [cursorReceived], timeout: 8)
         if let cursor = framebuffer?.remoteCursor, !cursor.isEmpty {
             print("[VNC live] server cursor shape=\(cursor.size.width)x\(cursor.size.height); hotspot=\(cursor.hotspot.x),\(cursor.hotspot.y)")
-            XCTAssertTrue(receivedRemoteCursor)
         } else if framebuffer?.remoteCursor?.isEmpty == true {
             print("[VNC live] server sent an empty cursor shape; client uses the dot fallback")
             XCTAssertEqual(framebuffer?.currentCursor.image.size, CGSize(width: 9, height: 9),
