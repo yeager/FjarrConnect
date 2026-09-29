@@ -99,6 +99,7 @@
 "vnc.unsupportedSecurity" = "Serveren tilbyr en VNC-sikkerhetsmetode som FjärrConnect ikke kan bruke. FjärrConnect støtter sertifikatverifisert VeNCrypt X509Vnc og X509Plain samt vanlig VNC-autentisering.";
 
 "rdp.error.network" = "Serveren kunne ikke nås. Kontroller at Eksternt skrivebord er aktivert og at adressen og porten er tilgjengelige.";
+"rdp.error.connectTimeout" = "RDP-serveren svarte ikke innen 15 sekunder. Kontroller serveren, adressen og porten, og prøv igjen.";
 "rdp.error.securityNegotiation" = "RDP-forhandlingen ble avsluttet før en sikkerhetsprotokoll ble valgt. Kontroller at adressen peker til en RDP-server, og at sikkerhetsinnstillingene passer til profilen.";
 "rdp.error.authentication" = "Serveren avviste innloggingen. Kontroller brukernavn, passord og tilgang til Eksternt skrivebord.";
 "rdp.error.certificate" = "Den sikre tilkoblingen mislyktes. Kontroller serverens sertifikat og TLS-innstillinger.";

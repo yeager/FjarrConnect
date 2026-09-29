@@ -86,6 +86,7 @@
 "vnc.retryingFirstConnection" = "Ensimmäinen yhteys epäonnistui. Yritetään vielä kerran…";
 "vnc.unsupportedSecurity" = "Palvelin tarjoaa VNC-suojausmenetelmän, jota FjärrConnect ei voi käyttää. FjärrConnect tukee varmenteella todennettua VeNCrypt X509Vnc- ja X509Plain-tilaa sekä tavallista VNC-todennusta.";
 "rdp.error.network" = "Palvelimeen ei saatu yhteyttä. Tarkista, että etätyöpöytä on käytössä ja osoite ja portti ovat saavutettavissa.";
+"rdp.error.connectTimeout" = "RDP-palvelin ei vastannut 15 sekunnissa. Tarkista palvelin, osoite ja portti ja yritä uudelleen.";
 "rdp.error.securityNegotiation" = "RDP-neuvottelu päättyi ennen suojausprotokollan valintaa. Varmista, että osoite johtaa RDP-palvelimeen ja että sen suojausasetukset sopivat profiiliin.";
 "rdp.error.authentication" = "Palvelin hylkäsi kirjautumisen. Tarkista käyttäjätunnus, salasana ja etätyöpöydän käyttöoikeus.";
 "rdp.error.certificate" = "Suojattu yhteys epäonnistui. Tarkista palvelimen varmenne ja TLS-asetukset.";

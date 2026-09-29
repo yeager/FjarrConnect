@@ -3,6 +3,7 @@ import SwiftUI
 /// Owns one embedded desktop, including its native connection worker. Changing
 /// tabs detaches the view without stopping the connection.
 final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource, SessionHealthProviding {
+    private static let connectionTimeout: TimeInterval = 15
     /// Safe presence bits from FreeRDP settings; credential contents never leave the native runtime.
     var inputState: UInt32? {
         guard let pointer else { return nil }
@@ -30,6 +31,7 @@ final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource, S
     @Published private(set) var hasReceivedFrame = false
     private var screen: NSView?
     private var timer: Timer?
+    private var connectionDeadlineTimer: Timer?
     private var active = false
     private let runtime: RDPRuntime?
 
@@ -81,14 +83,25 @@ final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource, S
         runtime.activate(view, active ? 1 : 0)
         runtime.start(view)
         timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in self?.updateStatus() }
+        connectionDeadlineTimer = Timer.scheduledTimer(withTimeInterval: Self.connectionTimeout, repeats: false) { [weak self] _ in
+            guard let self, self.status == .connecting, let pointer = self.pointer else { return }
+            self.connectionDeadlineTimer = nil
+            self.timer?.invalidate(); self.timer = nil
+            self.runtime?.stop(pointer)
+            self.status = .disconnected(reason: "RDP \(self.profile.host):\(self.profile.port)\n" +
+                NSLocalizedString("rdp.error.connectTimeout", comment: ""))
+        }
     }
     private func updateStatus() {
         guard let pointer, let runtime else { return }
         let receivedFrame = runtime.hasFrame(pointer) != 0
         if hasReceivedFrame != receivedFrame { hasReceivedFrame = receivedFrame }
         switch runtime.status(pointer) {
-        case 2: if status != .connected { status = .connected }
+        case 2:
+            connectionDeadlineTimer?.invalidate(); connectionDeadlineTimer = nil
+            if status != .connected { status = .connected }
         case 3:
+            connectionDeadlineTimer?.invalidate(); connectionDeadlineTimer = nil
             timer?.invalidate(); timer = nil
             let code = runtime.error(pointer)
             if code == 0 { status = .disconnected(reason: nil); return }
@@ -108,12 +121,13 @@ final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource, S
         runtime?.secureAttention(pointer)
     }
     func stop() {
+        connectionDeadlineTimer?.invalidate(); connectionDeadlineTimer = nil
         timer?.invalidate(); timer = nil
         if let pointer { runtime?.stop(pointer) }
         credentials = SessionCredentials()
         status = .disconnected(reason: nil)
     }
-    deinit { timer?.invalidate(); if let pointer { runtime?.stop(pointer) } }
+    deinit { connectionDeadlineTimer?.invalidate(); timer?.invalidate(); if let pointer { runtime?.stop(pointer) } }
     func makeScreenView() -> AnyView {
         guard let screen else { return AnyView(ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)) }
         return AnyView(ZStack {

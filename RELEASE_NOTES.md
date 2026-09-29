@@ -20,6 +20,8 @@ Unreleased — planned for FjärrConnect 0.2.31
   clipboard synchronization is disabled.
 - Bound queued RDP key repeats during a delayed input loop and reserve queue space for
   key-up and mouse-up events, preventing a lost release from leaving remote input stuck.
+- End an RDP connection attempt after 15 seconds without a response, show a localized
+  timeout message, and keep the session controls available for retry.
 - Release held VNC keys when the app or its window loses focus, including after autorepeat,
   so a missed key-up does not leave a key repeating on the remote computer.
 

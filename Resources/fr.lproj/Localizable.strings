@@ -86,6 +86,7 @@
 "vnc.retryingFirstConnection" = "La première connexion a échoué. Nouvelle tentative unique…";
 "vnc.unsupportedSecurity" = "Le serveur propose une méthode de sécurité VNC que FjärrConnect ne peut pas utiliser. FjärrConnect prend en charge VeNCrypt X509Vnc et X509Plain avec vérification du certificat, ainsi que l’authentification VNC standard.";
 "rdp.error.network" = "Impossible de joindre le serveur. Vérifiez que le bureau à distance est activé et que cette adresse et ce port sont accessibles.";
+"rdp.error.connectTimeout" = "Le serveur RDP n’a pas répondu en 15 secondes. Vérifiez le serveur, l’adresse et le port, puis réessayez.";
 "rdp.error.securityNegotiation" = "La négociation RDP s’est terminée avant la sélection d’un protocole de sécurité. Vérifiez que l’adresse mène à un serveur RDP et que ses réglages de sécurité sont compatibles avec le profil.";
 "rdp.error.authentication" = "Le serveur a refusé l’identification. Vérifiez le nom d’utilisateur, le mot de passe et l’autorisation d’utiliser le bureau à distance.";
 "rdp.error.certificate" = "La connexion sécurisée a échoué. Vérifiez le certificat du serveur et les réglages TLS.";

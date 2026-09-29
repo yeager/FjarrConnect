@@ -99,6 +99,7 @@
 "vnc.unsupportedSecurity" = "This server offered a VNC security method FjärrConnect cannot use. FjärrConnect supports certificate-verified VeNCrypt X509Vnc and X509Plain, plus standard VNC authentication.";
 
 "rdp.error.network" = "The server could not be reached. Check that Remote Desktop is enabled and that this address and port are reachable.";
+"rdp.error.connectTimeout" = "The RDP server did not respond within 15 seconds. Check the server, address, and port, then try again.";
 "rdp.error.securityNegotiation" = "RDP negotiation ended before a security protocol was selected. Check that this address is an RDP server and that its security settings are compatible with the profile.";
 "rdp.error.authentication" = "The server rejected the sign-in. Check the username, password and permission to use Remote Desktop.";
 "rdp.error.certificate" = "The secure connection failed. Check the server certificate and TLS settings.";
