@@ -286,6 +286,50 @@ int main(int argc, const char **argv) {
             puts("RDP failure categories passed: network, negotiation transport, security negotiation, certificate, authentication, account, activation, NLA, licensing, server logoff, unknown.");
             return 0;
         }
+        if ([NSProcessInfo.processInfo.environment[@"FC_TEST_RDP_FOCUS_RELEASE"] isEqualToString:@"1"]) {
+            NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(80, 80, 640, 480)
+                                                           styleMask:NSWindowStyleMaskTitled
+                                                           backing:NSBackingStoreBuffered defer:NO];
+            window.contentView = view;
+            [window makeKeyAndOrderFront:nil];
+            [NSApp activateIgnoringOtherApps:YES];
+            [window makeFirstResponder:view];
+            [view setValue:@2 forKey:@"connectionStatus"];
+            [view setValue:@NO forKey:@"clipboardAllowed"];
+
+            NSEvent *dashDown = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSZeroPoint
+                                            modifierFlags:0 timestamp:0 windowNumber:window.windowNumber
+                                                  context:nil characters:@"-" charactersIgnoringModifiers:@"-"
+                                                 isARepeat:NO keyCode:27];
+            NSEvent *mouseDown = [NSEvent mouseEventWithType:NSEventTypeLeftMouseDown location:NSMakePoint(20, 20)
+                                               modifierFlags:0 timestamp:0 windowNumber:window.windowNumber
+                                                    context:nil eventNumber:1 clickCount:1 pressure:1];
+            [view keyDown:dashDown];
+            [view mouseDown:mouseDown];
+            BOOL keyHeld = [[view valueForKey:@"_pressedKeys"] count] == 1;
+            BOOL mouseHeld = [[view valueForKey:@"_mouseButtons"] count] == 1;
+            NSUInteger inputCount = [[view valueForKey:@"_input"] count];
+            [NSNotificationCenter.defaultCenter postNotificationName:NSWindowDidResignKeyNotification object:window];
+            [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
+            NSUInteger windowInputAfter = [[view valueForKey:@"_input"] count];
+            BOOL windowRelease = [[view valueForKey:@"_pressedKeys"] count] == 0 &&
+                [[view valueForKey:@"_mouseButtons"] count] == 0 &&
+                windowInputAfter == inputCount + 2;
+
+            [view keyDown:dashDown];
+            [view mouseDown:mouseDown];
+            inputCount = [[view valueForKey:@"_input"] count];
+            [NSNotificationCenter.defaultCenter postNotificationName:NSApplicationDidResignActiveNotification object:NSApp];
+            [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
+            BOOL applicationRelease = [[view valueForKey:@"_pressedKeys"] count] == 0 &&
+                [[view valueForKey:@"_mouseButtons"] count] == 0 &&
+                [[view valueForKey:@"_input"] count] == inputCount + 2;
+            fprintf(stderr, "RDP focus-loss release clipboard-enabled=%d held=%d/%d window=%d application=%d\n",
+                    [[view valueForKey:@"clipboardAllowed"] boolValue], keyHeld, mouseHeld,
+                    windowRelease, applicationRelease);
+            [window orderOut:nil];
+            return keyHeld && mouseHeld && windowRelease && applicationRelease ? 0 : 28;
+        }
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_KEYBOARD_INPUT"] isEqualToString:@"1"]) {
             const uint16_t atAndSwedish[] = { CFSwapInt16HostToLittle(0x0040), CFSwapInt16HostToLittle(0x00E5), CFSwapInt16HostToLittle(0x00C5) };
             const uint16_t multilingual[] = { CFSwapInt16HostToLittle(0x20AC), CFSwapInt16HostToLittle(0x65E5) };

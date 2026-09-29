@@ -101,6 +101,14 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
         f'RDP Unicode keyboard input encoding failed (exit {keyboard_check.returncode}): '
         f'{keyboard_check.stdout}\n{keyboard_check.stderr}')
     print(f'RDP {architecture}: Unicode keyboard input passed (@, Swedish, Euro, CJK, supplementary scalar).')
+    focus_release_check = subprocess.run(
+        [str(probe), str(empty_translations), str(directory / 'desktop.png')],
+        input='', text=True, capture_output=True, timeout=15,
+        env=dict(os.environ, FC_TEST_RDP_FOCUS_RELEASE='1'))
+    assert focus_release_check.returncode == 0, (
+        f'RDP key/mouse release on focus loss failed: '
+        f'{focus_release_check.stdout}\n{focus_release_check.stderr}')
+    print(f'RDP {architecture}: {focus_release_check.stderr.strip()}')
     secure_attention_check = subprocess.run(
         [str(probe), str(empty_translations), str(directory / 'desktop.png')],
         input='', text=True, capture_output=True, timeout=15,

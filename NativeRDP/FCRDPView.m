@@ -273,11 +273,14 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
 @property(atomic) uint32_t requestedHeight;
 @property(atomic) int negotiatedCodec;
 @property(nonatomic) NSCursor *remoteCursor;
+@property(nonatomic, strong) id windowResignKeyObserver;
+@property(nonatomic, strong) id applicationResignActiveObserver;
 - (instancetype)initWithArguments:(NSString *)arguments translations:(NSDictionary *)translations;
 - (void)start;
 - (void)stop;
 - (void)setSessionActive:(BOOL)active;
 - (void)sendSecureAttentionSequence;
+- (void)releaseInput;
 - (void)setSessionActive:(BOOL)active pasteboard:(NSPasteboard *)pasteboard;
 - (void)setClipboardActive:(BOOL)active pasteboard:(NSPasteboard *)pasteboard;
 - (void)captureClipboardFromPasteboard:(NSPasteboard *)pasteboard;
@@ -350,6 +353,39 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
         self.wantsLayer = YES;
     }
     return self;
+}
+- (void)viewDidMoveToWindow {
+    [super viewDidMoveToWindow];
+    NSNotificationCenter *notifications = NSNotificationCenter.defaultCenter;
+    if (self.windowResignKeyObserver) {
+        [notifications removeObserver:self.windowResignKeyObserver];
+        self.windowResignKeyObserver = nil;
+    }
+    if (self.applicationResignActiveObserver) {
+        [notifications removeObserver:self.applicationResignActiveObserver];
+        self.applicationResignActiveObserver = nil;
+    }
+    NSWindow *window = self.window;
+    if (!window) return;
+
+    __weak FCRDPView *weakSelf = self;
+    self.windowResignKeyObserver = [notifications addObserverForName:NSWindowDidResignKeyNotification
+                                                               object:window
+                                                                queue:NSOperationQueue.mainQueue
+                                                           usingBlock:^(NSNotification *notification) {
+        [weakSelf releaseInput];
+    }];
+    self.applicationResignActiveObserver = [notifications addObserverForName:NSApplicationDidResignActiveNotification
+                                                                       object:NSApp
+                                                                        queue:NSOperationQueue.mainQueue
+                                                                   usingBlock:^(NSNotification *notification) {
+        [weakSelf releaseInput];
+    }];
+}
+- (void)dealloc {
+    NSNotificationCenter *notifications = NSNotificationCenter.defaultCenter;
+    if (self.windowResignKeyObserver) [notifications removeObserver:self.windowResignKeyObserver];
+    if (self.applicationResignActiveObserver) [notifications removeObserver:self.applicationResignActiveObserver];
 }
 - (NSString *)text:(NSString *)key { return self.translations[key] ?: key; }
 - (UINT32)clipboardFeatureMaskForFileTransfer:(BOOL)enabled {
