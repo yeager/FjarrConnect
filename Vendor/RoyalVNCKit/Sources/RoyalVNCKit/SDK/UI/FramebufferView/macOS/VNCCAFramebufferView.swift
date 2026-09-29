@@ -534,14 +534,15 @@ extension VNCCAFramebufferView {
 		}
 	}
 
-	func handleKeyDown(with event: NSEvent?) {
+	func handleKeyDown(with event: NSEvent?, characters overrideCharacters: String? = nil) {
 		guard let event,
               let connection else {
 			return
 		}
 
+		let commandTwoProducesAt = isCommandTwoAt(event)
 		let keyCodes = keyEventTracker.keyDown(for: CGKeyCode(event.keyCode),
-										   characters: event.characters,
+										   characters: overrideCharacters ?? event.characters,
 										   isRepeat: event.isARepeat)
 
 		if keyCodes.isEmpty {
@@ -556,7 +557,7 @@ extension VNCCAFramebufferView {
 		// their held state so subsequent key events keep their normal meaning.
 		let physicalKeyCode = CGKeyCode(event.keyCode)
 		let temporarilyReleasedModifiers = temporarilyReleasedModifiersByKey[physicalKeyCode] == nil
-			? layoutModifiersToRelease(for: event)
+			? layoutModifiersToRelease(for: event, includeCommand: commandTwoProducesAt)
 			: []
 		for modifier in temporarilyReleasedModifiers {
 			connection.keyUp(modifier.key)
@@ -574,11 +575,16 @@ extension VNCCAFramebufferView {
 		}
 	}
 
-	private func layoutModifiersToRelease(for event: NSEvent) -> [(key: VNCKeyCode, flag: NSEvent.ModifierFlags)] {
-		guard let characters = event.characters,
-			  !characters.isEmpty,
-			  characters != event.charactersIgnoringModifiers,
-			  (event.modifierFlags.contains(.leftShift) ||
+	private func layoutModifiersToRelease(for event: NSEvent,
+	                                      includeCommand: Bool = false) -> [(key: VNCKeyCode, flag: NSEvent.ModifierFlags)] {
+		if !includeCommand {
+			guard let characters = event.characters,
+				  !characters.isEmpty,
+				  characters != event.charactersIgnoringModifiers else {
+				return []
+			}
+		}
+		guard (includeCommand || event.modifierFlags.contains(.leftShift) ||
 			   event.modifierFlags.contains(.rightShift) ||
 			   event.modifierFlags.contains(.leftOption) ||
 			   event.modifierFlags.contains(.rightOption)) else {
@@ -598,7 +604,22 @@ extension VNCCAFramebufferView {
 		if event.modifierFlags.contains(.rightOption) {
 			modifiers.append((.rightOption, .rightOption))
 		}
+		if includeCommand && event.modifierFlags.contains(.leftCommand) {
+			modifiers.append((.command, .leftCommand))
+		}
+		if includeCommand && event.modifierFlags.contains(.rightCommand) {
+			modifiers.append((.rightCommand, .rightCommand))
+		}
 		return modifiers
+	}
+
+	private func isCommandTwoAt(_ event: NSEvent) -> Bool {
+		event.keyCode == 19 &&
+			(event.modifierFlags.contains(.command) ||
+			 event.modifierFlags.contains(.leftCommand) ||
+			 event.modifierFlags.contains(.rightCommand)) &&
+				!event.modifierFlags.contains(.option) &&
+					!event.modifierFlags.contains(.control)
 	}
 
 	func handleKeyUp(with event: NSEvent?) {
@@ -650,6 +671,17 @@ extension VNCCAFramebufferView {
 	}
 
 	func handlePerformKeyEquivalent(with event: NSEvent) -> Bool {
+		// On Swedish macOS keyboards, users may enter @ with Command+2. AppKit
+		// normally consumes Command shortcuts before keyDown reaches this view,
+		// so translate this specific chord while a remote framebuffer is focused.
+		if isCommandTwoAt(event),
+		   let window,
+		   (window.firstResponder === self || window.firstResponder === window) {
+			handleKeyDown(with: event, characters: "@")
+			handleKeyUp(with: event)
+			return true
+		}
+
         // swiftlint:disable:next control_statement
 		guard (settings.inputMode == .forwardKeyboardShortcutsEvenIfInUseLocally || settings.inputMode == .forwardAllKeyboardShortcutsAndHotKeys),
 			  let window,

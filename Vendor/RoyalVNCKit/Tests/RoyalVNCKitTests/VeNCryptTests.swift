@@ -107,7 +107,7 @@ final class VeNCryptTests: XCTestCase {
 		])
 		let defaultConnection = VeNCryptConnection(data: serverOffer)
 		await XCTAssertThrowsErrorAsync {
-			try await VNCProtocol.VeNCrypt.negotiate(connection: defaultConnection) { _ in }
+            _ = try await VNCProtocol.VeNCrypt.negotiate(connection: defaultConnection) { _ in }
 		}
 
 	}

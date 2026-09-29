@@ -780,6 +780,28 @@ final class VNCIntegrationTests: XCTestCase {
         view.keyDown(with: atKeyDown)
         view.keyUp(with: atKeyUp)
 
+        // Also accept the Command+2 chord used by this user to type @.
+        // AppKit sends Command as a modifier before the key equivalent; the
+        // framebuffer must briefly release it so the remote Mac receives @.
+        let commandDown = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
+                                           modifierFlags: [.leftCommand], timestamp: 0,
+                                           windowNumber: window.windowNumber, context: nil,
+                                           characters: "", charactersIgnoringModifiers: "",
+                                           isARepeat: false, keyCode: 55)!
+        view.flagsChanged(with: commandDown)
+        let commandTwo = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                          modifierFlags: [.leftCommand], timestamp: 0,
+                                          windowNumber: window.windowNumber, context: nil,
+                                          characters: "2", charactersIgnoringModifiers: "2",
+                                          isARepeat: false, keyCode: 19)!
+        XCTAssertTrue(view.performKeyEquivalent(with: commandTwo))
+        let commandUp = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
+                                         modifierFlags: [], timestamp: 0,
+                                         windowNumber: window.windowNumber, context: nil,
+                                         characters: "", charactersIgnoringModifiers: "",
+                                         isARepeat: false, keyCode: 55)!
+        view.flagsChanged(with: commandUp)
+
         let optionDownBeforeFocusLoss = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
                                                           modifierFlags: [.leftOption], timestamp: 0,
                                                           windowNumber: window.windowNumber, context: nil,
@@ -927,7 +949,7 @@ final class VNCIntegrationTests: XCTestCase {
 
         let sent = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
-            return contents.split(separator: "\n").count >= 49
+            return contents.split(separator: "\n").count >= 55
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [sent], timeout: 5), .completed)
         let contents = try String(contentsOf: receivedKeys, encoding: .utf8)
@@ -943,6 +965,7 @@ final class VNCIntegrationTests: XCTestCase {
             0xFFE9, 0xFFE9, 0x40, 0x40, 0xFFE9, 0xFFE9,
             0xFFE1, 0xFFE1, 0x40, 0x40, 0xFFE1, 0xFFE1,
             0x40, 0x40,
+            0xFFEB, 0xFFEB, 0x40, 0x40, 0xFFEB, 0xFFEB,
             0xFFE9, 0xFFE9, 0x40, 0x40, 0xFFE9,
             0x71, 0x71,
             0x78, 0x78,
