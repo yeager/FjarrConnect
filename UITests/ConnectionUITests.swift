@@ -82,7 +82,7 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertTrue(aboutPanel.waitForExistence(timeout: 5),
                       "The About dialog should open after choosing its menu item")
         XCTAssertTrue(aboutPanel.staticTexts.matching(
-            NSPredicate(format: "label BEGINSWITH %@", "Version ")).firstMatch.exists,
+            NSPredicate(format: "value BEGINSWITH %@", "Version ")).firstMatch.exists,
                       "The About dialog should show the application version")
         XCTAssertTrue(app.windows.matching(identifier: "main").firstMatch.exists,
                       "The main application window should remain open behind About")
