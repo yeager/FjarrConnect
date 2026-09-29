@@ -186,7 +186,10 @@ final class ConnectionUITests: XCTestCase {
 
         let profileRow = app.buttons["connect.Layout test"].firstMatch
         XCTAssertTrue(profileRow.waitForExistence(timeout: 15))
-        profileRow.doubleClick()
+        profileRow.rightClick()
+        let connectAction = app.menuItems["Connect"].firstMatch
+        XCTAssertTrue(connectAction.waitForExistence(timeout: 5))
+        connectAction.click()
         let sessionTab = app.buttons["session.select.Layout test"].firstMatch
         XCTAssertTrue(sessionTab.waitForExistence(timeout: 10))
         let window = app.windows.firstMatch
