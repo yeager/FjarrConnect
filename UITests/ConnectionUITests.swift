@@ -292,9 +292,9 @@ final class ConnectionUITests: XCTestCase {
                       "The app should show RDP runtime loading while it prepares a first connection")
         XCTAssertTrue(quickConnect.isHittable,
                       "Loading FreeRDP must not block the sidebar or the main event loop")
-        // macOS exposes both the toolbar wrapper and its clickable child with
-        // this identifier; test the actual button, not the wrapper element.
-        let newConnectionButton = app.buttons.matching(identifier: "newConnection").element(boundBy: 1)
+        // SwiftUI can expose multiple toolbar accessibility nodes. Select the
+        // visible control instead of relying on their order in the tree.
+        let newConnectionButton = app.buttons.matching(identifier: "newConnection").firstMatch
         XCTAssertTrue(newConnectionButton.isHittable,
                       "The toolbar should remain responsive while FreeRDP loads")
         let password = app.secureTextFields["auth.password"]
