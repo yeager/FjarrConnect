@@ -408,7 +408,9 @@ the client exit code when a connection fails. It distinguishes a server-initiate
 logoff from authentication, network, NLA and Remote Desktop licence failures. A
 saved diagnostic report includes
 app and macOS versions, architecture, session state and available connection-health
-values. It omits the endpoint, credentials, backend output and failure text.
+values. For VNC, it includes the negotiated security method and reports VeNCrypt
+X509 subtype selection separately from a completed TLS and certificate check. It
+omits the endpoint, credentials, backend output and failure text.
 If writing the report fails, the app reports the error instead of silently treating it as saved.
 
 Quick-connect examples:

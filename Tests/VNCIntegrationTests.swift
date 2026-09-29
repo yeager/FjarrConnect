@@ -33,7 +33,7 @@ private final class VNCKeyboardFocusTestView: NSView {
 /// A local RFB server exercises the actual RoyalVNCKit handshake and session lifecycle.
 final class VNCIntegrationTests: XCTestCase {
     func testVNCConnectsToLocalServerAndStops() throws {
-        try exerciseServer(requiresUsername: false)
+        try exerciseServer(requiresUsername: false, expectedNegotiatedSecurity: VNCNegotiatedSecurity.none)
     }
 
     func testMacScreenSharingRetriesOneSilentFirstConnection() throws {
@@ -364,7 +364,8 @@ final class VNCIntegrationTests: XCTestCase {
 #endif
 
     func testVNCAuthenticatesWithPasswordAndReceivesDesktop() throws {
-        try exerciseServer(requiresUsername: false, requiresPassword: true)
+        try exerciseServer(requiresUsername: false, requiresPassword: true,
+                           expectedNegotiatedSecurity: .vncPassword)
     }
 
     func testRejectedVNCPasswordIsReportedForCredentialRetry() throws {
@@ -550,7 +551,8 @@ final class VNCIntegrationTests: XCTestCase {
                                 tightDownloadOnly: Bool = false, uploadFile: URL? = nil,
                                 expectedUpload: Data? = nil, uploadFiles: [URL]? = nil,
                                 expectedUploads: [Data]? = nil, clientPassword: String? = nil,
-                                expectsCredentialRejection: Bool = false) throws {
+                                expectsCredentialRejection: Bool = false,
+                                expectedNegotiatedSecurity: VNCNegotiatedSecurity? = nil) throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -620,6 +622,9 @@ final class VNCIntegrationTests: XCTestCase {
         } else {
             XCTAssertEqual(session.status, .connected,
                            "RFB fixture diagnostics: " + ((try? String(contentsOf: diagnostics, encoding: .utf8)) ?? "unavailable"))
+            if let expectedNegotiatedSecurity {
+                XCTAssertEqual(session.negotiatedSecurity, expectedNegotiatedSecurity)
+            }
             let hasUploads = uploadFile != nil || uploadFiles?.isEmpty == false
             XCTAssertEqual(session.fileTransferAvailable, tightFileTransfer || tightDownloadOnly || hasUploads,
                             "A server advertising file-list and download messages should expose the read-only file browser.")

@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import RoyalVNCKit
 
 /// Retains only known FreeRDP error categories, never backend log messages.
 struct RDPDiagnostics {
@@ -52,6 +53,7 @@ enum DiagnosticReport {
     static func text(profile: ConnectionProfile, status: SessionStatus,
                      health: SessionHealth? = nil, connectionPhase: String? = nil,
                      requestedSecurityProtocols: UInt32? = nil, selectedSecurityProtocol: UInt32? = nil,
+                     vncSecurity: VNCNegotiatedSecurity? = nil,
                      inputState: UInt32? = nil,
                      now: Date = .now) -> String {
         let formatter = ISO8601DateFormatter()
@@ -115,6 +117,7 @@ enum DiagnosticReport {
             "rdp-connection-phase: \(profile.transport == .rdp || profile.transport == .remoteApp ? safePhase : "unavailable")",
             "rdp-requested-security-protocols: \(profile.transport == .rdp || profile.transport == .remoteApp ? safeRequestedProtocols : "unavailable")",
             "rdp-selected-security-protocol: \(profile.transport == .rdp || profile.transport == .remoteApp ? safeSelectedProtocol : "unavailable")",
+            "vnc-negotiated-security: \(profile.transport == .vnc ? vncSecurity?.rawValue ?? "unavailable" : "unavailable")",
             "rdp-arguments-parsed: \(profile.transport == .rdp || profile.transport == .remoteApp ? presence(1) : "unavailable")",
             "rdp-username-configured: \(profile.transport == .rdp || profile.transport == .remoteApp ? presence(2) : "unavailable")",
             "rdp-password-configured: \(profile.transport == .rdp || profile.transport == .remoteApp ? presence(4) : "unavailable")",
@@ -128,6 +131,7 @@ enum DiagnosticReport {
     static func save(profile: ConnectionProfile, status: SessionStatus,
                      health: SessionHealth? = nil, connectionPhase: String? = nil,
                      requestedSecurityProtocols: UInt32? = nil, selectedSecurityProtocol: UInt32? = nil,
+                     vncSecurity: VNCNegotiatedSecurity? = nil,
                      inputState: UInt32? = nil) throws {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = "FjarrConnect-diagnostic.txt"
@@ -135,17 +139,20 @@ enum DiagnosticReport {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         try write(profile: profile, status: status, health: health, connectionPhase: connectionPhase,
                   requestedSecurityProtocols: requestedSecurityProtocols,
-                  selectedSecurityProtocol: selectedSecurityProtocol, inputState: inputState, to: url)
+                  selectedSecurityProtocol: selectedSecurityProtocol, vncSecurity: vncSecurity,
+                  inputState: inputState, to: url)
     }
 
     static func write(profile: ConnectionProfile, status: SessionStatus,
                       health: SessionHealth? = nil, connectionPhase: String? = nil,
                       requestedSecurityProtocols: UInt32? = nil, selectedSecurityProtocol: UInt32? = nil,
+                      vncSecurity: VNCNegotiatedSecurity? = nil,
                       inputState: UInt32? = nil,
                       to url: URL, now: Date = .now) throws {
         try text(profile: profile, status: status, health: health, connectionPhase: connectionPhase,
                  requestedSecurityProtocols: requestedSecurityProtocols,
-                 selectedSecurityProtocol: selectedSecurityProtocol, inputState: inputState, now: now)
+                 selectedSecurityProtocol: selectedSecurityProtocol, vncSecurity: vncSecurity,
+                 inputState: inputState, now: now)
             .write(to: url, atomically: true, encoding: .utf8)
     }
 }

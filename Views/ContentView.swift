@@ -567,6 +567,7 @@ private struct SessionDetailView: View {
                                                       connectionPhase: tab.backend.connectionPhase,
                                                       requestedSecurityProtocols: tab.backend.requestedSecurityProtocols,
                                                       selectedSecurityProtocol: tab.backend.selectedSecurityProtocol,
+                                                      vncSecurity: (tab.backend as? VNCRemoteSession)?.negotiatedSecurity,
                                                       inputState: (tab.backend as? RDPRemoteSession)?.inputState)
                         } catch {
                             diagnosticSaveFailed = true

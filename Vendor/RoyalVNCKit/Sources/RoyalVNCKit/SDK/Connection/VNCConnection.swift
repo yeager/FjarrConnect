@@ -10,6 +10,21 @@ import Dispatch
 import Network
 #endif
 
+/// A fixed, credential-free summary of the security method negotiated by RFB.
+/// The VeNCrypt `selected` cases mean the TLS upgrade was requested; `verified`
+/// cases are set only after protected traffic was successfully read.
+public enum VNCNegotiatedSecurity: String, Sendable {
+    case none = "None (unencrypted)"
+    case vncPassword = "VNC password authentication"
+    case appleDiffieHellman = "Apple Diffie-Hellman (security type 30)"
+    case ultraVNCMSLogonII = "UltraVNC MS-Logon II"
+    case tight = "Tight security (subtype unavailable)"
+    case veNCryptX509VNCSelected = "VeNCrypt X509Vnc selected; TLS/certificate validation incomplete"
+    case veNCryptX509PlainSelected = "VeNCrypt X509Plain selected; TLS/certificate validation incomplete"
+    case veNCryptX509VNCVerified = "VeNCrypt X509Vnc; TLS and certificate validation succeeded"
+    case veNCryptX509PlainVerified = "VeNCrypt X509Plain; TLS and certificate validation succeeded"
+}
+
 #if canImport(ObjectiveC)
 @objc(VNCConnection)
 #endif
@@ -51,6 +66,9 @@ public final class VNCConnection: NSObjectOrAnyObject {
 	@objc
 #endif
 	public internal(set) var connectionState = ConnectionState.disconnected
+
+    /// Safe protocol summary for diagnostics; it never contains endpoint or credential data.
+    public internal(set) var negotiatedSecurity: VNCNegotiatedSecurity?
 
 #if canImport(ObjectiveC)
 	@objc

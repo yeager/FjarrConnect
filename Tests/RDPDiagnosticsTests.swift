@@ -86,6 +86,28 @@ final class RDPDiagnosticsTests: XCTestCase {
         XCTAssertFalse(report.contains(profile.host))
     }
 
+    func testVNCReportIncludesOnlyNegotiatedSecuritySummary() {
+        let profile = ConnectionProfile(name: "Remote", transport: .vnc,
+                                        host: "private.example", username: "private-user")
+        let report = DiagnosticReport.text(profile: profile, status: .disconnected(reason: "secret"),
+                                           vncSecurity: .veNCryptX509VNCVerified)
+        XCTAssertTrue(report.contains("vnc-negotiated-security: VeNCrypt X509Vnc; TLS and certificate validation succeeded"))
+        XCTAssertTrue(report.contains("credentials: omitted"))
+        XCTAssertFalse(report.contains("private.example"))
+        XCTAssertFalse(report.contains("private-user"))
+        XCTAssertFalse(report.contains("secret"))
+
+        let unavailable = DiagnosticReport.text(profile: profile, status: .connecting)
+        XCTAssertTrue(unavailable.contains("vnc-negotiated-security: unavailable"))
+
+        let nonVNC = DiagnosticReport.text(
+            profile: ConnectionProfile(name: "Remote", transport: .rdp, host: "private.example"),
+            status: .connecting,
+            vncSecurity: .veNCryptX509VNCVerified
+        )
+        XCTAssertTrue(nonVNC.contains("vnc-negotiated-security: unavailable"))
+    }
+
     func testDiagnosticReportIncludesOnlyCredentialPresenceBits() {
         let profile = ConnectionProfile(name: "Remote", transport: .rdp, host: "192.0.2.4", username: "private-user")
         let report = DiagnosticReport.text(profile: profile, status: .disconnected(reason: "failure"), inputState: 7)

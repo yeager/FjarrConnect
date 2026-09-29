@@ -127,6 +127,15 @@ private extension VNCConnection {
 			throw VNCError.authentication(.clientCouldNotDecideOnSecurityType)
 		}
 
+        switch chosenSecurityType {
+        case .none: negotiatedSecurity = VNCNegotiatedSecurity.none
+        case .vnc: negotiatedSecurity = .vncPassword
+        case .diffieHellman: negotiatedSecurity = .appleDiffieHellman
+        case .ultraVNCMSLogonII: negotiatedSecurity = .ultraVNCMSLogonII
+        case .tight: negotiatedSecurity = .tight
+        default: negotiatedSecurity = nil
+        }
+
 		try await sendAuthenticationData(securityType: chosenSecurityType)
 	}
 
@@ -159,8 +168,10 @@ private extension VNCConnection {
 				}
 				switch subtype {
 					case .x509VNC:
+                        negotiatedSecurity = .veNCryptX509VNCSelected
 						try await performVNCAuthentication()
 					case .x509Plain:
+                        negotiatedSecurity = .veNCryptX509PlainSelected
 						try await performVeNCryptPlainAuthentication()
 					default:
 						throw VNCError.authentication(.clientCouldNotDecideOnSecurityType)
@@ -195,6 +206,12 @@ private extension VNCConnection {
 
 		if shouldRequestSecurityTypeResult {
 			try await receiveSecurityTypeResult()
+
+            switch negotiatedSecurity {
+            case .veNCryptX509VNCSelected: negotiatedSecurity = .veNCryptX509VNCVerified
+            case .veNCryptX509PlainSelected: negotiatedSecurity = .veNCryptX509PlainVerified
+            default: break
+            }
 		}
 
 		try await sendClientInit()

@@ -46,6 +46,10 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
     private var macScreenSharingRetryUsed = false
     private var credentialFailure: String?
     private var requestedAuthentication: VNCAuthenticationType?
+
+    var negotiatedSecurity: VNCNegotiatedSecurity? {
+        connection?.negotiatedSecurity
+    }
     private var frameCheck: DispatchWorkItem?
     private var clipboardGate = VNCClipboardSessionGate()
 
