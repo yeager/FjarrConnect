@@ -794,7 +794,9 @@ final class VNCIntegrationTests: XCTestCase {
                                           windowNumber: window.windowNumber, context: nil,
                                           characters: "2", charactersIgnoringModifiers: "2",
                                           isARepeat: false, keyCode: 19)!
-        XCTAssertTrue(view.performKeyEquivalent(with: commandTwo))
+        // Dispatch through NSApplication so the local key-down monitor runs
+        // before AppKit consumes Command+2 as a key equivalent.
+        NSApp.sendEvent(commandTwo)
         let commandUp = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
                                          modifierFlags: [], timestamp: 0,
                                          windowNumber: window.windowNumber, context: nil,
