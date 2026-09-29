@@ -1,5 +1,7 @@
 Unreleased — planned for FjärrConnect 0.2.31
 
+- Forward Command+2 as `@` in a focused VNC session before macOS handles it as
+  an application keyboard shortcut.
 - Show the FreeRDP connection phase after an RDP failure and include only recognized
   phase names in an optional diagnostic report. Distinguish failed RDP security negotiation
   from an unreachable host. Credentials and backend logs remain excluded.
