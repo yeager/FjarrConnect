@@ -714,8 +714,9 @@ final class VNCIntegrationTests: XCTestCase {
         let view = try XCTUnwrap(framebuffer(in: host))
         XCTAssertTrue(window.makeFirstResponder(view))
 
-        // Swedish macOS uses Option+2 for @. Also emulate resolved characters
-        // from QWERTZ/AZERTY and Unicode input sources, then inspect the RFB wire.
+        // Swedish macOS uses right Option+2 for @. Left Option is also accepted.
+        // Emulate resolved characters from other layouts and Unicode input sources,
+        // then inspect the RFB wire.
         let option = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
                                       modifierFlags: [.leftOption], timestamp: 0,
                                       windowNumber: window.windowNumber, context: nil,
@@ -740,6 +741,30 @@ final class VNCIntegrationTests: XCTestCase {
                                         characters: "", charactersIgnoringModifiers: "",
                                         isARepeat: false, keyCode: 58)!
         view.flagsChanged(with: optionUp)
+        let rightOptionDown = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
+                                               modifierFlags: [.rightOption], timestamp: 0,
+                                               windowNumber: window.windowNumber, context: nil,
+                                               characters: "", charactersIgnoringModifiers: "",
+                                               isARepeat: false, keyCode: 61)!
+        view.flagsChanged(with: rightOptionDown)
+        let rightOptionAtDown = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                                 modifierFlags: [.rightOption], timestamp: 0,
+                                                 windowNumber: window.windowNumber, context: nil,
+                                                 characters: "@", charactersIgnoringModifiers: "2",
+                                                 isARepeat: false, keyCode: 19)!
+        let rightOptionAtUp = NSEvent.keyEvent(with: .keyUp, location: .zero,
+                                               modifierFlags: [.rightOption], timestamp: 0,
+                                               windowNumber: window.windowNumber, context: nil,
+                                               characters: "@", charactersIgnoringModifiers: "2",
+                                               isARepeat: false, keyCode: 19)!
+        view.keyDown(with: rightOptionAtDown)
+        view.keyUp(with: rightOptionAtUp)
+        let rightOptionUp = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
+                                             modifierFlags: [], timestamp: 0,
+                                             windowNumber: window.windowNumber, context: nil,
+                                             characters: "", charactersIgnoringModifiers: "",
+                                             isARepeat: false, keyCode: 61)!
+        view.flagsChanged(with: rightOptionUp)
         let shiftDown = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
                                          modifierFlags: [.leftShift], timestamp: 0,
                                          windowNumber: window.windowNumber, context: nil,
@@ -778,32 +803,6 @@ final class VNCIntegrationTests: XCTestCase {
                                        isARepeat: false, keyCode: 19)!
         view.keyDown(with: atKeyDown)
         view.keyUp(with: atKeyUp)
-
-        // Also accept the Command+2 chord used by this user to type @.
-        // Simulate the view losing first-responder status after Command went
-        // down; its focus-loss cleanup releases Command before the chord lands.
-        let commandDown = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
-                                           modifierFlags: [.leftCommand], timestamp: 0,
-                                           windowNumber: window.windowNumber, context: nil,
-                                           characters: "", charactersIgnoringModifiers: "",
-                                           isARepeat: false, keyCode: 55)!
-        view.flagsChanged(with: commandDown)
-        XCTAssertTrue(window.makeFirstResponder(window))
-        let commandTwo = NSEvent.keyEvent(with: .keyDown, location: .zero,
-                                          modifierFlags: [.leftCommand], timestamp: 0,
-                                          windowNumber: window.windowNumber, context: nil,
-                                          characters: "2", charactersIgnoringModifiers: "2",
-                                          isARepeat: false, keyCode: 19)!
-        // Dispatch through NSApplication so the local key-down monitor runs
-        // before AppKit consumes Command+2 as a key equivalent.
-        NSApp.sendEvent(commandTwo)
-        XCTAssertTrue(window.makeFirstResponder(view))
-        let commandUp = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
-                                         modifierFlags: [], timestamp: 0,
-                                         windowNumber: window.windowNumber, context: nil,
-                                         characters: "", charactersIgnoringModifiers: "",
-                                         isARepeat: false, keyCode: 55)!
-        view.flagsChanged(with: commandUp)
 
         let optionDownBeforeFocusLoss = NSEvent.keyEvent(with: .flagsChanged, location: .zero,
                                                           modifierFlags: [.leftOption], timestamp: 0,
@@ -966,9 +965,9 @@ final class VNCIntegrationTests: XCTestCase {
         let nonDashEvents = events.filter { $0.1 != 0x2D }
         XCTAssertEqual(nonDashEvents.map { $0.1 }, [
             0xFFE9, 0xFFE9, 0x40, 0x40, 0xFFE9, 0xFFE9,
+            0xFFEA, 0xFFEA, 0x40, 0x40, 0xFFEA, 0xFFEA,
             0xFFE1, 0xFFE1, 0x40, 0x40, 0xFFE1, 0xFFE1,
             0x40, 0x40,
-            0xFFEB, 0xFFEB, 0x40, 0x40,
             0xFFE9, 0xFFE9, 0x40, 0x40, 0xFFE9,
             0x71, 0x71,
             0x78, 0x78,
