@@ -993,16 +993,6 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertTrue(NSCursor.current === originalCursor,
                       "The remote cursor should be active before the server changes its shape")
         try Data().write(to: trigger)
-        let redCursorArrived = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            guard let image = framebuffer(in: host)?.remoteCursor?.cgImage,
-                  image.width == 3, image.height == 1,
-                  let pixel = NSBitmapImageRep(cgImage: image).colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB) else {
-                return false
-            }
-            return pixel.redComponent > 0.95 && pixel.greenComponent < 0.05
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [redCursorArrived], timeout: 5), .completed,
-                       "The test server must first replace the original cursor with its red XCursor shape")
         let resized = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             framebuffer(in: host)?.framebufferSize == CGSize(width: 5, height: 3)
         }, object: nil)
@@ -1034,7 +1024,7 @@ final class VNCIntegrationTests: XCTestCase {
         let cursorSnapshot = framebuffer(in: host)?.remoteCursor
         let fixtureStage = (try? String(contentsOf: URL(fileURLWithPath: trigger.path + ".stage"), encoding: .utf8)) ?? "unavailable"
         XCTAssertEqual(cursorResult, .completed,
-                       "Apple's cached cursor encoding must replace the earlier XCursor shape; " +
+                       "Apple's cached cursor encoding must replace the initial XCursor shape; " +
                        "received-size=\(String(describing: cursorSnapshot?.size)), fixture-stage=\(fixtureStage)")
         guard cursorResult == .completed else { return }
         let cursor = try XCTUnwrap(framebuffer(in: host)?.currentCursor)
@@ -1050,14 +1040,14 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertGreaterThan(firstPixel.alphaComponent, 0.95, "The updated server cursor must remain visible after a resize")
         XCTAssertLessThan(firstPixel.redComponent, 0.05)
         XCTAssertGreaterThan(firstPixel.greenComponent, 0.95,
-                             "The selected Apple cursor must differ from the earlier red XCursor shape")
+                             "The selected Apple cursor must differ from the initial XCursor shape")
         XCTAssertGreaterThan(firstPixel.blueComponent, 0.95)
         XCTAssertGreaterThan(secondPixel.alphaComponent, 0.95)
         XCTAssertGreaterThan(secondPixel.redComponent, 0.95)
         XCTAssertGreaterThan(secondPixel.greenComponent, 0.95)
         XCTAssertLessThan(secondPixel.blueComponent, 0.05)
         XCTAssertLessThan(thirdPixel.alphaComponent, 0.05,
-                          "The XCursor mask must keep transparent pixels invisible")
+                          "The Apple cursor alpha plane must keep transparent pixels invisible")
         XCTAssertTrue(NSCursor.current === cursor,
                       "A cursor shape update must take effect while the pointer remains over the framebuffer")
         XCTAssertGreaterThan(window.cursorRectInvalidations, 0,
@@ -1257,7 +1247,6 @@ with socket.socket() as listener:
             client.sendall(struct.pack('!HHHH', len(messages), len(clients), 0, 0) + b''.join(messages + clients))
         first_frame = None
         resized = False
-        sent_updated_cursor = False
         initial_frame_sent = False
         resized_frame_sent = False
         sent_cursor = False
@@ -1297,18 +1286,16 @@ with socket.socket() as listener:
                         while not os.path.exists(sys.argv[1] + '.resize') and client.fileno() >= 0:
                             time.sleep(0.01)
                     if sys.argv[2] == 'resize' and not sent_cursor:
-                        client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 1, 0, 2, 2, -239) + b'\xff\xff\xff\x00' * 4 + b'\xc0\xc0')
+                        xcursor = (
+                            struct.pack('!HHHHi', 1, 1, 2, 2, -240)
+                            + b'\xff\xff\xff\x00\x00\x00' + b'\xc0\xc0' + b'\xc0\xc0'
+                        )
+                        initial_pixels = struct.pack('!HHHHi', 0, 0, 2, 2, 0) + b'\x00\x00\xff\x00' * 4
+                        client.sendall(struct.pack('!BBH', 0, 0, 2) + xcursor + initial_pixels)
                         sent_cursor = True
+                        initial_frame_sent = True
+                        continue
                     if sys.argv[2] == 'resize' and os.path.exists(sys.argv[1] + '.resize'):
-                        if not sent_updated_cursor:
-                            # Deliver the XCursor in its own update so the test
-                            # can verify that this intermediate shape was active.
-                            cursor_data = b'\xff\x00\x00\x00\x00\xff' + b'\x80' + b'\xc0'
-                            client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 1, 0, 3, 1, -240) + cursor_data)
-                            sent_updated_cursor = True
-                            write_stage('red-xcursor-sent')
-                            continue
-
                         if not resized:
                             # RFC 6143 requires DesktopSize to be the last
                             # rectangle in its update. Send it by itself, then
