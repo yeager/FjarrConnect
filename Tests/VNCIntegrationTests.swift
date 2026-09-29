@@ -995,6 +995,34 @@ final class VNCIntegrationTests: XCTestCase {
         let xEvents = events.filter { $0.1 == 0x78 }
         XCTAssertEqual(xEvents.map { $0.0 }, [true, false],
                        "App deactivation must release a held key even when the window does not resign key")
+
+        // Send a no-delay typing burst through the full AppKit → framebuffer →
+        // RFB path. Slow manual typing can mask missing or reordered events.
+        let typingBurst = Array("abcdefghijklmnopqrstuvwxyz0123456789")
+        for (index, character) in typingBurst.enumerated() {
+            sendControlKey(UInt16(0xFF00 + index), characters: String(character))
+        }
+        sendControlKey(0xFEFF, characters: "☃")
+        let burstSent = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
+            return contents.contains("0:01002603\n")
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [burstSent], timeout: 5), .completed)
+        let burstLines = try String(contentsOf: receivedKeys, encoding: .utf8).split(separator: "\n")
+        let burstEvents = try burstLines.suffix(typingBurst.count * 2 + 2).map { line -> (Bool, UInt32) in
+            let fields = line.split(separator: ":")
+            guard fields.count == 2, let down = Int(fields[0]), let keysym = UInt32(fields[1], radix: 16) else {
+                throw NSError(domain: "VNC keyboard fixture", code: 2)
+            }
+            return (down == 1, keysym)
+        }
+        let expectedBurst = typingBurst.flatMap { character -> [UInt32] in
+            let keysym = UInt32(character.asciiValue!)
+            return [keysym, keysym]
+        } + [0x01002603, 0x01002603]
+        XCTAssertEqual(burstEvents.map(\.0), Array(repeating: [true, false], count: expectedBurst.count / 2).flatMap { $0 })
+        XCTAssertEqual(burstEvents.map(\.1), expectedBurst,
+                       "Fast typing must preserve every character keysym and key-up in order")
     }
 
     private func assertResize(_ session: VNCRemoteSession, trigger: URL) throws {
