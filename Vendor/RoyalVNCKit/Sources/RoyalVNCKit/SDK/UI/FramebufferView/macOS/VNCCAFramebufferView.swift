@@ -108,6 +108,7 @@ public final class VNCCAFramebufferView: NSView, VNCFramebufferView {
 	private var trackingArea: NSTrackingArea?
 	private var windowResignKeyObserver: NSObjectProtocol?
 	private var applicationResignActiveObserver: NSObjectProtocol?
+	private var commandTwoKeyMonitor: Any?
 	private(set) var remoteCursor: VNCCursor?
 	private var previousHotKeyMode: UnsafeMutableRawPointer?
 	private var keyEventTracker = VNCKeyEventTracker()
@@ -217,11 +218,18 @@ public final class VNCCAFramebufferView: NSView, VNCFramebufferView {
 		if let applicationResignActiveObserver {
 			NotificationCenter.default.removeObserver(applicationResignActiveObserver)
 		}
+		if let commandTwoKeyMonitor {
+			NSEvent.removeMonitor(commandTwoKeyMonitor)
+		}
 	}
 
 	public override func viewDidMoveToWindow() {
 		super.viewDidMoveToWindow()
 		addDisplayLink()
+		if let commandTwoKeyMonitor {
+			NSEvent.removeMonitor(commandTwoKeyMonitor)
+			self.commandTwoKeyMonitor = nil
+		}
 
 		if let windowResignKeyObserver {
 			NotificationCenter.default.removeObserver(windowResignKeyObserver)
@@ -233,6 +241,17 @@ public final class VNCCAFramebufferView: NSView, VNCFramebufferView {
 		}
 
 		guard let window else { return }
+		// AppKit may consume Command shortcuts before `performKeyEquivalent`
+		// reaches this view. Observe key-down before menu/key-equivalent dispatch,
+		// but only while this framebuffer owns keyboard focus.
+		commandTwoKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak window] event in
+			guard let self, let window,
+			      event.window === window,
+			      window.firstResponder === self,
+			      self.isCommandTwoAt(event) else { return event }
+			self.sendCommandTwoAsAt(event)
+			return nil
+		}
 		windowResignKeyObserver = NotificationCenter.default.addObserver(
 			forName: NSWindow.didResignKeyNotification,
 			object: window,
@@ -677,8 +696,7 @@ extension VNCCAFramebufferView {
 		if isCommandTwoAt(event),
 		   let window,
 		   (window.firstResponder === self || window.firstResponder === window) {
-			handleKeyDown(with: event, characters: "@")
-			handleKeyUp(with: event)
+			sendCommandTwoAsAt(event)
 			return true
 		}
 
@@ -702,6 +720,11 @@ extension VNCCAFramebufferView {
 		handleKeyUp(with: event)
 
 		return true
+	}
+
+	private func sendCommandTwoAsAt(_ event: NSEvent) {
+		handleKeyDown(with: event, characters: "@")
+		handleKeyUp(with: event)
 	}
 }
 
