@@ -15,87 +15,84 @@ import Dispatch
 final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection {
 	let settings: NetworkConnectionSettings
 
-	private var readStream: CFReadStream?
-	private var writeStream: CFWriteStream?
-	private var lifecycleQueue = DispatchQueue(label: "com.royalapps.royalvnc.cfstream.lifecycle.placeholder")
+	private let state = CFStreamNetworkState()
 	private let readQueue = DispatchQueue(label: "com.royalapps.royalvnc.cfstream.read")
 	private let writeQueue = DispatchQueue(label: "com.royalapps.royalvnc.cfstream.write")
-	private var didUpgradeToTLS = false
-
-	private(set) var statusUpdateHandler: NetworkConnectionStatusUpdateHandler?
-	private(set) var status: NetworkConnectionStatus = .setup {
-		didSet { statusUpdateHandler?(status) }
-	}
 
 	init(settings: NetworkConnectionSettings) {
 		self.settings = settings
 	}
 
+	var status: NetworkConnectionStatus { state.status }
+
 	var isReady: Bool {
-		if case .ready = status { return true }
+		if case .ready = state.status { return true }
 		return false
 	}
 
 	func setStatusUpdateHandler(_ statusUpdateHandler: NetworkConnectionStatusUpdateHandler?) {
-		self.statusUpdateHandler = statusUpdateHandler
+		state.setStatusUpdateHandler(statusUpdateHandler)
 	}
 
 	func start(queue: DispatchQueue) {
-		self.lifecycleQueue = queue
-		status = .preparing
+		let state = self.state
+		let host = settings.host
+		let port = UInt32(settings.port)
+		state.lifecycleQueue = queue
+		state.updateStatus(.preparing)
 
-		queue.async { [weak self] in
-			guard let self else { return }
-
+		queue.async {
 			var readStream: Unmanaged<CFReadStream>?
 			var writeStream: Unmanaged<CFWriteStream>?
 			CFStreamCreatePairWithSocketToHost(
 				kCFAllocatorDefault,
-				settings.host as CFString,
-				UInt32(settings.port),
+				host as CFString,
+				port,
 				&readStream,
 				&writeStream
 			)
 
 			guard let read = readStream?.takeRetainedValue(),
 				  let write = writeStream?.takeRetainedValue(),
-				  CFReadStreamOpen(read),
-				  CFWriteStreamOpen(write) else {
-				self.status = .failed(VNCError.connection(.failed(nil)))
+			  CFReadStreamOpen(read),
+			  CFWriteStreamOpen(write) else {
+				state.updateStatus(.failed(VNCError.connection(.failed(nil))))
 				return
 			}
 
-			self.readStream = read
-			self.writeStream = write
-			self.status = .ready
+			guard state.install(readStream: read, writeStream: write) else {
+				CFReadStreamClose(read)
+				CFWriteStreamClose(write)
+				return
+			}
+			state.updateStatus(.ready)
 		}
 	}
 
 	func cancel() {
+		let state = self.state
+		state.markCancelled()
 		let group = DispatchGroup()
 		group.enter()
-		readQueue.async { [weak self] in
-			guard let self else { group.leave(); return }
-			if let readStream { CFReadStreamClose(readStream) }
-			readStream = nil
+		readQueue.async {
+			if let readStream = state.takeReadStream() { CFReadStreamClose(readStream) }
 			group.leave()
 		}
 		group.enter()
-		writeQueue.async { [weak self] in
-			guard let self else { group.leave(); return }
-			if let writeStream { CFWriteStreamClose(writeStream) }
-			writeStream = nil
+		writeQueue.async {
+			if let writeStream = state.takeWriteStream() { CFWriteStreamClose(writeStream) }
 			group.leave()
 		}
-		group.notify(queue: lifecycleQueue) { [weak self] in
-			self?.status = .cancelled
+		group.notify(queue: state.lifecycleQueue) {
+			state.updateStatus(.cancelled)
 		}
 	}
 
 	func upgradeToTLS(serverName: String) async throws {
+		let state = self.state
 		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-			readQueue.async { [weak self] in
-				guard let self, let readStream, !didUpgradeToTLS else {
+			readQueue.async {
+				guard let readStream = state.readStream, state.canUpgradeToTLS else {
 					continuation.resume(throwing: VNCError.protocol(.invalidData))
 					return
 				}
@@ -111,16 +108,17 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection {
 					return
 				}
 
-				didUpgradeToTLS = true
+				state.markTLSUpgradeComplete()
 				continuation.resume()
 			}
 		}
 	}
 
 	func read(minimumLength: Int, maximumLength: Int) async throws -> Data {
-		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-			readQueue.async { [weak self] in
-				guard let self, let readStream else {
+		let state = self.state
+		return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
+			readQueue.async {
+				guard let readStream = state.readStream else {
 					continuation.resume(throwing: VNCError.connection(.closed))
 					return
 				}
@@ -145,9 +143,10 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection {
 	}
 
 	func write(data: Data) async throws {
+		let state = self.state
 		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-			writeQueue.async { [weak self] in
-				guard let self, let writeStream else {
+			writeQueue.async {
+				guard let writeStream = state.writeStream else {
 					continuation.resume(throwing: VNCError.connection(.closed))
 					return
 				}
@@ -168,6 +167,106 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection {
 				continuation.resume()
 			}
 		}
+	}
+}
+
+/// Synchronizes state shared by the lifecycle, read and write queues. The
+/// streams themselves are only read or written on their respective queues;
+/// the lock is never held while performing stream I/O or invoking callbacks.
+private final class CFStreamNetworkState: @unchecked Sendable {
+	private let lock = NSLock()
+	private var storedReadStream: CFReadStream?
+	private var storedWriteStream: CFWriteStream?
+	private var storedStatus: NetworkConnectionStatus = .setup
+	private var storedStatusUpdateHandler: NetworkConnectionStatusUpdateHandler?
+	private var storedLifecycleQueue = DispatchQueue(label: "com.royalapps.royalvnc.cfstream.lifecycle")
+	private var didUpgradeToTLS = false
+	private var wasCancelled = false
+
+	var status: NetworkConnectionStatus {
+		lock.lock()
+		defer { lock.unlock() }
+		return storedStatus
+	}
+
+	var lifecycleQueue: DispatchQueue {
+		get {
+			lock.lock()
+			defer { lock.unlock() }
+			return storedLifecycleQueue
+		}
+		set {
+			lock.lock()
+			storedLifecycleQueue = newValue
+			lock.unlock()
+		}
+	}
+
+	var readStream: CFReadStream? {
+		lock.lock()
+		defer { lock.unlock() }
+		return storedReadStream
+	}
+
+	var writeStream: CFWriteStream? {
+		lock.lock()
+		defer { lock.unlock() }
+		return storedWriteStream
+	}
+
+	var canUpgradeToTLS: Bool {
+		lock.lock()
+		defer { lock.unlock() }
+		return !didUpgradeToTLS && !wasCancelled
+	}
+
+	func setStatusUpdateHandler(_ handler: NetworkConnectionStatusUpdateHandler?) {
+		lock.lock()
+		storedStatusUpdateHandler = handler
+		lock.unlock()
+	}
+
+	func updateStatus(_ status: NetworkConnectionStatus) {
+		lock.lock()
+		storedStatus = status
+		let handler = storedStatusUpdateHandler
+		lock.unlock()
+		handler?(status)
+	}
+
+	func install(readStream: CFReadStream, writeStream: CFWriteStream) -> Bool {
+		lock.lock()
+		defer { lock.unlock() }
+		guard !wasCancelled else { return false }
+		storedReadStream = readStream
+		storedWriteStream = writeStream
+		return true
+	}
+
+	func takeReadStream() -> CFReadStream? {
+		lock.lock()
+		defer { lock.unlock() }
+		defer { storedReadStream = nil }
+		return storedReadStream
+	}
+
+	func takeWriteStream() -> CFWriteStream? {
+		lock.lock()
+		defer { lock.unlock() }
+		defer { storedWriteStream = nil }
+		return storedWriteStream
+	}
+
+	func markTLSUpgradeComplete() {
+		lock.lock()
+		didUpgradeToTLS = true
+		lock.unlock()
+	}
+
+	func markCancelled() {
+		lock.lock()
+		wasCancelled = true
+		lock.unlock()
 	}
 }
 #endif
