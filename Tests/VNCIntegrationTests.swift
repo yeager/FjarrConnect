@@ -993,6 +993,16 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertTrue(NSCursor.current === originalCursor,
                       "The remote cursor should be active before the server changes its shape")
         try Data().write(to: trigger)
+        let redCursorArrived = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let image = framebuffer(in: host)?.remoteCursor?.cgImage,
+                  image.width == 3, image.height == 1,
+                  let pixel = NSBitmapImageRep(cgImage: image).colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB) else {
+                return false
+            }
+            return pixel.redComponent > 0.95 && pixel.greenComponent < 0.05
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [redCursorArrived], timeout: 5), .completed,
+                       "The test server must first replace the original cursor with its red XCursor shape")
         let resized = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             framebuffer(in: host)?.framebufferSize == CGSize(width: 5, height: 3)
         }, object: nil)
@@ -1022,9 +1032,10 @@ final class VNCIntegrationTests: XCTestCase {
         }, object: nil)
         let cursorResult = XCTWaiter.wait(for: [appleCursorArrived], timeout: 12)
         let cursorSnapshot = framebuffer(in: host)?.remoteCursor
+        let fixtureStage = (try? String(contentsOf: URL(fileURLWithPath: trigger.path + ".stage"), encoding: .utf8)) ?? "unavailable"
         XCTAssertEqual(cursorResult, .completed,
                        "Apple's cached cursor encoding must replace the earlier XCursor shape; " +
-                       "received-size=\(String(describing: cursorSnapshot?.size))")
+                       "received-size=\(String(describing: cursorSnapshot?.size)), fixture-stage=\(fixtureStage)")
         guard cursorResult == .completed else { return }
         let cursor = try XCTUnwrap(framebuffer(in: host)?.currentCursor)
         XCTAssertEqual(cursor.image.size, CGSize(width: 3, height: 2))
@@ -1250,9 +1261,10 @@ with socket.socket() as listener:
         initial_frame_sent = False
         resized_frame_sent = False
         sent_cursor = False
-        sent_apple_cursor = False
         sent_empty_cursor = False
         upload_data = b''
+        def write_stage(stage):
+            with open(sys.argv[1] + '.resize.stage', 'w') as out: out.write(stage)
         try:
             while True:
                 kind = read(client, 1)[0]
@@ -1289,16 +1301,17 @@ with socket.socket() as listener:
                         sent_cursor = True
                     if sys.argv[2] == 'resize' and not resized and os.path.exists(sys.argv[1] + '.resize'):
                         if not sent_updated_cursor:
-                            # XCursor: red foreground, blue background, red/blue/transparent pixels.
+                            # Deliver the XCursor in its own update so the test
+                            # can verify that this intermediate shape was active.
                             cursor_data = b'\xff\x00\x00\x00\x00\xff' + b'\x80' + b'\xc0'
                             client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 1, 0, 3, 1, -240) + cursor_data)
                             sent_updated_cursor = True
-                        # An unaligned width exercises the CALayer image path;
-                        # aligned IOSurfaces use Metal and have no layer.contents.
-                        client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 0, 0, 5, 3, -223))
-                        resized = True
-                        continue
-                    if sys.argv[2] == 'resize' and resized and not sent_apple_cursor:
+                            write_stage('red-xcursor-sent')
+                            continue
+
+                        # Send resize, pixels, and cached-cursor selection in
+                        # one update. This avoids depending on a later polling
+                        # request before the Apple cursor is delivered.
                         apple_cursor = (
                             b'\xff\xff\x00\x00' + b'\x00\xff\xff\x00' + b'\xff\x00\xff\x00'
                             + b'\x00\x00\x00\x00' * 3 + b'\xff\xff' + b'\x00' * 4
@@ -1308,7 +1321,10 @@ with socket.socket() as listener:
                             (1000, 2, 1, 3, 2, apple_cursor),
                             (1001, 0, 0, 1, 1, green_cursor),
                         ]
-                        rectangles = []
+                        rectangles = [
+                            struct.pack('!HHHHi', 0, 0, 5, 3, -223),
+                            struct.pack('!HHHHi', 0, 0, 5, 3, 0) + b'\xff\x00\x00\x00' * 15,
+                        ]
                         for cache_id, hotspot_x, hotspot_y, width, height, cursor_data in stored_cursors:
                             compressor = zlib.compressobj(9)
                             compressed = compressor.compress(cursor_data) + compressor.flush(zlib.Z_SYNC_FLUSH)
@@ -1318,7 +1334,9 @@ with socket.socket() as listener:
                             )
                         rectangles.append(struct.pack('!HHHHiII', 0, 0, 0, 0, 1104, 1000, 0))
                         client.sendall(struct.pack('!BBH', 0, 0, len(rectangles)) + b''.join(rectangles))
-                        sent_apple_cursor = True
+                        resized = True
+                        resized_frame_sent = True
+                        write_stage('resized-frame-and-apple-cursor-sent')
                         continue
                     if first_frame is None: first_frame = time.monotonic()
                     black = sys.argv[2] == 'black' and time.monotonic() - first_frame < 9
