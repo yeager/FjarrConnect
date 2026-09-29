@@ -31,6 +31,12 @@ for candidate in "$OUTPUT/libFjarrRDP.dylib" "$LOCAL_BUILD/libFjarrRDP.dylib"; d
   fi
 done
 test -f "$RUNTIME"
+# Refuse to ship temporary local FreeRDP diagnostic instrumentation. This also
+# catches stale incremental-build outputs left behind after source restoration.
+if strings "$RUNTIME" | grep 'FC_DIAG ' >/dev/null; then
+  echo "Refusing to package FreeRDP runtime containing temporary FC_DIAG instrumentation: $RUNTIME" >&2
+  exit 1
+fi
 cp "$RUNTIME" "$APP/Contents/Frameworks/libFjarrRDP.dylib"
 LICENSE_ROOT="$RUNTIME_ROOT"
 if [ "$LICENSE_ROOT" = "$LOCAL_BUILD" ]; then LICENSE_ROOT="$OUTPUT"; fi

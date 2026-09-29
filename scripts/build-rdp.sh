@@ -3,10 +3,32 @@
 set -euo pipefail
 RDP_ARCH=${1:?Usage: build-rdp.sh arm64|x86_64}
 case "$RDP_ARCH" in arm64) SSL_TARGET=darwin64-arm64-cc ;; x86_64) SSL_TARGET=darwin64-x86_64-cc ;; *) exit 2 ;; esac
-ROOT=$(pwd)
-STAGE="$ROOT/build/rdp-$RDP_ARCH"
+ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_KEY=$(printf '%s' "$ROOT" | shasum -a 256 | cut -c1-12)
+if [ -n "${FJARRCONNECT_RDP_BUILD_ROOT:-}" ]; then
+  case "$FJARRCONNECT_RDP_BUILD_ROOT" in
+    /*) BUILD_ROOT=$FJARRCONNECT_RDP_BUILD_ROOT ;;
+    *) echo "FJARRCONNECT_RDP_BUILD_ROOT must be an absolute path" >&2; exit 2 ;;
+  esac
+else
+  # Keep CMake's source/build paths out of File Provider-managed Documents.
+  BUILD_ROOT="/tmp/fjarrconnect-rdp-$ROOT_KEY"
+fi
+OWNER_FILE="$BUILD_ROOT/.fjarrconnect-root"
+if [ -e "$BUILD_ROOT" ]; then
+  if [ ! -f "$OWNER_FILE" ] || [ "$(cat "$OWNER_FILE")" != "$ROOT" ]; then
+    echo "RDP build directory is not marked for this checkout: $BUILD_ROOT" >&2
+    exit 1
+  fi
+else
+  mkdir -p "$BUILD_ROOT"
+  printf '%s\n' "$ROOT" > "$OWNER_FILE"
+fi
+STAGE="$BUILD_ROOT/build/rdp-$RDP_ARCH"
+NATIVE_SOURCE="$BUILD_ROOT/NativeRDP"
 PREFIX="$STAGE/install"
-mkdir -p "$STAGE" "$PREFIX" "$ROOT/build/rdp-output/$RDP_ARCH/Licenses"
+mkdir -p "$STAGE" "$NATIVE_SOURCE" "$PREFIX" "$ROOT/build/rdp-output/$RDP_ARCH/Licenses"
+cp -R "$ROOT/NativeRDP/." "$NATIVE_SOURCE/"
 export MACOSX_DEPLOYMENT_TARGET=14.0
 fetch() {
   local name=$1 repo=$2 revision=$3
@@ -32,7 +54,9 @@ if [ ! -f "$PREFIX/.openssl-ready" ]; then
 )
 touch "$PREFIX/.openssl-ready"
 fi
-cmake -S "$ROOT/NativeRDP" -B "$STAGE/FreeRDP-build" -DFREERDP_SOURCE_DIR="$STAGE/FreeRDP" "${COMMON[@]}" \
+(
+cd "$STAGE"
+cmake -S "$NATIVE_SOURCE" -B "$STAGE/FreeRDP-build" -DFREERDP_SOURCE_DIR="$STAGE/FreeRDP" "${COMMON[@]}" \
   -DOPENSSL_ROOT_DIR="$PREFIX" -DOPENSSL_USE_STATIC_LIBS=TRUE \
   -DCHANNEL_URBDRC=OFF -DWITH_SERVER=OFF -DWITH_SAMPLE=OFF -DBUILD_TESTING=OFF \
   -DWITH_X11=OFF -DWITH_WAYLAND=OFF -DWITH_WEBVIEW=OFF -DWITH_MANPAGES=OFF \
@@ -40,9 +64,14 @@ cmake -S "$ROOT/NativeRDP" -B "$STAGE/FreeRDP-build" -DFREERDP_SOURCE_DIR="$STAG
   -DWITH_JPEG=OFF -DWITH_GSM=OFF -DWITH_LAME=OFF -DWITH_FAAD2=OFF -DWITH_FAAC=OFF \
   -DWITH_SOXR=OFF -DWITH_AOM=OFF -DWITH_DAV1D=OFF -DWITH_YUV=OFF -DWITH_PCSC=OFF \
   -DWITH_CUPS=OFF -DWITH_FUSE=OFF -DWITH_KRB5=OFF -DWITH_PKCS11=OFF \
+  -DWITH_CLANG_FORMAT=OFF \
   -DWITH_JSON_DISABLED=ON -DWITH_AAD=OFF -DWITH_FIDO=OFF -DWITH_CCACHE=OFF \
   -DWITH_AVX2=OFF -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF
-cmake --build "$STAGE/FreeRDP-build" --target FjarrRDP --parallel 3
+# A previous local build may have been made from temporarily instrumented
+# FreeRDP sources that were later restored with older timestamps. Force CMake
+# to discard stale objects so the packaged runtime always matches pinned source.
+cmake --build "$STAGE/FreeRDP-build" --clean-first --target FjarrRDP --parallel 3
+)
 BINARY="$STAGE/FreeRDP-build/libFjarrRDP.dylib"
 test -f "$BINARY"
 lipo "$BINARY" -verify_arch "$RDP_ARCH"
