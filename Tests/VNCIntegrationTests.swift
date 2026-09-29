@@ -1022,6 +1022,37 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertEqual(burstEvents.map(\.0), Array(repeating: [true, false], count: expectedBurst.count / 2).flatMap { $0 })
         XCTAssertEqual(burstEvents.map(\.1), expectedBurst,
                        "Fast typing must preserve every character keysym and key-up in order")
+
+        // Reuse the same physical key code for repeated characters, as a real
+        // keyboard does when a password contains repeated letters or symbols.
+        // The distinctive final keysym is a server-side delivery barrier.
+        let repeatedBurst = Array(String(repeating: "aa--11zz--", count: 16))
+        for character in repeatedBurst {
+            let keyCode = UInt16(0xF000 + Int(character.asciiValue!))
+            sendControlKey(keyCode, characters: String(character))
+        }
+        sendControlKey(0xFEFE, characters: "!")
+        let repeatedBurstSent = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
+            return contents.hasSuffix("0:00000021\n")
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [repeatedBurstSent], timeout: 10), .completed)
+        let repeatedLines = try String(contentsOf: receivedKeys, encoding: .utf8).split(separator: "\n")
+        let repeatedEvents = try repeatedLines.suffix(repeatedBurst.count * 2 + 2).map { line -> (Bool, UInt32) in
+            let fields = line.split(separator: ":")
+            guard fields.count == 2, let down = Int(fields[0]), let keysym = UInt32(fields[1], radix: 16) else {
+                throw NSError(domain: "VNC keyboard fixture", code: 3)
+            }
+            return (down == 1, keysym)
+        }
+        let expectedRepeated = repeatedBurst.flatMap { character -> [UInt32] in
+            let keysym = UInt32(character.asciiValue!)
+            return [keysym, keysym]
+        } + [0x21, 0x21]
+        XCTAssertEqual(repeatedEvents.map(\.0),
+                       Array(repeating: [true, false], count: expectedRepeated.count / 2).flatMap { $0 })
+        XCTAssertEqual(repeatedEvents.map(\.1), expectedRepeated,
+                       "Rapid repeated letters, dashes, and digits must reach the server in order")
     }
 
     private func assertResize(_ session: VNCRemoteSession, trigger: URL) throws {
