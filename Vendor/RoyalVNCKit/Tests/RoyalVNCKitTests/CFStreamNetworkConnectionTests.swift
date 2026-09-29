@@ -5,6 +5,31 @@ import XCTest
 @testable import RoyalVNCKit
 
 final class CFStreamNetworkConnectionTests: XCTestCase {
+    func testTLSUpgradeCanBeEnabledOnlyOnceOnConnectedStream() async throws {
+        let peer = try DelayedCFStreamPeer()
+        defer { peer.stop() }
+
+        let connection = CFStreamNetworkConnection(settings: NetworkConnectionSettings(
+            connectionTimeout: 5, host: "127.0.0.1", port: peer.port
+        ))
+        defer { connection.cancel() }
+
+        let ready = expectation(description: "CFStream connected")
+        connection.setStatusUpdateHandler { status in
+            if case .ready = status { ready.fulfill() }
+        }
+        connection.start(queue: DispatchQueue(label: "CFStreamNetworkConnectionTests.tls"))
+        await fulfillment(of: [ready], timeout: 5)
+
+        try await connection.upgradeToTLS(serverName: "localhost")
+        do {
+            try await connection.upgradeToTLS(serverName: "localhost")
+            XCTFail("A VeNCrypt stream must not be upgraded to TLS twice")
+        } catch {
+            // Expected: TLS is negotiated once on the existing TCP stream.
+        }
+    }
+
     func testKeyboardWriteIsNotBlockedByPendingServerRead() async throws {
         let peer = try DelayedCFStreamPeer()
         defer { peer.stop() }
