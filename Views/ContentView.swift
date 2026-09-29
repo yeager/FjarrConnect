@@ -156,10 +156,10 @@ struct ContentView: View {
                 Button(action: toggleSidebar) {
                     Image(systemName: columnVisibility == .detailOnly ? "sidebar.right" : "sidebar.left")
                 }
+                .accessibilityElement(children: .ignore)
                 .help(columnVisibility == .detailOnly ? "sidebar.show" : "sidebar.hide")
                 .accessibilityLabel(Text(columnVisibility == .detailOnly ? "sidebar.show" : "sidebar.hide"))
                 .accessibilityIdentifier("sidebar.toggle")
-                .accessibilityElement(children: .ignore)
                 Button { quickFocused = true } label: { Image(systemName: "bolt") }
                     .help("action.quickConnect").keyboardShortcut("k")
                     .accessibilityLabel(Text("action.quickConnect"))
