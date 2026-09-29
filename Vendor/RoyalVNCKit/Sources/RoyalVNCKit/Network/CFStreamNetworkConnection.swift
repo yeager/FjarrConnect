@@ -90,6 +90,7 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection {
 
 	func upgradeToTLS(serverName: String) async throws {
 		let state = self.state
+		let readQueue = self.readQueue
 		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
 			readQueue.async {
 				guard let readStream = state.readStream, state.canUpgradeToTLS else {
@@ -116,6 +117,7 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection {
 
 	func read(minimumLength: Int, maximumLength: Int) async throws -> Data {
 		let state = self.state
+		let readQueue = self.readQueue
 		return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
 			readQueue.async {
 				guard let readStream = state.readStream else {
@@ -144,6 +146,7 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection {
 
 	func write(data: Data) async throws {
 		let state = self.state
+		let writeQueue = self.writeQueue
 		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
 			writeQueue.async {
 				guard let writeStream = state.writeStream else {

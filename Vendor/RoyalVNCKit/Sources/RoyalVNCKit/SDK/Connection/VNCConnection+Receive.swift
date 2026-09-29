@@ -114,9 +114,9 @@ private extension VNCConnection {
 		let serverCutText = try await VNCProtocol.ServerCutText.receive(connection: connection,
 													logger: logger)
 
-		DispatchQueue.main.async { [weak self] in
+		DispatchQueue.main.async(execute: DispatchWorkItem { [weak self] in
 			self?.handleClipboardMessage(serverCutText)
-		}
+		})
 	}
 
 	func handleBellMessage() async throws {
@@ -208,6 +208,8 @@ private extension VNCConnection {
     }
 
     func deliverFileTransferEvent(_ event: VNCFileTransferEvent) {
-        DispatchQueue.main.async { [weak self] in self?.fileTransferHandler?(event) }
+        DispatchQueue.main.async(execute: DispatchWorkItem { [weak self] in
+            self?.fileTransferHandler?(event)
+        })
     }
 }

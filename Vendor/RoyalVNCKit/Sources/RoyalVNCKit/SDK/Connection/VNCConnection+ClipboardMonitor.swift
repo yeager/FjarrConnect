@@ -142,9 +142,9 @@ public extension VNCConnection {
     /// clipboard policy, negotiated formats or size limits prevent sending it.
     func sendClipboardText(_ text: String) async -> Bool {
         await withCheckedContinuation { continuation in
-            DispatchQueue.main.async { [weak self] in
+            DispatchQueue.main.async(execute: DispatchWorkItem { [weak self] in
                 continuation.resume(returning: self?.sendClipboardOnMainQueue(text) ?? false)
-            }
+            })
         }
     }
 }

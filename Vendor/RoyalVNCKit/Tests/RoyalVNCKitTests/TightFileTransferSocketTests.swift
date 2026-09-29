@@ -222,7 +222,10 @@ private final class TightFileTransferServer: @unchecked Sendable {
     }
 
     private func readRequest(_ fd: Int32, type: UInt8) throws -> Data {
-        guard try readExactly(fd, 1) == Data([type]) else { throw fixtureError("unexpected client message") }
+        let messageType = try readExactly(fd, 1)[0]
+        guard messageType == type else {
+            throw fixtureError("unexpected client message type \(messageType); expected \(type)")
+        }
         if type == 130 {
             let header = try readExactly(fd, 3)
             let size = Int(header[1]) << 8 | Int(header[2])
