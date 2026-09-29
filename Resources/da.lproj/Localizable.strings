@@ -106,7 +106,7 @@
 
 "rdp.error.network" = "Serveren kunne ikke nås. Kontrollér, at Fjernskrivebord er aktiveret, og at adressen og porten er tilgængelige.";
 "rdp.error.connectTimeout" = "RDP-serveren svarede ikke inden for 15 sekunder. Kontrollér serveren, adressen og porten, og prøv igen.";
-"rdp.error.securityNegotiation" = "RDP-forhandlingen sluttede, før en sikkerhedsprotokol blev valgt. Kontrollér, at adressen peger på en RDP-server, og at dens sikkerhedsindstillinger passer til profilen.";
+"rdp.error.securityNegotiation" = "RDP-sikkerhedsforhandlingen kunne ikke gennemføres. Kontrollér serverens RDP-sikkerhedsindstillinger og forbindelsesprofilen.";
 "rdp.error.authentication" = "Serveren afviste login. Kontrollér brugernavn, adgangskode og tilladelse til Fjernskrivebord.";
 "rdp.error.certificate" = "Den sikre forbindelse mislykkedes. Kontrollér serverens certifikat og TLS-indstillinger.";
 "rdp.error.account" = "Kontoen kræver handling: den kan være låst, deaktiveret, udløbet eller kræve en ny adgangskode. Kontrollér adgangen til Fjernskrivebord.";

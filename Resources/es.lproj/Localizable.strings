@@ -93,7 +93,7 @@
 "vnc.unsupportedSecurity" = "El servidor ofrece un método de seguridad VNC que FjärrConnect no puede usar. FjärrConnect admite VeNCrypt X509Vnc y X509Plain con verificación del certificado, además de la autenticación VNC estándar.";
 "rdp.error.network" = "No se pudo acceder al servidor. Comprueba que el escritorio remoto está activado y que la dirección y el puerto son accesibles.";
 "rdp.error.connectTimeout" = "El servidor RDP no respondió en 15 segundos. Comprueba el servidor, la dirección y el puerto e inténtalo de nuevo.";
-"rdp.error.securityNegotiation" = "La negociación RDP terminó antes de seleccionar un protocolo de seguridad. Comprueba que la dirección corresponde a un servidor RDP y que sus ajustes de seguridad son compatibles con el perfil.";
+"rdp.error.securityNegotiation" = "No se pudo completar la negociación de seguridad RDP. Comprueba los ajustes de seguridad RDP del servidor y el perfil de conexión.";
 "rdp.error.authentication" = "El servidor rechazó la identificación. Comprueba el nombre de usuario, la contraseña y el permiso para usar el escritorio remoto.";
 "rdp.error.certificate" = "Falló la conexión segura. Comprueba el certificado del servidor y los ajustes de TLS.";
 "rdp.error.account" = "Es necesario revisar la cuenta: puede estar bloqueada, desactivada, caducada o requerir un cambio de contraseña. Comprueba su acceso al escritorio remoto.";

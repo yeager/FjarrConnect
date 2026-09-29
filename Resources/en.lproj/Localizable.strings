@@ -106,7 +106,7 @@
 
 "rdp.error.network" = "The server could not be reached. Check that Remote Desktop is enabled and that this address and port are reachable.";
 "rdp.error.connectTimeout" = "The RDP server did not respond within 15 seconds. Check the server, address, and port, then try again.";
-"rdp.error.securityNegotiation" = "RDP negotiation ended before a security protocol was selected. Check that this address is an RDP server and that its security settings are compatible with the profile.";
+"rdp.error.securityNegotiation" = "RDP security negotiation could not be completed. Check the server's RDP security settings and the connection profile.";
 "rdp.error.authentication" = "The server rejected the sign-in. Check the username, password and permission to use Remote Desktop.";
 "rdp.error.certificate" = "The secure connection failed. Check the server certificate and TLS settings.";
 "rdp.error.account" = "The account needs attention: it may be locked, disabled, expired or require a password change. Check its Remote Desktop access.";

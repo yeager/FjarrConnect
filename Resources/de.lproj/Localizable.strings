@@ -93,7 +93,7 @@
 "vnc.unsupportedSecurity" = "Der Server bietet eine VNC-Sicherheitsmethode an, die FjärrConnect nicht verwenden kann. FjärrConnect unterstützt zertifikatsgeprüftes VeNCrypt X509Vnc und X509Plain sowie die Standard-VNC-Authentifizierung.";
 "rdp.error.network" = "Der Server ist nicht erreichbar. Prüfe, ob Remotedesktop aktiviert ist und Adresse sowie Port erreichbar sind.";
 "rdp.error.connectTimeout" = "Der RDP-Server hat innerhalb von 15 Sekunden nicht geantwortet. Prüfe Server, Adresse und Port und versuche es erneut.";
-"rdp.error.securityNegotiation" = "Die RDP-Aushandlung endete, bevor ein Sicherheitsprotokoll ausgewählt wurde. Prüfe, ob die Adresse zu einem RDP-Server führt und dessen Sicherheitseinstellungen zum Profil passen.";
+"rdp.error.securityNegotiation" = "Die RDP-Sicherheitsaushandlung konnte nicht abgeschlossen werden. Prüfe die RDP-Sicherheitseinstellungen des Servers und das Verbindungsprofil.";
 "rdp.error.authentication" = "Der Server hat die Anmeldung abgelehnt. Prüfe Benutzername, Passwort und die Berechtigung für Remotedesktop.";
 "rdp.error.certificate" = "Die sichere Verbindung ist fehlgeschlagen. Prüfe das Serverzertifikat und die TLS-Einstellungen.";
 "rdp.error.account" = "Der Account muss überprüft werden: Er ist möglicherweise gesperrt, deaktiviert oder abgelaufen oder benötigt ein neues Passwort. Prüfe seinen Remotedesktop-Zugriff.";
