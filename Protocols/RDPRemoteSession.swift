@@ -46,12 +46,25 @@ final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource, S
         return String(cString: value)
     }
     var requestedSecurityProtocols: UInt32? {
-        guard let pointer else { return nil }
+        guard let pointer, securityProtocolWasSelected else { return nil }
         return runtime?.requestedProtocols(pointer)
     }
     var selectedSecurityProtocol: UInt32? {
-        guard let pointer else { return nil }
+        guard let pointer, securityProtocolWasSelected else { return nil }
         return runtime?.selectedProtocol(pointer)
+    }
+
+    /// FreeRDP publishes the protocol fields after the server's negotiation
+    /// response, before CredSSP/NLA finishes. Zero is ambiguous until a later
+    /// phase because it also represents the initial value and legacy RDP.
+    private var securityProtocolWasSelected: Bool {
+        guard let pointer, let connectionPhase else { return false }
+        let requested = runtime?.requestedProtocols(pointer) ?? 0
+        let selected = runtime?.selectedProtocol(pointer) ?? 0
+        if requested != 0 || selected != 0 {
+            return true
+        }
+        return connectionPhase != "CONNECTION_STATE_INITIAL" && connectionPhase != "CONNECTION_STATE_NEGO"
     }
 
     static var isAvailable: Bool { RDPRuntime.shared != nil }

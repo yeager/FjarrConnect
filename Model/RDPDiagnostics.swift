@@ -87,9 +87,13 @@ enum DiagnosticReport {
             "CONNECTION_STATE_CAPABILITIES_EXCHANGE_MONITOR_LAYOUT", "CONNECTION_STATE_CAPABILITIES_EXCHANGE_CONFIRM_ACTIVE",
             "CONNECTION_STATE_FINALIZATION", "CONNECTION_STATE_ACTIVE"]
         let safePhase = connectionPhase.flatMap { knownPhases.contains($0) ? $0 : nil } ?? "unavailable"
-        let safeRequestedProtocols = requestedSecurityProtocols.map { String(format: "0x%08X", $0) } ?? "unavailable"
+        let hasNegotiatedProtocol = (requestedSecurityProtocols ?? 0) != 0 || (selectedSecurityProtocol ?? 0) != 0
+        let negotiationInProgress = (safePhase == "CONNECTION_STATE_INITIAL" || safePhase == "CONNECTION_STATE_NEGO") &&
+            !hasNegotiatedProtocol
+        let safeRequestedProtocols = negotiationInProgress ? "unavailable" :
+            (requestedSecurityProtocols.map { String(format: "0x%08X", $0) } ?? "unavailable")
         let safeSelectedProtocol: String
-        switch selectedSecurityProtocol {
+        switch negotiationInProgress ? nil : selectedSecurityProtocol {
         case .some(0): safeSelectedProtocol = "RDP"
         case .some(1): safeSelectedProtocol = "TLS"
         case .some(2): safeSelectedProtocol = "NLA"

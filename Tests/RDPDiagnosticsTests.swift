@@ -86,6 +86,26 @@ final class RDPDiagnosticsTests: XCTestCase {
         XCTAssertFalse(report.contains(profile.host))
     }
 
+    func testSecurityProtocolsAreUnavailableBeforeNegotiationCompletes() {
+        let profile = ConnectionProfile(name: "Remote", transport: .rdp, host: "192.0.2.4")
+        let report = DiagnosticReport.text(profile: profile, status: .disconnected(reason: "failure"),
+                                           connectionPhase: "CONNECTION_STATE_NEGO",
+                                           requestedSecurityProtocols: 0,
+                                           selectedSecurityProtocol: 0)
+        XCTAssertTrue(report.contains("rdp-requested-security-protocols: unavailable"))
+        XCTAssertTrue(report.contains("rdp-selected-security-protocol: unavailable"))
+    }
+
+    func testNegotiatedProtocolRemainsVisibleDuringNLAFailure() {
+        let profile = ConnectionProfile(name: "Remote", transport: .rdp, host: "192.0.2.4")
+        let report = DiagnosticReport.text(profile: profile, status: .disconnected(reason: "failure"),
+                                           connectionPhase: "CONNECTION_STATE_NEGO",
+                                           requestedSecurityProtocols: 0x0B,
+                                           selectedSecurityProtocol: 0x08)
+        XCTAssertTrue(report.contains("rdp-requested-security-protocols: 0x0000000B"))
+        XCTAssertTrue(report.contains("rdp-selected-security-protocol: NLA-Extended"))
+    }
+
     func testVNCReportIncludesOnlyNegotiatedSecuritySummary() {
         let profile = ConnectionProfile(name: "Remote", transport: .vnc,
                                         host: "private.example", username: "private-user")
