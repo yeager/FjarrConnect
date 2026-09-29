@@ -1299,7 +1299,7 @@ with socket.socket() as listener:
                     if sys.argv[2] == 'resize' and not sent_cursor:
                         client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 1, 0, 2, 2, -239) + b'\xff\xff\xff\x00' * 4 + b'\xc0\xc0')
                         sent_cursor = True
-                    if sys.argv[2] == 'resize' and not resized and os.path.exists(sys.argv[1] + '.resize'):
+                    if sys.argv[2] == 'resize' and os.path.exists(sys.argv[1] + '.resize'):
                         if not sent_updated_cursor:
                             # Deliver the XCursor in its own update so the test
                             # can verify that this intermediate shape was active.
@@ -1309,9 +1309,18 @@ with socket.socket() as listener:
                             write_stage('red-xcursor-sent')
                             continue
 
-                        # Send resize, pixels, and cached-cursor selection in
-                        # one update. This avoids depending on a later polling
-                        # request before the Apple cursor is delivered.
+                        if not resized:
+                            # RFC 6143 requires DesktopSize to be the last
+                            # rectangle in its update. Send it by itself, then
+                            # deliver pixels and cursor data in the next one.
+                            client.sendall(struct.pack('!BBHHHHHi', 0, 0, 1, 0, 0, 5, 3, -223))
+                            resized = True
+                            write_stage('desktop-size-sent')
+                            continue
+
+                        # The client requests another update after applying
+                        # DesktopSize. Populate the new framebuffer and then
+                        # exercise Apple's cached cursor format in that update.
                         apple_cursor = (
                             b'\xff\xff\x00\x00' + b'\x00\xff\xff\x00' + b'\xff\x00\xff\x00'
                             + b'\x00\x00\x00\x00' * 3 + b'\xff\xff' + b'\x00' * 4
@@ -1322,7 +1331,6 @@ with socket.socket() as listener:
                             (1001, 0, 0, 1, 1, green_cursor),
                         ]
                         rectangles = [
-                            struct.pack('!HHHHi', 0, 0, 5, 3, -223),
                             struct.pack('!HHHHi', 0, 0, 5, 3, 0) + b'\xff\x00\x00\x00' * 15,
                         ]
                         for cache_id, hotspot_x, hotspot_y, width, height, cursor_data in stored_cursors:
@@ -1334,7 +1342,6 @@ with socket.socket() as listener:
                             )
                         rectangles.append(struct.pack('!HHHHiII', 0, 0, 0, 0, 1104, 1000, 0))
                         client.sendall(struct.pack('!BBH', 0, 0, len(rectangles)) + b''.join(rectangles))
-                        resized = True
                         resized_frame_sent = True
                         write_stage('resized-frame-and-apple-cursor-sent')
                         continue
