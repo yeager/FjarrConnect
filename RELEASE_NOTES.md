@@ -18,6 +18,8 @@ Unreleased — planned for FjärrConnect 0.2.31
   do not send cursor-shape updates; the local arrow stays visible until a server shape arrives.
 - Release held RDP keys and mouse buttons when the app or its window loses focus, even when
   clipboard synchronization is disabled.
+- Bound queued RDP key repeats during a delayed input loop and reserve queue space for
+  key-up and mouse-up events, preventing a lost release from leaving remote input stuck.
 - Release held VNC keys when the app or its window loses focus, including after autorepeat,
   so a missed key-up does not leave a key repeating on the remote computer.
 

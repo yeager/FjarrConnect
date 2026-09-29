@@ -305,6 +305,16 @@ int main(int argc, const char **argv) {
                                                modifierFlags:0 timestamp:0 windowNumber:window.windowNumber
                                                     context:nil eventNumber:1 clickCount:1 pressure:1];
             [view keyDown:dashDown];
+            for (NSUInteger index = 0; index < 32; index++) {
+                NSEvent *repeatedDashDown = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSZeroPoint
+                                                       modifierFlags:0 timestamp:0 windowNumber:window.windowNumber
+                                                             context:nil characters:@"-" charactersIgnoringModifiers:@"-"
+                                                            isARepeat:YES keyCode:27];
+                [view keyDown:repeatedDashDown];
+            }
+            BOOL repeatedKeyDownsCoalesced = [[view valueForKey:@"_input"] count] == 2 &&
+                [[view valueForKey:@"_pressedKeys"] count] == 1 &&
+                [[view valueForKey:@"_queuedKeyRepeats"] containsObject:@27];
             [view mouseDown:mouseDown];
             BOOL keyHeld = [[view valueForKey:@"_pressedKeys"] count] == 1;
             BOOL mouseHeld = [[view valueForKey:@"_mouseButtons"] count] == 1;
@@ -324,11 +334,24 @@ int main(int argc, const char **argv) {
             BOOL applicationRelease = [[view valueForKey:@"_pressedKeys"] count] == 0 &&
                 [[view valueForKey:@"_mouseButtons"] count] == 0 &&
                 [[view valueForKey:@"_input"] count] == inputCount + 2;
-            fprintf(stderr, "RDP focus-loss release clipboard-enabled=%d held=%d/%d window=%d application=%d\n",
+            NSMutableArray *inputQueue = [view valueForKey:@"_input"];
+            [inputQueue removeAllObjects];
+            [[view valueForKey:@"_queuedKeyRepeats"] removeAllObjects];
+            for (NSUInteger index = 0; index < 4095; index++) [inputQueue addObject:NSNull.null];
+            [view keyDown:dashDown];
+            NSEvent *dashUp = [NSEvent keyEventWithType:NSEventTypeKeyUp location:NSZeroPoint
+                                         modifierFlags:0 timestamp:0 windowNumber:window.windowNumber
+                                               context:nil characters:@"-" charactersIgnoringModifiers:@"-"
+                                              isARepeat:NO keyCode:27];
+            NSUInteger fullQueueKeyDownCount = inputQueue.count;
+            [view keyUp:dashUp];
+            BOOL releaseSurvivesFullQueue = fullQueueKeyDownCount == 4096 && inputQueue.count == 4097 &&
+                [[view valueForKey:@"_pressedKeys"] count] == 0;
+            fprintf(stderr, "RDP input safety clipboard-enabled=%d held=%d/%d repeats-coalesced=%d window=%d application=%d release-survives-full-queue=%d\n",
                     [[view valueForKey:@"clipboardAllowed"] boolValue], keyHeld, mouseHeld,
-                    windowRelease, applicationRelease);
+                    repeatedKeyDownsCoalesced, windowRelease, applicationRelease, releaseSurvivesFullQueue);
             [window orderOut:nil];
-            return keyHeld && mouseHeld && windowRelease && applicationRelease ? 0 : 28;
+            return keyHeld && mouseHeld && repeatedKeyDownsCoalesced && windowRelease && applicationRelease && releaseSurvivesFullQueue ? 0 : 28;
         }
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_KEYBOARD_INPUT"] isEqualToString:@"1"]) {
             const uint16_t atAndSwedish[] = { CFSwapInt16HostToLittle(0x0040), CFSwapInt16HostToLittle(0x00E5), CFSwapInt16HostToLittle(0x00C5) };

@@ -285,6 +285,8 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
 - (void)setClipboardActive:(BOOL)active pasteboard:(NSPasteboard *)pasteboard;
 - (void)captureClipboardFromPasteboard:(NSPasteboard *)pasteboard;
 - (void)enqueue:(FCInput)input;
+- (void)enqueue:(FCInput)input release:(BOOL)isRelease;
+- (void)enqueueKeyRepeat:(unsigned short)key code:(DWORD)code;
 - (void)publishFrame:(rdpGdi *)gdi;
 - (NSData *)DIBFromPasteboard:(NSPasteboard *)pasteboard;
 - (NSArray<NSURL *> *)clipboardFileURLsFromPasteboard:(NSPasteboard *)pasteboard;
@@ -314,6 +316,7 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
     FCContext *_context;
     NSLock *_lock;
     NSMutableArray<FCInput> *_input;
+    NSMutableSet<NSNumber *> *_queuedKeyRepeats;
     NSString *_arguments;
     NSImage *_frame;
     NSImage *_pendingFrame;
@@ -341,6 +344,7 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
         _translations = [translations copy];
         _lock = [NSLock new];
         _input = [NSMutableArray new];
+        _queuedKeyRepeats = [NSMutableSet new];
         _pressedKeys = [NSMutableSet new];
         _mouseButtons = [NSMutableSet new];
         _markedText = [NSMutableAttributedString new];
@@ -848,10 +852,35 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
     _clipboardChange = pasteboard.changeCount;
 }
 - (void)enqueue:(FCInput)input {
+    [self enqueue:input release:NO];
+}
+- (void)enqueue:(FCInput)input release:(BOOL)isRelease {
     if (self.cancelled || self.connectionStatus != 2) return;
     [_lock lock];
-    // Inputs are local events. A bounded queue also protects a stalled connection.
-    if (_input.count < 4096) [_input addObject:[input copy]];
+    // Reserve room for key-up and mouse-up events so queue pressure cannot
+    // leave a remote key or button held after the user releases it.
+    if (_input.count < 4096 || (isRelease && _input.count < 4608))
+        [_input addObject:[input copy]];
+    [_lock unlock];
+}
+- (void)enqueueKeyRepeat:(unsigned short)key code:(DWORD)code {
+    if (self.cancelled || self.connectionStatus != 2) return;
+    NSNumber *keyNumber = @(key);
+    [_lock lock];
+    // Preserve normal autorepeat while the worker keeps up, but coalesce a
+    // held key to one pending repeat when the network/input loop is delayed.
+    if (_input.count < 4096 && ![_queuedKeyRepeats containsObject:keyNumber]) {
+        [_queuedKeyRepeats addObject:keyNumber];
+        __weak FCRDPView *weakSelf = self;
+        [_input addObject:[^(FCContext *ctx) {
+            freerdp_input_send_keyboard_event_ex(ctx->common.context.input, TRUE, TRUE, code);
+            FCRDPView *view = weakSelf;
+            if (!view) return;
+            [view->_lock lock];
+            [view->_queuedKeyRepeats removeObject:keyNumber];
+            [view->_lock unlock];
+        } copy]];
+    }
     [_lock unlock];
 }
 - (void)runConnection {
@@ -919,7 +948,7 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
     self.selectedProtocol = freerdp_settings_get_uint32(base->settings, FreeRDP_SelectedProtocol);
     freerdp_disconnect(instance);
     [self discardRemoteClipboardFileTransfer];
-    [_lock lock]; _context = NULL; [_input removeAllObjects]; [_lock unlock];
+    [_lock lock]; _context = NULL; [_input removeAllObjects]; [_queuedKeyRepeats removeAllObjects]; [_lock unlock];
     if (ctx->fileClipboard) { ClipboardDestroy(ctx->fileClipboard); ctx->fileClipboard = NULL; }
     freerdp_client_context_free(base);
     self.clipboardText = nil; self.clipboardImage = nil;
@@ -952,13 +981,14 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
 - (void)resetCursorRects { [self addCursorRect:self.bounds cursor:self.remoteCursor ?: NSCursor.arrowCursor]; }
 - (void)mouseEntered:(NSEvent *)event { [self.remoteCursor set]; }
 - (void)mouseExited:(NSEvent *)event { [NSCursor.arrowCursor set]; }
-- (void)mouse:(NSEvent *)event flags:(UINT16)flags {
+- (void)mouse:(NSEvent *)event flags:(UINT16)flags release:(BOOL)isRelease {
     NSRect rect = [self imageRect]; NSPoint point = [self convertPoint:event.locationInWindow fromView:nil];
     if (rect.size.width <= 0 || rect.size.height <= 0 || !_frame) return;
     UINT16 x = (UINT16)MAX(0, MIN(_frame.size.width - 1, (point.x - rect.origin.x) * _frame.size.width / rect.size.width));
     UINT16 y = (UINT16)MAX(0, MIN(_frame.size.height - 1, (point.y - rect.origin.y) * _frame.size.height / rect.size.height));
-    [self enqueue:^(FCContext *ctx) { freerdp_input_send_mouse_event(ctx->common.context.input, flags, x, y); }];
+    [self enqueue:^(FCContext *ctx) { freerdp_input_send_mouse_event(ctx->common.context.input, flags, x, y); } release:isRelease];
 }
+- (void)mouse:(NSEvent *)event flags:(UINT16)flags { [self mouse:event flags:flags release:NO]; }
 - (void)mouseMoved:(NSEvent *)event { [self mouse:event flags:PTR_FLAGS_MOVE]; }
 - (void)mouseDragged:(NSEvent *)event { [self mouseMoved:event]; }
 - (void)rightMouseDragged:(NSEvent *)event { [self mouseMoved:event]; }
@@ -966,7 +996,7 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
 - (void)button:(NSEvent *)event down:(BOOL)down button:(UINT16)button {
     [self.window makeFirstResponder:self];
     if (down) [_mouseButtons addObject:@(button)]; else [_mouseButtons removeObject:@(button)];
-    [self mouse:event flags:button | (down ? PTR_FLAGS_DOWN : 0)];
+    [self mouse:event flags:button | (down ? PTR_FLAGS_DOWN : 0) release:!down];
 }
 - (void)mouseDown:(NSEvent *)event { [self button:event down:YES button:PTR_FLAGS_BUTTON1]; }
 - (void)mouseUp:(NSEvent *)event { [self button:event down:NO button:PTR_FLAGS_BUTTON1]; }
@@ -989,15 +1019,29 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
     return GetVirtualScanCodeFromVirtualKeyCode(vk, WINPR_KBD_TYPE_IBM_ENHANCED);
 }
 - (void)sendKey:(unsigned short)key down:(BOOL)down {
+    [self sendKey:key down:down repeat:NO];
+}
+- (void)sendKey:(unsigned short)key down:(BOOL)down repeat:(BOOL)isRepeat {
     DWORD code = [self scancode:key]; if (!code) return;
-    if (down) [_pressedKeys addObject:@(key)]; else [_pressedKeys removeObject:@(key)];
-    [self enqueue:^(FCContext *ctx) { freerdp_input_send_keyboard_event_ex(ctx->common.context.input, down, FALSE, code); }];
+    NSNumber *keyNumber = @(key);
+    if (down) {
+        if ([_pressedKeys containsObject:keyNumber]) {
+            if (isRepeat) [self enqueueKeyRepeat:key code:code];
+            return;
+        }
+        if (isRepeat) return;
+        [_pressedKeys addObject:keyNumber];
+    } else {
+        if (![_pressedKeys containsObject:keyNumber]) return;
+        [_pressedKeys removeObject:keyNumber];
+    }
+    [self enqueue:^(FCContext *ctx) { freerdp_input_send_keyboard_event_ex(ctx->common.context.input, down, FALSE, code); } release:!down];
 }
 - (void)keyDown:(NSEvent *)event {
-    if (!self.unicodeSupported || (event.modifierFlags & (NSEventModifierFlagControl | NSEventModifierFlagCommand))) [self sendKey:event.keyCode down:YES];
+    if (!self.unicodeSupported || (event.modifierFlags & (NSEventModifierFlagControl | NSEventModifierFlagCommand))) [self sendKey:event.keyCode down:YES repeat:event.isARepeat];
     else [self interpretKeyEvents:@[event]];
 }
-- (void)keyUp:(NSEvent *)event { if ([_pressedKeys containsObject:@(event.keyCode)]) [self sendKey:event.keyCode down:NO]; }
+- (void)keyUp:(NSEvent *)event { if ([_pressedKeys containsObject:@(event.keyCode)]) [self sendKey:event.keyCode down:NO repeat:NO]; }
 - (void)sendControlShortcut:(unsigned short)key {
     [self releaseInput];
     DWORD code = [self scancode:key], control = [self scancode:59];
@@ -1050,7 +1094,7 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
 }
 - (void)releaseInput {
     for (NSNumber *key in [_pressedKeys copy]) [self sendKey:key.unsignedShortValue down:NO];
-    for (NSNumber *button in _mouseButtons) [self enqueue:^(FCContext *ctx) { freerdp_input_send_mouse_event(ctx->common.context.input, button.unsignedShortValue, 0, 0); }];
+    for (NSNumber *button in _mouseButtons) [self enqueue:^(FCContext *ctx) { freerdp_input_send_mouse_event(ctx->common.context.input, button.unsignedShortValue, 0, 0); } release:YES];
     [_mouseButtons removeAllObjects];
 }
 - (BOOL)resignFirstResponder { [self releaseInput]; return [super resignFirstResponder]; }
