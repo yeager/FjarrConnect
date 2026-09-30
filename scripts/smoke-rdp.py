@@ -35,15 +35,21 @@ assert not missing_crypto_symbols, (
     f'{architecture} FreeRDP runtime is missing statically linked OpenSSL symbols: '
     f'{", ".join(missing_crypto_symbols)}')
 print(f'RDP {architecture}: static OpenSSL TLS, AES-128/256-GCM, and SHA-256/384 symbols are linked.')
-artifact_headers = ROOT / f'build/rdp-artifacts/rdp-{architecture}/SmokeHeaders'
-if (artifact_headers / 'freerdp/include/freerdp/error.h').is_file():
-    freerdp = artifact_headers / 'freerdp'
-    freerdp_build = artifact_headers / 'build'
-else:
+header_candidates = [
+    library.parent / 'SmokeHeaders',
+    ROOT / f'build/rdp-artifacts/rdp-{architecture}/SmokeHeaders',
+    ROOT / f'build/rdp-output/{architecture}/SmokeHeaders'
+]
+smoke_headers = next((candidate for candidate in header_candidates
+                      if (candidate / 'freerdp/include/freerdp/error.h').is_file()), None)
+if smoke_headers is None:
     # Local runtime builds keep their source checkout and generated headers
-    # under build/rdp-ARCH; release jobs consume the header subset above.
+    # under the architecture-specific build directory.
     freerdp = ROOT / f'build/rdp-{architecture}/FreeRDP'
     freerdp_build = ROOT / f'build/rdp-{architecture}/FreeRDP-build'
+else:
+    freerdp = smoke_headers / 'freerdp'
+    freerdp_build = smoke_headers / 'build'
 assert (freerdp / 'include/freerdp/error.h').is_file(), f'Pinned FreeRDP headers not found: {freerdp}'
 assert (freerdp_build / 'freerdp/winpr/include/winpr/config.h').is_file(), (
     f'Generated FreeRDP headers not found: {freerdp_build}')
@@ -76,9 +82,9 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
     directory = Path(temporary)
     probe = directory / 'FjarrRDPProbe'
     subprocess.run(['xcrun', 'clang', '-arch', architecture, '-fobjc-arc', '-framework', 'AppKit',
-                    '-I', str(ROOT / 'NativeRDP'), '-I', str(freerdp / 'include'),
-                    '-I', str(freerdp / 'winpr/include'), '-I', str(freerdp_build / 'freerdp/include'),
-                    '-I', str(freerdp_build / 'freerdp/winpr/include'), str(ROOT / 'NativeRDP/Tests/Probe.m'),
+                    '-I', str(ROOT / 'NativeRDP'), '-isystem', str(freerdp / 'include'),
+                    '-isystem', str(freerdp / 'winpr/include'), '-isystem', str(freerdp_build / 'freerdp/include'),
+                    '-isystem', str(freerdp_build / 'freerdp/winpr/include'), str(ROOT / 'NativeRDP/Tests/Probe.m'),
                     str(library), '-Wl,-rpath,' + str(library.parent), '-o', str(probe)], check=True)
     empty_translations = directory / 'empty-translations.json'
     empty_translations.write_text('{}')
