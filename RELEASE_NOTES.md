@@ -2,7 +2,7 @@ FjärrConnect 0.2.33
 
 - Explain when the embedded RDP component is missing, built for the wrong Mac
   architecture, incompatible with the app, or rejected by macOS.
-- Forward Swedish Command+2 as `@` in a focused VNC session, including when
+- Forward Swedish right Option+2 as `@` in a focused VNC session, including when
   AppKit routes the key equivalent through the window instead of the framebuffer.
 - Add regression coverage for rapid VNC input, repeated characters, and key release
   after focus changes.
@@ -28,8 +28,8 @@ approval in System Settings → Privacy & Security on first launch.
 
 FjärrConnect 0.2.31
 
-- Forward Command+2 as `@` in a focused VNC session before macOS handles it as
-  an application keyboard shortcut.
+- Forward Command+2 in a focused VNC session before macOS handles it as an
+  application keyboard shortcut.
 - Show the FreeRDP connection phase after an RDP failure and include only recognized
   phase names in an optional diagnostic report. Distinguish failed RDP security negotiation
   from an unreachable host. Credentials and backend logs remain excluded.

@@ -31,7 +31,8 @@ requires a Windows server that advertises file clipboard support. Local protocol
 cover both directions; the live RDP test host currently resets the connection during
 security negotiation, so an authenticated desktop session has not been verified.
 
-Version 0.2.31 fixed Swedish Command+2 input (`@`) in VNC. Version 0.2.30 added the
+Version 0.2.31 changed Command+2 handling in focused VNC sessions. Version 0.2.33
+adds Swedish right Option+2 input (`@`) to VNC. Version 0.2.30 added the
 optional stable-release check, fixes Backspace, Return and Tab input to VNC, supports
 VNC Tight file uploads when offered by the server, and adds RDP security selection and
 a Ctrl+Alt+End action. It also improves RemoteApp tab labels, supports
@@ -152,9 +153,9 @@ Choose an RDP keyboard layout in **Settings → Simple → Keyboard**. Automatic
 maps the active macOS input source to U.S. or British English, Swedish, German,
 French, Danish, Norwegian Bokmål, Finnish, Spanish, or Italian when recognized;
 the selection is sent to Windows when a new RDP session starts. You can select one
-of those layouts manually. VNC does not negotiate a
-keyboard layout and uses the active macOS input source. Combinations such as
-Option+2 still depend on the layout configured on the remote Mac.
+of those layouts manually. VNC does not negotiate a keyboard layout; printable
+characters use the character resolved by the active macOS input source. On a Swedish
+Mac layout, type `@` with right Option+2.
 In an active RDP session, use the keyboard button in the session toolbar to send
 Ctrl+Alt+End to Windows, including its sign-in screen.
 
