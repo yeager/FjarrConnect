@@ -25,5 +25,5 @@ cp "$RUNTIME" "$APP/Contents/Frameworks/libFjarrRDP.dylib"
 # macOS rejects newly copied executable code in an ad-hoc signed debug app on
 # Apple Silicon. Sign after the copy, before the runtime smoke test.
 codesign --force --sign - "$APP/Contents/Frameworks/libFjarrRDP.dylib"
-python3 scripts/smoke-rdp.py "$APP/Contents/Frameworks/libFjarrRDP.dylib"
+python3 scripts/smoke-rdp.py "$APP/Contents/Frameworks/libFjarrRDP.dylib" "${RUNTIME%/libFjarrRDP.dylib}/SmokeHeaders"
 echo "$APP"

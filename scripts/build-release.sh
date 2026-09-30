@@ -56,7 +56,7 @@ while IFS= read -r binary; do
 done < <(find "$APP/Contents" -type f)
 # This is NOT Developer ID signing or notarization.
 python3 scripts/smoke-app.py "$APP"
-python3 scripts/smoke-rdp.py "$APP/Contents/Frameworks/libFjarrRDP.dylib"
+python3 scripts/smoke-rdp.py "$APP/Contents/Frameworks/libFjarrRDP.dylib" "$RUNTIME_ROOT/SmokeHeaders"
 VERSION=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$APP/Contents/Info.plist")
 ARCHIVE="FjarrConnect-${VERSION}-macOS-${ARCH}.zip"
 ditto -c -k --keepParent "$APP" "$DIST_DIR/$ARCHIVE"

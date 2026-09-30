@@ -35,12 +35,14 @@ assert not missing_crypto_symbols, (
     f'{architecture} FreeRDP runtime is missing statically linked OpenSSL symbols: '
     f'{", ".join(missing_crypto_symbols)}')
 print(f'RDP {architecture}: static OpenSSL TLS, AES-128/256-GCM, and SHA-256/384 symbols are linked.')
+explicit_headers = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else None
 header_candidates = [
+    explicit_headers,
     library.parent / 'SmokeHeaders',
     ROOT / f'build/rdp-artifacts/rdp-{architecture}/SmokeHeaders',
     ROOT / f'build/rdp-output/{architecture}/SmokeHeaders'
 ]
-smoke_headers = next((candidate for candidate in header_candidates
+smoke_headers = next((candidate for candidate in header_candidates if candidate is not None
                       if (candidate / 'freerdp/include/freerdp/error.h').is_file()), None)
 if smoke_headers is None:
     # Local runtime builds keep their source checkout and generated headers
@@ -61,7 +63,7 @@ version = re.search(r'^#define FREERDP_VERSION "([^"]+)"', version_header.read_t
 assert version and version.group(1) == '3.32.0', (
     f'{architecture} runtime was built from unexpected FreeRDP version: '
     f'{version.group(1) if version else "unknown"}')
-openssl_header = freerdp_build / 'openssl/include/openssl/opensslv.h'
+openssl_header = freerdp_build / 'openssl/include/opensslv.h'
 if openssl_header.is_file():
     openssl_version = re.search(r'^#\s*define OPENSSL_VERSION_TEXT "OpenSSL ([^" ]+)',
                                 openssl_header.read_text(), re.MULTILINE)
