@@ -2,7 +2,7 @@ import XCTest
 import Combine
 @testable import FjarrConnect
 
-/// Opt-in authenticated test against the developer's saved Windows profile.
+/// Opt-in authenticated test against a saved RDP profile.
 /// Credentials stay in Keychain and are only held in memory by the session.
 final class RDPLiveIntegrationTests: XCTestCase {
     @MainActor
@@ -16,7 +16,7 @@ final class RDPLiveIntegrationTests: XCTestCase {
         }
 
         let store = ProfileStore()
-        guard var profile = store.profiles.first(where: {
+        guard let profile = store.profiles.first(where: {
             $0.host == host && $0.transport == .rdp
         }) else {
             throw XCTSkip("No saved RDP profile exists for the selected host")
@@ -34,10 +34,6 @@ final class RDPLiveIntegrationTests: XCTestCase {
             throw XCTSkip("The saved RDP profile has no Keychain credential")
         }
 
-        var options = profile.rdp ?? RDPOptions()
-        options.clipboardFiles = true
-        profile.rdp = options
-        profile.clipboardEnabled = true
         let runtime = try XCTUnwrap(RDPRuntime(path: runtimePath))
         let session = RDPRemoteSession(profile: profile, password: password, runtime: runtime)
         let connected = expectation(description: "Live RDP session established")
