@@ -4,7 +4,7 @@ import FoundationEssentials
 import Foundation
 #endif
 
-@_implementationOnly import RoyalVNCKitC
+import RoyalVNCKitC
 
 final class VNCFrameEncodings_C {
     private(set) var frameEncodings = [VNCFrameEncodingType]()

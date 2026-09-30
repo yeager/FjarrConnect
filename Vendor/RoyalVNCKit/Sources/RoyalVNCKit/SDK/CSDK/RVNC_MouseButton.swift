@@ -4,7 +4,7 @@ import FoundationEssentials
 import Foundation
 #endif
 
-@_implementationOnly import RoyalVNCKitC
+import RoyalVNCKitC
 
 extension RVNC_MOUSEBUTTON {
     var swiftVNCMouseButton: VNCMouseButton {
