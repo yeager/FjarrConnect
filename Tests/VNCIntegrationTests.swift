@@ -1198,7 +1198,13 @@ final class VNCIntegrationTests: XCTestCase {
             return view.subviews.lazy.compactMap { framebuffer(in: $0) }.first
         }
         let originalReady = await waitForUI(timeout: 5) {
-            framebuffer(in: host)?.framebufferSize == CGSize(width: 2, height: 2)
+            guard let framebuffer = framebuffer(in: host),
+                  framebuffer.framebufferSize == CGSize(width: 2, height: 2),
+                  framebuffer.remoteCursor?.size.width == 2,
+                  framebuffer.remoteCursor?.size.height == 2 else {
+                return false
+            }
+            return framebuffer.currentCursor.image.size == CGSize(width: 2, height: 2)
         }
         XCTAssertTrue(originalReady)
         let originalView = try XCTUnwrap(framebuffer(in: host))
@@ -1241,9 +1247,10 @@ final class VNCIntegrationTests: XCTestCase {
             else { return false }
             return pixel.greenComponent > 0.95 && pixel.blueComponent > 0.95
         }
-        XCTAssertTrue(cursorArrived)
-        let cursorSnapshot = framebuffer(in: host)?.remoteCursor
         let fixtureStage = (try? String(contentsOf: URL(fileURLWithPath: trigger.path + ".stage"), encoding: .utf8)) ?? "unavailable"
+        let cursorSnapshot = framebuffer(in: host)?.remoteCursor
+        XCTAssertTrue(cursorArrived,
+                      "Apple cursor was not selected; fixture-stage=\(fixtureStage), received-size=\(String(describing: cursorSnapshot?.size))")
         guard cursorSnapshot != nil else {
             XCTFail("Apple's cached cursor encoding must replace the initial XCursor shape; " +
                     "received-size=\(String(describing: cursorSnapshot?.size)), fixture-stage=\(fixtureStage)")
