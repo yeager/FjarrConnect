@@ -1,4 +1,4 @@
-Unreleased
+FjärrConnect 0.2.34
 
 - Release ordinary VNC keys immediately and send autorepeat as balanced press/release
   pairs, so a dropped physical key-up cannot leave a key repeating on a remote Mac.

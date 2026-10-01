@@ -35,7 +35,10 @@ jobs:
           brew list --formula xcbeautify >/dev/null 2>&1 || brew install xcbeautify
       - run: python3 scripts/check-resources.py && xcodegen generate
       - name: Test RoyalVNCKit package
-        run: swift test --package-path Vendor/RoyalVNCKit
+        # Xcode 16.4's Swift 6.1 verifier cannot resolve this package's private
+        # C target while checking the emitted SPI interface. The app and package
+        # compile/link that target normally; skip only this redundant verifier.
+        run: swift test --package-path Vendor/RoyalVNCKit -Xswiftc -no-verify-emitted-module-interface
       - name: Test
         run: |
           set -o pipefail

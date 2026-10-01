@@ -51,6 +51,11 @@ jobs:
         run: |
           python3 scripts/check-resources.py
           xcodegen generate
+      - name: Test RoyalVNCKit package
+        # Xcode 16.4's Swift 6.1 verifier cannot resolve this package's private
+        # C target while checking the emitted SPI interface. The app and package
+        # compile/link that target normally; skip only this redundant verifier.
+        run: swift test --package-path Vendor/RoyalVNCKit -Xswiftc -no-verify-emitted-module-interface
       - name: Run regression tests
         run: |
           set -o pipefail
@@ -102,6 +107,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           (cd dist && sha256sum FjarrConnect-*.zip > SHA256SUMS.txt)
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          version = os.environ["GITHUB_REF_NAME"].removeprefix("v")
+          lines = Path("RELEASE_NOTES.md").read_text().splitlines()
+          heading = f"FjärrConnect {version}"
+          start = lines.index(heading) + 1
+          end = next((i for i in range(start, len(lines))
+                      if lines[i].startswith("FjärrConnect ") or lines[i] == "---"), len(lines))
+          notes = "\n".join(lines[start:end]).strip() + "\n"
+          Path(os.environ["RUNNER_TEMP"], "RELEASE_NOTES.md").write_text(notes)
+          PY
           gh release create "$GITHUB_REF_NAME" dist/* \
             --title "FjärrConnect ${GITHUB_REF_NAME#v}" \
-            --notes-file RELEASE_NOTES.md --verify-tag
+            --notes-file "$RUNNER_TEMP/RELEASE_NOTES.md" --verify-tag

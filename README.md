@@ -24,8 +24,8 @@ for Apple Silicon and Intel. Choose `FjarrConnect-0.2.31-macOS-arm64.zip` for Ap
 architecture. Unzip the archive and move FjärrConnect to Applications.
 `SHA256SUMS.txt` contains both download checksums.
 
-The current checkout contains unreleased changes for 0.2.33. They add clearer, localized
-messages when the embedded RDP component is missing, incompatible with the Mac or app,
+Version 0.2.34 adds clearer, localized messages when the embedded RDP component is
+missing, incompatible with the Mac or app,
 or rejected by macOS. FreeRDP 3.32.1 was tested against a GNOME Remote Desktop server:
 it negotiated NLA Extended (`0x08`), authenticated, received a desktop frame and rendered
 the embedded native view in a macOS window. This verifies the server and native RDP
