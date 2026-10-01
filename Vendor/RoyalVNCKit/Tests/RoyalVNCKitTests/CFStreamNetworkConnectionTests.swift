@@ -67,12 +67,40 @@ final class CFStreamNetworkConnectionTests: XCTestCase {
         XCTAssertEqual(response, Data([0x52]))
         await fulfillment(of: [peer.receivedClientData], timeout: 2)
     }
+
+    func testReadAfterServerClosesFailsInsteadOfWaitingForever() async throws {
+        let peer = try DelayedCFStreamPeer()
+        defer { peer.stop() }
+
+        let connection = CFStreamNetworkConnection(settings: NetworkConnectionSettings(
+            connectionTimeout: 5, host: "127.0.0.1", port: peer.port
+        ))
+        defer { connection.cancel() }
+
+        let ready = expectation(description: "CFStream connected")
+        connection.setStatusUpdateHandler { status in
+            if case .ready = status { ready.fulfill() }
+        }
+        connection.start(queue: DispatchQueue(label: "CFStreamNetworkConnectionTests.closed"))
+        await fulfillment(of: [ready], timeout: 5)
+
+        await fulfillment(of: [peer.clientConnected], timeout: 5)
+        peer.closeClient()
+
+        do {
+            _ = try await connection.read(minimumLength: 1, maximumLength: 1)
+            XCTFail("A read after EOF should fail")
+        } catch {
+            // A terminal stream event must be retained for reads submitted later.
+        }
+    }
 }
 
 private final class DelayedCFStreamPeer: @unchecked Sendable {
     private let listener: Int32
     let port: UInt16
     private let sendsDelayedByte: Bool
+    let clientConnected = XCTestExpectation(description: "VNC peer accepted the client")
     let receivedClientData = XCTestExpectation(description: "Client data reached the VNC server")
     private let lock = NSLock()
     private var client: Int32 = -1
@@ -123,6 +151,17 @@ private final class DelayedCFStreamPeer: @unchecked Sendable {
         Darwin.close(listener)
     }
 
+    func closeClient() {
+        lock.lock()
+        let fd = client
+        client = -1
+        lock.unlock()
+        if fd >= 0 {
+            Darwin.shutdown(fd, SHUT_RDWR)
+            Darwin.close(fd)
+        }
+    }
+
     private func serve() {
         var address = sockaddr_in()
         var length = socklen_t(MemoryLayout<sockaddr_in>.size)
@@ -131,6 +170,7 @@ private final class DelayedCFStreamPeer: @unchecked Sendable {
         }
         guard fd >= 0 else { return }
         lock.lock(); client = fd; lock.unlock()
+        clientConnected.fulfill()
 
         if sendsDelayedByte {
             // Let the client's first read block. A healthy transport still writes concurrently.

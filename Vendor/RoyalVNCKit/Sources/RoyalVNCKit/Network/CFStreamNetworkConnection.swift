@@ -19,11 +19,49 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection, @unchecke
 	let settings: NetworkConnectionSettings
 
 	private let state = CFStreamNetworkState()
-	private let readQueue = DispatchQueue(label: "com.royalapps.royalvnc.cfstream.read")
-	private let writeQueue = DispatchQueue(label: "com.royalapps.royalvnc.cfstream.write")
+	private let ioLoop = CFStreamRunLoop()
+	// These fields are only accessed on ioLoop.
+	private var readStream: CFReadStream?
+	private var writeStream: CFWriteStream?
+	private var pendingReads: [PendingRead] = []
+	private var pendingWrites: [PendingWrite] = []
+	private var isCancelled = false
+	private var readFailure: Error?
+	private var writeFailure: Error?
+
+	private struct PendingRead {
+		let minimumLength: Int
+		let maximumLength: Int
+		var bytes: [UInt8] = []
+		let continuation: CheckedContinuation<Data, Error>
+	}
+
+	private struct PendingWrite {
+		let bytes: [UInt8]
+		var offset = 0
+		let continuation: CheckedContinuation<Void, Error>
+	}
 
 	init(settings: NetworkConnectionSettings) {
 		self.settings = settings
+	}
+
+	deinit {
+		let readStream = self.readStream
+		let writeStream = self.writeStream
+		let runLoop = ioLoop.runLoop
+		_ = ioLoop.performAndStop {
+			if let readStream {
+				CFReadStreamSetClient(readStream, 0, nil, nil)
+				CFReadStreamUnscheduleFromRunLoop(readStream, runLoop, CFRunLoopMode.defaultMode!)
+				CFReadStreamClose(readStream)
+			}
+			if let writeStream {
+				CFWriteStreamSetClient(writeStream, 0, nil, nil)
+				CFWriteStreamUnscheduleFromRunLoop(writeStream, runLoop, CFRunLoopMode.defaultMode!)
+				CFWriteStreamClose(writeStream)
+			}
+		}
 	}
 
     static func safeTLSFailureCode(domain: Int, code: Int32) -> Int32? {
@@ -50,8 +88,8 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection, @unchecke
 		let port = UInt32(settings.port)
 		state.lifecycleQueue = queue
 		state.updateStatus(.preparing)
-
-		queue.async {
+		_ = ioLoop.perform { [self] in
+			guard !isCancelled else { return }
 			var readStream: Unmanaged<CFReadStream>?
 			var writeStream: Unmanaged<CFWriteStream>?
 			CFStreamCreatePairWithSocketToHost(
@@ -63,47 +101,84 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection, @unchecke
 			)
 
 			guard let read = readStream?.takeRetainedValue(),
-				  let write = writeStream?.takeRetainedValue(),
-			  CFReadStreamOpen(read),
-			  CFWriteStreamOpen(write) else {
-				state.updateStatus(.failed(VNCError.connection(.failed(nil))))
+				  let write = writeStream?.takeRetainedValue() else {
+				queue.async { state.updateStatus(.failed(VNCError.connection(.failed(nil)))) }
 				return
 			}
-
-			guard state.install(readStream: read, writeStream: write) else {
+			self.readStream = read
+			self.writeStream = write
+			let callbackContext = CFStreamCallbackContext(self)
+			var context = CFStreamClientContext(
+				version: 0,
+				info: Unmanaged.passUnretained(callbackContext).toOpaque(),
+				retain: { info in
+					guard let info else { return nil }
+					return Unmanaged<CFStreamCallbackContext>.fromOpaque(info).retain().toOpaque()
+				},
+				release: { info in
+					guard let info else { return }
+					Unmanaged<CFStreamCallbackContext>.fromOpaque(info).release()
+				},
+				copyDescription: nil
+			)
+			let readEvents: CFOptionFlags = CFStreamEventType([.hasBytesAvailable, .errorOccurred, .endEncountered]).rawValue
+			let writeEvents: CFOptionFlags = CFStreamEventType([.canAcceptBytes, .errorOccurred, .endEncountered]).rawValue
+			guard CFReadStreamSetClient(read, readEvents, { stream, event, info in
+				guard let stream, let info,
+					  let connection = Unmanaged<CFStreamCallbackContext>.fromOpaque(info).takeUnretainedValue().connection else { return }
+				connection.handleReadEvent(stream, event: event)
+			}, &context),
+			CFWriteStreamSetClient(write, writeEvents, { stream, event, info in
+				guard let stream, let info,
+					  let connection = Unmanaged<CFStreamCallbackContext>.fromOpaque(info).takeUnretainedValue().connection else { return }
+				connection.handleWriteEvent(stream, event: event)
+			}, &context) else {
 				CFReadStreamClose(read)
 				CFWriteStreamClose(write)
+				self.readStream = nil
+				self.writeStream = nil
+				queue.async { state.updateStatus(.failed(VNCError.connection(.failed(nil)))) }
 				return
 			}
-			state.updateStatus(.ready)
+			CFReadStreamScheduleWithRunLoop(read, self.ioLoop.runLoop, CFRunLoopMode.defaultMode!)
+			CFWriteStreamScheduleWithRunLoop(write, self.ioLoop.runLoop, CFRunLoopMode.defaultMode!)
+			guard CFReadStreamOpen(read), CFWriteStreamOpen(write) else {
+				self.closeStreams()
+				queue.async { state.updateStatus(.failed(VNCError.connection(.failed(nil)))) }
+				return
+			}
+			queue.async { state.updateStatus(.ready) }
 		}
 	}
 
 	func cancel() {
 		let state = self.state
 		state.markCancelled()
-		let group = DispatchGroup()
-		group.enter()
-		readQueue.async {
-			if let readStream = state.takeReadStream() { CFReadStreamClose(readStream) }
-			group.leave()
-		}
-		group.enter()
-		writeQueue.async {
-			if let writeStream = state.takeWriteStream() { CFWriteStreamClose(writeStream) }
-			group.leave()
-		}
-		group.notify(queue: state.lifecycleQueue) {
-			state.updateStatus(.cancelled)
+		guard ioLoop.performAndStop({ [self] in
+			guard !isCancelled else { return }
+			isCancelled = true
+			for operation in pendingReads {
+				operation.continuation.resume(throwing: VNCError.connection(.closed))
+			}
+			pendingReads.removeAll()
+			for operation in pendingWrites {
+				operation.continuation.resume(throwing: VNCError.connection(.closed))
+			}
+			pendingWrites.removeAll()
+			closeStreams()
+			state.lifecycleQueue.async { state.updateStatus(.cancelled) }
+		}) else {
+			state.lifecycleQueue.async { state.updateStatus(.cancelled) }
+			return
 		}
 	}
 
 	func upgradeToTLS(serverName: String) async throws {
 		let state = self.state
-		let readQueue = self.readQueue
 		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-			readQueue.async {
-				guard let readStream = state.readStream, state.canUpgradeToTLS else {
+			guard ioLoop.perform({ [self] in
+				guard let readStream = self.readStream, state.canUpgradeToTLS,
+					  pendingReads.isEmpty, pendingWrites.isEmpty else {
 					continuation.resume(throwing: VNCError.protocol(.invalidData))
 					return
 				}
@@ -121,41 +196,41 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection, @unchecke
 
 				state.markTLSUpgradeComplete()
 				continuation.resume()
+			}) else {
+				continuation.resume(throwing: VNCError.connection(.closed))
+				return
 			}
 		}
 	}
 
 	func read(minimumLength: Int, maximumLength: Int) async throws -> Data {
-		let state = self.state
-		let readQueue = self.readQueue
 		return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-			readQueue.async {
-				guard let readStream = state.readStream else {
+			guard ioLoop.perform({ [self] in
+				guard !isCancelled else {
 					continuation.resume(throwing: VNCError.connection(.closed))
 					return
 				}
-
-				var buffer = [UInt8](repeating: 0, count: maximumLength)
-				var received = 0
-
-					repeat {
-					let count = buffer.withUnsafeMutableBufferPointer {
-						CFReadStreamRead(readStream, $0.baseAddress?.advanced(by: received), maximumLength - received)
-					}
-					guard count >= 0 else {
-	                    self.captureTLSFailure(from: readStream)
-						continuation.resume(throwing: VNCError.protocol(.noData))
-						return
-					}
-					guard count > 0 else {
-						continuation.resume(throwing: VNCError.protocol(.noData))
-						return
-					}
-					received += count
-	                self.captureVerifiedCertificate(from: readStream)
-				} while received < minimumLength
-
-				continuation.resume(returning: Data(buffer.prefix(received)))
+				if let readFailure {
+					continuation.resume(throwing: readFailure)
+					return
+				}
+				guard let readStream = self.readStream else {
+					continuation.resume(throwing: VNCError.connection(.closed))
+					return
+				}
+				guard maximumLength > 0, minimumLength >= 0, minimumLength <= maximumLength else {
+					continuation.resume(throwing: VNCError.protocol(.noData))
+					return
+				}
+				pendingReads.append(PendingRead(
+					minimumLength: max(1, minimumLength),
+					maximumLength: maximumLength,
+					continuation: continuation
+				))
+				readAvailableBytes(from: readStream)
+			}) else {
+				continuation.resume(throwing: VNCError.connection(.closed))
+				return
 			}
 		}
 	}
@@ -190,31 +265,143 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection, @unchecke
     }
 
 	func write(data: Data) async throws {
-		let state = self.state
-		let writeQueue = self.writeQueue
 		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-			writeQueue.async {
-				guard let writeStream = state.writeStream else {
+			guard ioLoop.perform({ [self] in
+				guard !isCancelled else {
 					continuation.resume(throwing: VNCError.connection(.closed))
 					return
 				}
-
-				let bytes = [UInt8](data)
-				var offset = 0
-				while offset < bytes.count {
-					let count = bytes.withUnsafeBufferPointer {
-						CFWriteStreamWrite(writeStream, $0.baseAddress?.advanced(by: offset), bytes.count - offset)
-					}
-					guard count > 0 else {
-	                self.captureTLSFailure(from: writeStream)
-						continuation.resume(throwing: VNCError.connection(.failed(nil)))
-						return
-					}
-					offset += count
+				if let writeFailure {
+					continuation.resume(throwing: writeFailure)
+					return
 				}
-
-				continuation.resume()
+				guard let writeStream = self.writeStream else {
+					continuation.resume(throwing: VNCError.connection(.closed))
+					return
+				}
+				pendingWrites.append(PendingWrite(bytes: Array(data), continuation: continuation))
+				writeAvailableBytes(to: writeStream)
+			}) else {
+				continuation.resume(throwing: VNCError.connection(.closed))
+				return
 			}
+		}
+	}
+
+	private func handleReadEvent(_ stream: CFReadStream, event: CFStreamEventType) {
+		guard stream == readStream else { return }
+		switch event {
+		case .hasBytesAvailable:
+			readAvailableBytes(from: stream)
+		case .errorOccurred, .endEncountered:
+			captureTLSFailure(from: stream)
+			let error = VNCError.connection(.closed)
+			readFailure = error
+			finishPendingReads(with: .failure(error))
+		default:
+			break
+		}
+	}
+
+	private func readAvailableBytes(from stream: CFReadStream) {
+		while !pendingReads.isEmpty, CFReadStreamHasBytesAvailable(stream) {
+			let remaining = pendingReads[0].maximumLength - pendingReads[0].bytes.count
+			var buffer = [UInt8](repeating: 0, count: remaining)
+			let count = buffer.withUnsafeMutableBufferPointer {
+				CFReadStreamRead(stream, $0.baseAddress, remaining)
+			}
+			guard count > 0 else {
+				if count < 0 {
+					captureTLSFailure(from: stream)
+					readFailure = VNCError.protocol(.noData)
+				} else {
+					readFailure = VNCError.connection(.closed)
+				}
+				finishPendingReads(with: .failure(readFailure!))
+				return
+			}
+			pendingReads[0].bytes.append(contentsOf: buffer.prefix(count))
+			captureVerifiedCertificate(from: stream)
+			if pendingReads[0].bytes.count >= pendingReads[0].minimumLength {
+				let operation = pendingReads.removeFirst()
+				operation.continuation.resume(returning: Data(operation.bytes))
+			}
+		}
+	}
+
+	private func writeAvailableBytes(to stream: CFWriteStream) {
+		while !pendingWrites.isEmpty {
+			let remaining = pendingWrites[0].bytes.count - pendingWrites[0].offset
+			if remaining == 0 {
+				let operation = pendingWrites.removeFirst()
+				operation.continuation.resume()
+				continue
+			}
+			guard CFWriteStreamCanAcceptBytes(stream) else { return }
+			let count = pendingWrites[0].bytes.withUnsafeBufferPointer {
+				CFWriteStreamWrite(stream, $0.baseAddress!.advanced(by: pendingWrites[0].offset), remaining)
+			}
+			if count < 0 {
+				captureTLSFailure(from: stream)
+				writeFailure = VNCError.connection(.failed(nil))
+				finishPendingWrites(with: .failure(writeFailure!))
+				return
+			}
+			guard count > 0 else { return }
+			pendingWrites[0].offset += count
+		}
+	}
+
+	private func handleWriteEvent(_ stream: CFWriteStream, event: CFStreamEventType) {
+		guard stream == writeStream else { return }
+		switch event {
+		case .canAcceptBytes:
+			writeAvailableBytes(to: stream)
+		case .errorOccurred, .endEncountered:
+			captureTLSFailure(from: stream)
+			writeFailure = VNCError.connection(.closed)
+			finishPendingWrites(with: .failure(writeFailure!))
+		default:
+			break
+		}
+	}
+
+	private func finishPendingReads(with result: Result<Data, Error>) {
+		let operations = pendingReads
+		pendingReads.removeAll()
+		for operation in operations {
+			if case .success = result {
+				operation.continuation.resume(returning: Data(operation.bytes))
+			} else if case let .failure(error) = result {
+				operation.continuation.resume(throwing: error)
+			}
+		}
+	}
+
+	private func finishPendingWrites(with result: Result<Void, Error>) {
+		let operations = pendingWrites
+		pendingWrites.removeAll()
+		for operation in operations {
+			if case .success = result {
+				operation.continuation.resume()
+			} else if case let .failure(error) = result {
+				operation.continuation.resume(throwing: error)
+			}
+		}
+	}
+
+	private func closeStreams() {
+		if let readStream {
+			CFReadStreamSetClient(readStream, 0, nil, nil)
+			CFReadStreamUnscheduleFromRunLoop(readStream, ioLoop.runLoop, CFRunLoopMode.defaultMode!)
+			CFReadStreamClose(readStream)
+			self.readStream = nil
+		}
+		if let writeStream {
+			CFWriteStreamSetClient(writeStream, 0, nil, nil)
+			CFWriteStreamUnscheduleFromRunLoop(writeStream, ioLoop.runLoop, CFRunLoopMode.defaultMode!)
+			CFWriteStreamClose(writeStream)
+			self.writeStream = nil
 		}
 	}
 
@@ -226,13 +413,81 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection, @unchecke
     }
 }
 
+private final class CFStreamCallbackContext {
+	weak var connection: CFStreamNetworkConnection?
+	init(_ connection: CFStreamNetworkConnection) { self.connection = connection }
+}
+
+/// Owns the run loop used for all CFStream scheduling and I/O callbacks.
+private final class CFStreamRunLoop {
+	private let lock = NSLock()
+	private let ready = DispatchSemaphore(value: 0)
+	private var storedRunLoop: CFRunLoop?
+	private var stopped = false
+	private var thread: Thread?
+
+	init() {
+		let thread = Thread { [weak self] in
+			guard let self else { return }
+			let runLoop = CFRunLoopGetCurrent()
+			var context = CFRunLoopSourceContext(
+				version: 0, info: nil, retain: nil, release: nil, copyDescription: nil,
+				equal: nil, hash: nil, schedule: nil, cancel: nil, perform: { _ in }
+			)
+			guard let keepAlive = CFRunLoopSourceCreate(nil, 0, &context) else {
+				ready.signal()
+				return
+			}
+			CFRunLoopAddSource(runLoop, keepAlive, CFRunLoopMode.defaultMode!)
+			lock.lock()
+			storedRunLoop = runLoop
+			lock.unlock()
+			ready.signal()
+			CFRunLoopRun()
+			CFRunLoopRemoveSource(runLoop, keepAlive, CFRunLoopMode.defaultMode!)
+		}
+		self.thread = thread
+		thread.name = "com.royalapps.royalvnc.cfstream"
+		thread.start()
+		ready.wait()
+	}
+
+	var runLoop: CFRunLoop {
+		lock.lock()
+		defer { lock.unlock() }
+		return storedRunLoop!
+	}
+
+	func perform(_ action: @escaping () -> Void) -> Bool {
+		lock.lock()
+		defer { lock.unlock() }
+		guard !stopped, let runLoop = storedRunLoop else { return false }
+		CFRunLoopPerformBlock(runLoop, CFRunLoopMode.defaultMode!.rawValue, action)
+		CFRunLoopWakeUp(runLoop)
+		return true
+	}
+
+	func performAndStop(_ action: @escaping () -> Void) -> Bool {
+		lock.lock()
+		guard !stopped, let runLoop = storedRunLoop else {
+			lock.unlock()
+			return false
+		}
+		stopped = true
+		CFRunLoopPerformBlock(runLoop, CFRunLoopMode.defaultMode!.rawValue) {
+			action()
+			CFRunLoopStop(runLoop)
+		}
+		CFRunLoopWakeUp(runLoop)
+		lock.unlock()
+		return true
+	}
+}
+
 /// Synchronizes state shared by the lifecycle, read and write queues. The
-/// streams themselves are only read or written on their respective queues;
-/// the lock is never held while performing stream I/O or invoking callbacks.
+/// lock is never held while performing stream I/O or invoking callbacks.
 private final class CFStreamNetworkState: @unchecked Sendable {
 	private let lock = NSLock()
-	private var storedReadStream: CFReadStream?
-	private var storedWriteStream: CFWriteStream?
 	private var storedStatus: NetworkConnectionStatus = .setup
 	private var storedStatusUpdateHandler: NetworkConnectionStatusUpdateHandler?
 	private var storedLifecycleQueue = DispatchQueue(label: "com.royalapps.royalvnc.cfstream.lifecycle")
@@ -290,18 +545,6 @@ private final class CFStreamNetworkState: @unchecked Sendable {
 		}
 	}
 
-	var readStream: CFReadStream? {
-		lock.lock()
-		defer { lock.unlock() }
-		return storedReadStream
-	}
-
-	var writeStream: CFWriteStream? {
-		lock.lock()
-		defer { lock.unlock() }
-		return storedWriteStream
-	}
-
 	var canUpgradeToTLS: Bool {
 		lock.lock()
 		defer { lock.unlock() }
@@ -320,29 +563,6 @@ private final class CFStreamNetworkState: @unchecked Sendable {
 		let handler = storedStatusUpdateHandler
 		lock.unlock()
 		handler?(status)
-	}
-
-	func install(readStream: CFReadStream, writeStream: CFWriteStream) -> Bool {
-		lock.lock()
-		defer { lock.unlock() }
-		guard !wasCancelled else { return false }
-		storedReadStream = readStream
-		storedWriteStream = writeStream
-		return true
-	}
-
-	func takeReadStream() -> CFReadStream? {
-		lock.lock()
-		defer { lock.unlock() }
-		defer { storedReadStream = nil }
-		return storedReadStream
-	}
-
-	func takeWriteStream() -> CFWriteStream? {
-		lock.lock()
-		defer { lock.unlock() }
-		defer { storedWriteStream = nil }
-		return storedWriteStream
 	}
 
 	func markTLSUpgradeComplete() {
