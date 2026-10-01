@@ -287,6 +287,7 @@
 "rdp.error.nla" = "El servidor requiere autenticación a nivel de red (NLA). Comprueba que la cuenta pueda usar NLA y que el servidor Windows admita el método de inicio de sesión elegido.";
 "rdp.error.license" = "El servidor rechazó la negociación de licencia de Escritorio remoto. Comprueba el servicio de licencias de Escritorio remoto y las licencias de acceso de cliente disponibles.";
 "rdp.error.serverEndedSession" = "El servidor finalizó la sesión RDP después de conectarse. Comprueba la política de sesiones de la cuenta remota y los registros de Escritorio remoto del servidor.";
+"rdp.error.channel" = "El servidor RDP interrumpió un canal virtual. Comprueba qué canales de redirección permite el servidor y si el perfil usa un canal compatible.";
 
 // Network service discovery
 "discovery.scan.title" = "Buscar servidores";
@@ -424,6 +425,7 @@
 "health.title" = "Estado de conexión";
 "health.tcpConnection" = "Conexión TCP";
 "health.tcpConnection.value" = "%d ms";
+"health.rdpRoundTrip" = "Tiempo de ida y vuelta de RDP";
 "health.packetLoss" = "Pérdida de paquetes";
 "health.packetLoss.value" = "%.1f %%";
 "health.packetLoss.unavailable" = "No disponible para esta sesión TCP";
@@ -432,6 +434,14 @@
 "health.reconnect.value" = "Intento %d de %d";
 "health.reconnect.none" = "No hay reconexión en curso";
 "health.unavailable" = "No disponible";
+"vnc.security.section" = "Seguridad de VNC";
+"vnc.tlsHandshakeFailed" = "No se pudo establecer la conexión VNC segura. Comprueba que el certificado del servidor sea de confianza y válido para esta dirección, y que el servidor admita una configuración TLS compatible.";
+"vnc.security.unknown" = "Sin negociar";
+"vnc.security.none" = "Sin cifrar";
+"vnc.security.verified" = "Certificado TLS verificado";
+"vnc.security.notVerified" = "Certificado TLS no verificado";
+"vnc.certificate.subject" = "Nombre del certificado";
+"vnc.certificate.sha256" = "Huella SHA-256";
 
 /* RDP network profile */
 "rdp.network" = "Perfil de red";

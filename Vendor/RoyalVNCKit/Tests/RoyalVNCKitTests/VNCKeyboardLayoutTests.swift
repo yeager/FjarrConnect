@@ -4,11 +4,22 @@ import XCTest
 @testable import RoyalVNCKit
 
 final class VNCKeyboardLayoutTests: XCTestCase {
+    func testModifierKeysRemainHeldUntilTheirPhysicalKeyUp() {
+        let modifiers: [VNCKeyCode] = [
+            .shift, .rightShift, .control, .rightControl,
+            .option, .optionForARD, .rightOption, .rightOptionForARD,
+            .command, .commandForARD, .rightCommand, .rightCommandForARD
+        ]
+
+        XCTAssertTrue(modifiers.allSatisfy(\.isModifier))
+        XCTAssertFalse(VNCKeyCode(asciiCharacter: 0x61).isModifier)
+    }
+
     func testKeyUpReleasesTheSymbolSentForKeyDown() {
         var tracker = VNCKeyEventTracker()
 
         let keyDown = tracker.keyDown(for: CGKeyCode(19), characters: "@")
-        let repeatedKeyDown = tracker.keyDown(for: CGKeyCode(19), characters: "2")
+        let repeatedKeyDown = tracker.keyDown(for: CGKeyCode(19), characters: "2", isRepeat: true)
         let keyUp = tracker.keyUp(for: CGKeyCode(19))
 
         XCTAssertEqual(keyDown.map(\.rawValue), [0x40])
@@ -116,6 +127,40 @@ final class VNCKeyboardLayoutTests: XCTestCase {
         XCTAssertTrue(tracker.releaseAll().isEmpty)
     }
 
+    func testInitialPressGetsRemoteReleaseWithoutClearingPhysicalKeyForRepeats() {
+        let queue = Queue<VNCSendableMessage>()
+        let initialDown = VNCProtocol.KeyEvent(isDown: true, key: 0x2D)
+        let keyUp = VNCProtocol.KeyEvent(isDown: false, key: 0x2D)
+
+        queue.enqueueKeyEvent(initialDown)
+        queue.enqueueKeyTapRelease(keyUp)
+        XCTAssertEqual((queue.dequeue() as? VNCProtocol.KeyEvent)?.isDown, true)
+        XCTAssertEqual((queue.dequeue() as? VNCProtocol.KeyEvent)?.isDown, false,
+                       "The initial press is released even if AppKit later loses physical key-up")
+
+        queue.enqueueKeyRepeat(initialDown)
+        XCTAssertEqual((queue.dequeue() as? VNCProtocol.KeyEvent)?.isDown, true,
+                       "The client retains physical state so autorepeat still works")
+        XCTAssertEqual((queue.dequeue() as? VNCProtocol.KeyEvent)?.isDown, false)
+        queue.enqueueKeyEvent(keyUp)
+        queue.enqueueKeyRepeat(initialDown)
+        XCTAssertNil(queue.dequeue())
+    }
+
+    func testPhysicalKeyUpKeepsAnUnsentInitialPressBalanced() {
+        let queue = Queue<VNCSendableMessage>()
+        let keyDown = VNCProtocol.KeyEvent(isDown: true, key: 0x2D)
+        let keyUp = VNCProtocol.KeyEvent(isDown: false, key: 0x2D)
+
+        queue.enqueueKeyEvent(keyDown)
+        queue.enqueueKeyTapRelease(keyUp)
+        queue.enqueueKeyEvent(keyUp)
+        XCTAssertEqual((queue.dequeue() as? VNCProtocol.KeyEvent)?.isDown, true)
+        XCTAssertEqual((queue.dequeue() as? VNCProtocol.KeyEvent)?.isDown, false,
+                       "The real key-up replaces a synthetic release removed from the unsent queue")
+        XCTAssertNil(queue.dequeue())
+    }
+
     func testPendingAutorepeatsAreBoundedUntilTheSendQueueDrains() {
         let queue = Queue<VNCSendableMessage>()
         let initialDown = VNCProtocol.KeyEvent(isDown: true, key: 0x2D)
@@ -133,7 +178,10 @@ final class VNCKeyboardLayoutTests: XCTestCase {
         for _ in 0..<10_000 {
             queue.enqueueKeyRepeat(repeatDown)
         }
-        XCTAssertNotNil(queue.dequeue() as? VNCProtocol.KeyEvent, "One pending repeat is preserved after the initial press drains")
+        let repeatedPress = queue.dequeue() as? VNCProtocol.KeyEvent
+        XCTAssertEqual(repeatedPress?.isDown, true, "One pending repeat is preserved after the initial press drains")
+        let repeatedRelease = queue.dequeue() as? VNCProtocol.KeyEvent
+        XCTAssertEqual(repeatedRelease?.isDown, false, "Every autorepeat is paired with a release")
         XCTAssertNil(queue.dequeue(), "Further repeats coalesce until that pending repeat drains")
 
         for _ in 0..<10_000 {
@@ -141,7 +189,7 @@ final class VNCKeyboardLayoutTests: XCTestCase {
         }
         queue.enqueueKeyEvent(keyUp)
         XCTAssertEqual((queue.dequeue() as? VNCProtocol.KeyEvent)?.isDown, false,
-                       "Key-up discards a repeat that had not reached the server")
+                       "Key-up discards both events of a repeat that had not reached the server")
         queue.enqueueKeyRepeat(repeatDown)
         XCTAssertNil(queue.dequeue(), "A repeat after key-up cannot start another remote press")
 
@@ -151,9 +199,13 @@ final class VNCKeyboardLayoutTests: XCTestCase {
         queue.enqueueKeyRepeat(repeatDown)
         XCTAssertEqual((queue.dequeue() as? VNCProtocol.KeyEvent)?.isDown, true,
                        "A held physical key can still autorepeat after its initial press is sent")
-        queue.enqueueKeyEvent(keyUp)
+        XCTAssertEqual((queue.dequeue() as? VNCProtocol.KeyEvent)?.isDown, false,
+                       "The repeat releases its key even while the physical key remains held")
+        queue.enqueueKeyRepeat(repeatDown)
+        XCTAssertEqual((queue.dequeue() as? VNCProtocol.KeyEvent)?.isDown, true)
         XCTAssertEqual((queue.dequeue() as? VNCProtocol.KeyEvent)?.isDown, false)
-        XCTAssertNil(queue.dequeue())
+        queue.enqueueKeyEvent(keyUp)
+        XCTAssertNil(queue.dequeue(), "A key-up after a balanced repeat must not send a duplicate release")
     }
 }
 #endif

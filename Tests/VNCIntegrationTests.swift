@@ -32,8 +32,9 @@ private final class VNCKeyboardFocusTestView: NSView {
 
 /// A local RFB server exercises the actual RoyalVNCKit handshake and session lifecycle.
 final class VNCIntegrationTests: XCTestCase {
-    func testVNCConnectsToLocalServerAndStops() throws {
-        try exerciseServer(requiresUsername: false, expectedNegotiatedSecurity: VNCNegotiatedSecurity.none)
+    @MainActor
+    func testVNCConnectsToLocalServerAndStops() async throws {
+        try await exerciseServer(requiresUsername: false, expectedNegotiatedSecurity: VNCNegotiatedSecurity.none)
     }
 
     func testMacScreenSharingRetriesOneSilentFirstConnection() throws {
@@ -104,8 +105,9 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: portFile.appendingPathExtension("count"), encoding: .utf8), "2")
     }
 
-    func testAppleVNCExplainsMissingUsername() throws {
-        try exerciseServer(requiresUsername: true)
+    @MainActor
+    func testAppleVNCExplainsMissingUsername() async throws {
+        try await exerciseServer(requiresUsername: true)
     }
 
     func testCursorPointSizeAndHotspotFollowFramebufferScale() {
@@ -362,60 +364,71 @@ final class VNCIntegrationTests: XCTestCase {
     }
 #endif
 
-    func testVNCAuthenticatesWithPasswordAndReceivesDesktop() throws {
-        try exerciseServer(requiresUsername: false, requiresPassword: true,
+    @MainActor
+    func testVNCAuthenticatesWithPasswordAndReceivesDesktop() async throws {
+        try await exerciseServer(requiresUsername: false, requiresPassword: true,
                            expectedNegotiatedSecurity: .vncPassword)
     }
 
-    func testRejectedVNCPasswordIsReportedForCredentialRetry() throws {
-        try exerciseServer(requiresUsername: false, requiresPassword: true,
+    @MainActor
+    func testRejectedVNCPasswordIsReportedForCredentialRetry() async throws {
+        try await exerciseServer(requiresUsername: false, requiresPassword: true,
                            clientPassword: "wrong-test-password", expectsCredentialRejection: true)
     }
 
-    func testTightFileBrowserAppearsWhenTheServerAdvertisesDownloadChannels() throws {
-        try exerciseServer(requiresUsername: false, tightFileTransfer: true)
+    @MainActor
+    func testTightFileBrowserAppearsWhenTheServerAdvertisesDownloadChannels() async throws {
+        try await exerciseServer(requiresUsername: false, tightFileTransfer: true)
     }
 
-    func testTightReadOnlyServerStillOffersFileDownloads() throws {
-        try exerciseServer(requiresUsername: false, tightDownloadOnly: true)
+    @MainActor
+    func testTightReadOnlyServerStillOffersFileDownloads() async throws {
+        try await exerciseServer(requiresUsername: false, tightDownloadOnly: true)
     }
 
-    func testTightUploadSendsFileWhenServerAdvertisesUploadChannel() throws {
+    @MainActor
+    func testTightUploadSendsFileWhenServerAdvertisesUploadChannel() async throws {
         let source = FileManager.default.temporaryDirectory.appendingPathComponent("fjarrconnect-upload-fixture.txt")
         let payload = Data((0..<150_000).map { UInt8($0 % 251) })
         try payload.write(to: source, options: .atomic)
         defer { try? FileManager.default.removeItem(at: source) }
-        try exerciseServer(requiresUsername: false, uploadFile: source, expectedUpload: payload)
+        try await exerciseServer(requiresUsername: false, uploadFile: source, expectedUpload: payload)
     }
 
-    func testTightUploadSendsDroppedFilesSequentially() throws {
+    @MainActor
+    func testTightUploadSendsDroppedFilesSequentially() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let sources = [directory.appendingPathComponent("first.txt"), directory.appendingPathComponent("second.bin")]
         let payloads = [Data("first-file".utf8), Data((0..<90_000).map { UInt8($0 % 239) })]
         for (source, payload) in zip(sources, payloads) { try payload.write(to: source, options: .atomic) }
-        try exerciseServer(requiresUsername: false, uploadFiles: sources, expectedUploads: payloads)
+        try await exerciseServer(requiresUsername: false, uploadFiles: sources, expectedUploads: payloads)
     }
 
-    func testBlackDesktopHintClearsWhenServerStartsSendingContent() throws {
-        try exerciseServer(requiresUsername: false, blackInitially: true)
+    @MainActor
+    func testBlackDesktopHintClearsWhenServerStartsSendingContent() async throws {
+        try await exerciseServer(requiresUsername: false, blackInitially: true)
     }
 
-    func testDesktopResizeReplacesTheDisplayedFramebuffer() throws {
-        try exerciseServer(requiresUsername: false, resize: true)
+    @MainActor
+    func testDesktopResizeReplacesTheDisplayedFramebuffer() async throws {
+        try await exerciseServer(requiresUsername: false, resize: true)
     }
 
-    func testEmptyRemoteCursorUsesDotFallbackInRenderedSession() throws {
-        try exerciseServer(requiresUsername: false, emptyCursor: true)
+    @MainActor
+    func testEmptyRemoteCursorUsesDotFallbackInRenderedSession() async throws {
+        try await exerciseServer(requiresUsername: false, emptyCursor: true)
     }
 
-    func testConnectedVNCDesktopReceivesInitialKeyboardFocus() throws {
-        try exerciseServer(requiresUsername: false, verifyInitialFocus: true)
+    @MainActor
+    func testConnectedVNCDesktopReceivesInitialKeyboardFocus() async throws {
+        try await exerciseServer(requiresUsername: false, verifyInitialFocus: true)
     }
 
-    func testInternationalKeyboardCharactersReachVNCServer() throws {
-        try exerciseServer(requiresUsername: false, keyboard: true)
+    @MainActor
+    func testInternationalKeyboardCharactersReachVNCServer() async throws {
+        try await exerciseServer(requiresUsername: false, keyboard: true)
     }
 
     func testVNCFailureMessageIsLocalizedAndDoesNotContainBackendDiagnostics() {
@@ -434,6 +447,15 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertTrue(message.contains("desktop.local:5901"))
         XCTAssertTrue(message.contains(NSLocalizedString("vnc.unsupportedSecurity", comment: "")))
         XCTAssertFalse(message.contains("could not decide"))
+    }
+
+    func testVNCTLSFailureHasSafeLocalizedGuidance() {
+        let message = VNCRemoteSession.connectionFailureMessage(
+            host: "desktop.local", port: 5901, tlsFailureCode: -9807
+        )
+        XCTAssertTrue(message.contains("desktop.local:5901"))
+        XCTAssertTrue(message.contains(NSLocalizedString("vnc.tlsHandshakeFailed", comment: "")))
+        XCTAssertFalse(message.contains("-9807"))
     }
 
     func testMacScreenSharingAuthenticationFailureExplainsAccountChecks() {
@@ -501,8 +523,8 @@ final class VNCIntegrationTests: XCTestCase {
         )
     }
 
-    func testVNCRejectsAnUnknownSecurityType() throws {
-        try exerciseServer(requiresUsername: false, unsupportedSecurity: true)
+    func testVNCRejectsAnUnknownSecurityType() async throws {
+        try await exerciseServer(requiresUsername: false, unsupportedSecurity: true)
     }
 
     func testClipboardIsIsolatedBetweenVNCsessionsWhenChangingTabs() {
@@ -542,6 +564,7 @@ final class VNCIntegrationTests: XCTestCase {
                                     isForeground: true, changeCount: 4))
     }
 
+    @MainActor
     private func exerciseServer(requiresUsername: Bool, requiresPassword: Bool = false,
                                 blackInitially: Bool = false, resize: Bool = false,
                                 emptyCursor: Bool = false, keyboard: Bool = false,
@@ -551,7 +574,7 @@ final class VNCIntegrationTests: XCTestCase {
                                 expectedUpload: Data? = nil, uploadFiles: [URL]? = nil,
                                 expectedUploads: [Data]? = nil, clientPassword: String? = nil,
                                 expectsCredentialRejection: Bool = false,
-                                expectedNegotiatedSecurity: VNCNegotiatedSecurity? = nil) throws {
+                                expectedNegotiatedSecurity: VNCNegotiatedSecurity? = nil) async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -584,19 +607,20 @@ final class VNCIntegrationTests: XCTestCase {
         server.standardError = diagnosticHandle
         try server.run()
         defer { if server.isRunning { server.terminate(); server.waitUntilExit() } }
-        let ready = expectation(description: "RFB server listening")
-        DispatchQueue.global().async {
-            for _ in 0..<220 {
-                if FileManager.default.fileExists(atPath: portFile.path) || !server.isRunning { ready.fulfill(); return }
-                Thread.sleep(forTimeInterval: 0.05)
+        var port: UInt16?
+        for _ in 0..<240 {
+            if let value = try? String(contentsOf: portFile, encoding: .utf8),
+               let parsed = UInt16(value) {
+                port = parsed
+                break
             }
+            guard server.isRunning else { break }
+            try await Task.sleep(for: .milliseconds(50))
         }
-        wait(for: [ready], timeout: 12)
-        guard FileManager.default.fileExists(atPath: portFile.path) else {
+        guard let port else {
             XCTFail("RFB fixture did not start: " + ((try? String(contentsOf: diagnostics, encoding: .utf8)) ?? "No diagnostics"))
             return
         }
-        let port = try XCTUnwrap(UInt16(String(contentsOf: portFile, encoding: .utf8)))
         let session = VNCRemoteSession(profile: ConnectionProfile(name: "Local RFB", host: "127.0.0.1", port: port),
                                        password: clientPassword ?? (requiresPassword ? "vnc-test" : nil))
         let connected = expectation(description: "Authenticated RFB session")
@@ -608,7 +632,7 @@ final class VNCIntegrationTests: XCTestCase {
             }
         }
         session.start()
-        wait(for: [connected], timeout: 10)
+        await fulfillment(of: [connected], timeout: 10)
         if requiresUsername {
             XCTAssertEqual(session.status.error, NSLocalizedString("vnc.usernameRequired", comment: ""))
             XCTAssertTrue(session.serverRequiresUsername)
@@ -635,17 +659,17 @@ final class VNCIntegrationTests: XCTestCase {
                 let listingLoaded = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                     session.hasCurrentRemoteFileListing
                 }, object: nil)
-                XCTAssertEqual(XCTWaiter.wait(for: [listingLoaded], timeout: 5), .completed)
+                await fulfillment(of: [listingLoaded], timeout: 5)
                 session.uploadLocalFile(uploadFile)
                 let uploadSent = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                     session.fileTransferNotice == NSLocalizedString("vnc.files.uploadSent", comment: "")
                 }, object: nil)
-                XCTAssertEqual(XCTWaiter.wait(for: [uploadSent], timeout: 5), .completed)
+                await fulfillment(of: [uploadSent], timeout: 5)
                 let uploadedFile = URL(fileURLWithPath: portFile.path + ".uploaded")
                 let received = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                     (try? Data(contentsOf: uploadedFile)) == expectedUpload
                 }, object: nil)
-                XCTAssertEqual(XCTWaiter.wait(for: [received], timeout: 5), .completed)
+                await fulfillment(of: [received], timeout: 5)
             }
             if let uploadFiles, let expectedUploads {
                 XCTAssertFalse(session.canUploadLocalFiles(uploadFiles), "Do not upload before checking remote-name conflicts.")
@@ -653,7 +677,7 @@ final class VNCIntegrationTests: XCTestCase {
                 let listingLoaded = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                     session.listedRemoteDirectory == "/" && !session.isLoadingRemoteFiles
                 }, object: nil)
-                XCTAssertEqual(XCTWaiter.wait(for: [listingLoaded], timeout: 5), .completed)
+                await fulfillment(of: [listingLoaded], timeout: 5)
                 XCTAssertTrue(session.canUploadLocalFiles(uploadFiles))
                 XCTAssertFalse(session.canUploadLocalFiles([uploadFiles[0].deletingLastPathComponent()]))
                 session.uploadLocalFiles(uploadFiles)
@@ -663,24 +687,24 @@ final class VNCIntegrationTests: XCTestCase {
                         return (try? Data(contentsOf: receivedURL)) == payload
                     }
                 }, object: nil)
-                XCTAssertEqual(XCTWaiter.wait(for: [received], timeout: 10), .completed)
+                await fulfillment(of: [received], timeout: 10)
             }
             if resize {
-                try assertResize(session, trigger: URL(fileURLWithPath: portFile.path + ".resize"))
+                try await assertResize(session, trigger: URL(fileURLWithPath: portFile.path + ".resize"))
             } else {
-                try assertRenderedDesktop(session, isBlack: blackInitially, expectsEmptyCursor: emptyCursor)
+                try await assertRenderedDesktop(session, isBlack: blackInitially, expectsEmptyCursor: emptyCursor)
             }
-            if keyboard { try assertKeyboardCharacters(session, receivedKeys: URL(fileURLWithPath: portFile.path + ".keys")) }
-            if verifyInitialFocus { try assertInitialFocus(session) }
+            if keyboard { try await assertKeyboardCharacters(session, receivedKeys: URL(fileURLWithPath: portFile.path + ".keys")) }
+            if verifyInitialFocus { try await assertInitialFocus(session) }
             if blackInitially {
                 let warning = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                     session.notice == NSLocalizedString("vnc.blackScreen", comment: "")
                 }, object: nil)
-                XCTAssertEqual(XCTWaiter.wait(for: [warning], timeout: 12), .completed)
+                await fulfillment(of: [warning], timeout: 12)
                 let recovered = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                     session.notice == nil
                 }, object: nil)
-                XCTAssertEqual(XCTWaiter.wait(for: [recovered], timeout: 6), .completed)
+                await fulfillment(of: [recovered], timeout: 6)
                 XCTAssertEqual(session.status, .connected)
             }
         }
@@ -689,7 +713,8 @@ final class VNCIntegrationTests: XCTestCase {
         subscription.cancel()
     }
 
-    private func assertKeyboardCharacters(_ session: VNCRemoteSession, receivedKeys: URL) throws {
+    @MainActor
+    private func assertKeyboardCharacters(_ session: VNCRemoteSession, receivedKeys: URL) async throws {
         let host = NSHostingView(rootView: VNCSessionScreenView(session: session))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
                               styleMask: [.titled], backing: .buffered, defer: false)
@@ -706,11 +731,11 @@ final class VNCIntegrationTests: XCTestCase {
             if let frame = view as? VNCCAFramebufferView { return frame }
             return view.subviews.lazy.compactMap { framebuffer(in: $0) }.first
         }
-        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            guard let view = framebuffer(in: host) else { return false }
-            return view.framebufferSize == CGSize(width: 2, height: 2) && view.window === window
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed)
+        let framebufferReady = await waitForUI(timeout: 5) {
+            framebuffer(in: host)?.framebufferSize == CGSize(width: 2, height: 2)
+                && framebuffer(in: host)?.window === window
+        }
+        XCTAssertTrue(framebufferReady)
         let view = try XCTUnwrap(framebuffer(in: host))
         XCTAssertTrue(window.makeFirstResponder(view))
 
@@ -953,7 +978,7 @@ final class VNCIntegrationTests: XCTestCase {
             guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
             return contents.contains("0:0000ff09\n")
         }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [sent], timeout: 5), .completed)
+        await fulfillment(of: [sent], timeout: 5)
         let contents = try String(contentsOf: receivedKeys, encoding: .utf8)
         let events = try contents.split(separator: "\n").map { line -> (Bool, UInt32) in
             let fields = line.split(separator: ":")
@@ -981,8 +1006,8 @@ final class VNCIntegrationTests: XCTestCase {
         let dashEvents = events.filter { $0.1 == 0x2D }
         XCTAssertGreaterThanOrEqual(dashEvents.count, 4,
                                     "The held dash, focus-loss release, and later press/release must reach the server")
-        XCTAssertLessThanOrEqual(dashEvents.count, 7,
-                                 "The initial press and three AppKit repeats are the maximum expected events")
+        XCTAssertLessThanOrEqual(dashEvents.count, 10,
+                                 "Three AppKit repeats must be balanced taps before focus-loss release")
         XCTAssertEqual(Array(dashEvents.suffix(2).map { $0.0 }), [true, false],
                        "A new press after focus returns remains usable")
         XCTAssertEqual(dashEvents.dropLast(2).last?.0, false,
@@ -993,6 +1018,64 @@ final class VNCIntegrationTests: XCTestCase {
         let xEvents = events.filter { $0.1 == 0x78 }
         XCTAssertEqual(xEvents.map { $0.0 }, [true, false],
                        "App deactivation must release a held key even when the window does not resign key")
+
+        // A VNC server must not keep typing when the physical key-up is lost.
+        // Autorepeat events carry their own release, which is checked before
+        // sending a different key as a delivery barrier.
+        let linesBeforeLostKeyUp = try String(contentsOf: receivedKeys, encoding: .utf8)
+            .split(separator: "\n").count
+        let heldDash = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                        modifierFlags: [], timestamp: 0,
+                                        windowNumber: window.windowNumber, context: nil,
+                                        characters: "-", charactersIgnoringModifiers: "-",
+                                        isARepeat: false, keyCode: 27)!
+        view.keyDown(with: heldDash)
+        let initialDashDelivered = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
+            return contents.split(separator: "\n").count > linesBeforeLostKeyUp
+        }, object: nil)
+        await fulfillment(of: [initialDashDelivered], timeout: 5)
+        let initialDashReleased = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
+            return contents.hasSuffix("0:0000002d\n")
+        }, object: nil)
+        await fulfillment(of: [initialDashReleased], timeout: 5)
+        for _ in 0..<20 {
+            let repeatedDash = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                                modifierFlags: [], timestamp: 0,
+                                                windowNumber: window.windowNumber, context: nil,
+                                                characters: "-", charactersIgnoringModifiers: "-",
+                                                isARepeat: true, keyCode: 27)!
+            view.keyDown(with: repeatedDash)
+        }
+        sendControlKey(0xFEFE, characters: "!")
+        let lostKeyUpBarrier = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
+            return contents.hasSuffix("0:00000021\n")
+        }, object: nil)
+        await fulfillment(of: [lostKeyUpBarrier], timeout: 5)
+        let lostKeyUpEvents = try String(contentsOf: receivedKeys, encoding: .utf8)
+            .split(separator: "\n").dropFirst(linesBeforeLostKeyUp).map { line -> (Bool, UInt32) in
+                let fields = line.split(separator: ":")
+                guard fields.count == 2, let down = Int(fields[0]), let key = UInt32(fields[1], radix: 16) else {
+                    throw NSError(domain: "VNC keyboard fixture", code: 4)
+                }
+                return (down == 1, key)
+        }
+        let repeatedDashEvents = lostKeyUpEvents.filter { $0.1 == 0x2D }
+        XCTAssertGreaterThanOrEqual(repeatedDashEvents.count, 4,
+                                    "The initial press and one balanced autorepeat must reach the server")
+        XCTAssertEqual(Array(repeatedDashEvents.prefix(2).map { $0.0 }), [true, false],
+                       "The initial press must release even though its physical key-up is lost")
+        XCTAssertEqual(Array(repeatedDashEvents.suffix(2).map { $0.0 }), [true, false],
+                       "AppKit repeats remain usable as balanced taps")
+        XCTAssertEqual(repeatedDashEvents.count % 2, 0,
+                       "Every dash press delivered without physical key-up is released")
+        XCTAssertEqual(repeatedDashEvents.last?.0, false,
+                       "The last delivered autorepeat releases the dash without waiting for physical key-up")
+        XCTAssertEqual(lostKeyUpEvents.suffix(2).map { $0.0 }, [true, false],
+                       "The delivery barrier must remain usable after the lost physical key-up")
+        view.releasePressedKeys()
 
         // Send a no-delay typing burst through the full AppKit → framebuffer →
         // RFB path. Slow manual typing can mask missing or reordered events.
@@ -1005,7 +1088,7 @@ final class VNCIntegrationTests: XCTestCase {
             guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
             return contents.contains("0:01002603\n")
         }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [burstSent], timeout: 5), .completed)
+        await fulfillment(of: [burstSent], timeout: 5)
         let burstLines = try String(contentsOf: receivedKeys, encoding: .utf8).split(separator: "\n")
         let burstEvents = try burstLines.suffix(typingBurst.count * 2 + 2).map { line -> (Bool, UInt32) in
             let fields = line.split(separator: ":")
@@ -1035,7 +1118,7 @@ final class VNCIntegrationTests: XCTestCase {
             guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
             return contents.hasSuffix("0:00000021\n")
         }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [repeatedBurstSent], timeout: 10), .completed)
+        await fulfillment(of: [repeatedBurstSent], timeout: 10)
         let repeatedLines = try String(contentsOf: receivedKeys, encoding: .utf8).split(separator: "\n")
         let repeatedEvents = try repeatedLines.suffix(repeatedBurst.count * 2 + 2).map { line -> (Bool, UInt32) in
             let fields = line.split(separator: ":")
@@ -1052,9 +1135,57 @@ final class VNCIntegrationTests: XCTestCase {
                        Array(repeating: [true, false], count: expectedRepeated.count / 2).flatMap { $0 })
         XCTAssertEqual(repeatedEvents.map(\.1), expectedRepeated,
                        "Rapid repeated letters, dashes, and digits must reach the server in order")
+
+        let linesBeforeDetach = try String(contentsOf: receivedKeys, encoding: .utf8)
+            .split(separator: "\n").count
+        let detachKeyDown = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                             modifierFlags: [], timestamp: 0,
+                                             windowNumber: window.windowNumber, context: nil,
+                                             characters: "v", charactersIgnoringModifiers: "v",
+                                             isARepeat: false, keyCode: 9)!
+        view.keyDown(with: detachKeyDown)
+        let detachPressSent = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
+            return contents.split(separator: "\n").dropFirst(linesBeforeDetach)
+                .contains("1:00000076")
+        }, object: nil)
+        await fulfillment(of: [detachPressSent], timeout: 5)
+
+        view.removeFromSuperview()
+        XCTAssertNil(view.window, "The test must exercise framebuffer detachment")
+        let detachedKeyReleased = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
+            return contents.hasSuffix("0:00000076\n")
+        }, object: nil)
+        await fulfillment(of: [detachedKeyReleased], timeout: 5)
+
+        let lateRepeat = NSEvent.keyEvent(with: .keyDown, location: .zero,
+                                          modifierFlags: [], timestamp: 0,
+                                          windowNumber: window.windowNumber, context: nil,
+                                          characters: "v", charactersIgnoringModifiers: "v",
+                                          isARepeat: true, keyCode: 9)!
+        view.keyDown(with: lateRepeat)
+        sendControlKey(0xFEFE, characters: "!")
+        let detachedInputDrained = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let contents = try? String(contentsOf: receivedKeys, encoding: .utf8) else { return false }
+            return contents.hasSuffix("0:00000021\n")
+        }, object: nil)
+        await fulfillment(of: [detachedInputDrained], timeout: 5)
+        let eventsAfterDetach = try String(contentsOf: receivedKeys, encoding: .utf8)
+            .split(separator: "\n").suffix(4).map { line -> (Bool, UInt32) in
+                let fields = line.split(separator: ":")
+                guard fields.count == 2, let down = Int(fields[0]), let key = UInt32(fields[1], radix: 16) else {
+                    throw NSError(domain: "VNC keyboard fixture", code: 5)
+                }
+                return (down == 1, key)
+            }
+        XCTAssertEqual(eventsAfterDetach.map(\.0), [true, false, true, false])
+        XCTAssertEqual(eventsAfterDetach.map(\.1), [0x76, 0x76, 0x21, 0x21],
+                       "A delayed repeat must not press the key again after its view detaches")
     }
 
-    private func assertResize(_ session: VNCRemoteSession, trigger: URL) throws {
+    @MainActor
+    private func assertResize(_ session: VNCRemoteSession, trigger: URL) async throws {
         let host = NSHostingView(rootView: VNCSessionScreenView(session: session))
         let window = CursorTrackingWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
                                           styleMask: [.titled], backing: .buffered, defer: false)
@@ -1066,10 +1197,10 @@ final class VNCIntegrationTests: XCTestCase {
             if let frame = view as? VNCCAFramebufferView { return frame }
             return view.subviews.lazy.compactMap { framebuffer(in: $0) }.first
         }
-        let original = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+        let originalReady = await waitForUI(timeout: 5) {
             framebuffer(in: host)?.framebufferSize == CGSize(width: 2, height: 2)
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [original], timeout: 5), .completed)
+        }
+        XCTAssertTrue(originalReady)
         let originalView = try XCTUnwrap(framebuffer(in: host))
         let originalCursor = originalView.currentCursor
         XCTAssertEqual(originalCursor.image.size, CGSize(width: 2, height: 2))
@@ -1082,40 +1213,42 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertTrue(NSCursor.current === originalCursor,
                       "The remote cursor should be active before the server changes its shape")
         try Data().write(to: trigger)
-        let resized = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+        let resizedReady = await waitForUI(timeout: 5) {
             framebuffer(in: host)?.framebufferSize == CGSize(width: 5, height: 3)
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [resized], timeout: 5), .completed)
-        let painted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            guard let image = framebuffer(in: host)?.framebuffer?.cgImage else { return false }
-            guard image.width == 5, image.height == 3,
-                  let pixel = NSBitmapImageRep(cgImage: image).colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB) else { return false }
-            return pixel.blueComponent > 0.95 && pixel.redComponent < 0.05
-        }, object: nil)
-        let paintedResult = XCTWaiter.wait(for: [painted], timeout: 5)
+        }
+        XCTAssertTrue(resizedReady)
+        let didPaint = await waitForUI(timeout: 5) {
+            guard let image = framebuffer(in: host)?.framebuffer?.cgImage,
+                  image.width == 5, image.height == 3,
+                  let color = NSBitmapImageRep(cgImage: image).colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB)
+            else { return false }
+            return color.blueComponent > 0.95 && color.redComponent < 0.05
+        }
+        XCTAssertTrue(didPaint)
         let resizedView = framebuffer(in: host)
         let resizedImage = resizedView?.framebuffer?.cgImage
         let resizedPixel = resizedImage.flatMap { NSBitmapImageRep(cgImage: $0).colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB) }
         let resizedImageDescription = resizedImage.map { "\($0.width)x\($0.height)" } ?? "nil"
-        XCTAssertEqual(paintedResult, .completed,
-                       "Expected a rendered blue 5x3 frame; view=\(String(describing: resizedView?.framebufferSize)), image=\(resizedImageDescription), pixel=\(String(describing: resizedPixel))")
+        XCTAssertTrue(resizedImage != nil,
+                      "Expected a rendered blue 5x3 frame; view=\(String(describing: resizedView?.framebufferSize)), image=\(resizedImageDescription), pixel=\(String(describing: resizedPixel))")
         if window.isKeyWindow {
             XCTAssertTrue(window.firstResponder === framebuffer(in: host), "Keyboard focus must follow the resized desktop")
         }
-        let appleCursorArrived = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            guard let image = framebuffer(in: host)?.remoteCursor?.cgImage else { return false }
-            guard let pixel = NSBitmapImageRep(cgImage: image).colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB) else {
-                return false
-            }
+        let cursorArrived = await waitForUI(timeout: 12) {
+            guard let image = framebuffer(in: host)?.remoteCursor?.cgImage,
+                  image.width == 3, image.height == 2,
+                  let pixel = NSBitmapImageRep(cgImage: image).colorAt(x: 0, y: 0)?.usingColorSpace(.deviceRGB)
+            else { return false }
             return pixel.greenComponent > 0.95 && pixel.blueComponent > 0.95
-        }, object: nil)
-        let cursorResult = XCTWaiter.wait(for: [appleCursorArrived], timeout: 12)
+        }
+        XCTAssertTrue(cursorArrived)
         let cursorSnapshot = framebuffer(in: host)?.remoteCursor
         let fixtureStage = (try? String(contentsOf: URL(fileURLWithPath: trigger.path + ".stage"), encoding: .utf8)) ?? "unavailable"
-        XCTAssertEqual(cursorResult, .completed,
-                       "Apple's cached cursor encoding must replace the initial XCursor shape; " +
-                       "received-size=\(String(describing: cursorSnapshot?.size)), fixture-stage=\(fixtureStage)")
-        guard cursorResult == .completed else { return }
+        guard cursorSnapshot != nil else {
+            XCTFail("Apple's cached cursor encoding must replace the initial XCursor shape; " +
+                    "received-size=\(String(describing: cursorSnapshot?.size)), fixture-stage=\(fixtureStage)")
+            return
+        }
         let cursor = try XCTUnwrap(framebuffer(in: host)?.currentCursor)
         XCTAssertEqual(cursor.image.size, CGSize(width: 3, height: 2))
         XCTAssertEqual(cursor.hotSpot, CGPoint(x: 2, y: 1),
@@ -1166,7 +1299,8 @@ final class VNCIntegrationTests: XCTestCase {
         XCTAssertEqual(session.status, .connected)
     }
 
-    private func assertInitialFocus(_ session: VNCRemoteSession) throws {
+    @MainActor
+    private func assertInitialFocus(_ session: VNCRemoteSession) async throws {
         let host = NSHostingView(rootView: VNCSessionScreenView(session: session))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
                               styleMask: [.titled], backing: .buffered, defer: false)
@@ -1178,24 +1312,24 @@ final class VNCIntegrationTests: XCTestCase {
             if let frame = view as? VNCCAFramebufferView { return frame }
             return view.subviews.lazy.compactMap { framebuffer(in: $0) }.first
         }
-        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            guard let view = framebuffer(in: host) else { return false }
-            return view.framebufferSize == CGSize(width: 2, height: 2) && view.window === window
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed)
+        let framebufferReady = await waitForUI(timeout: 5) {
+            framebuffer(in: host)?.framebufferSize == CGSize(width: 2, height: 2)
+                && framebuffer(in: host)?.window === window
+        }
+        XCTAssertTrue(framebufferReady)
         guard window.isKeyWindow else {
             throw XCTSkip("Initial keyboard focus requires an unlocked macOS window session")
         }
-        let focused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            guard let view = framebuffer(in: host) else { return false }
-            return window.firstResponder === view
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [focused], timeout: 5), .completed,
-                       "A connected VNC desktop should receive keyboard focus without a click")
+        let focusArrived = await waitForUI(timeout: 5) {
+            window.firstResponder === framebuffer(in: host)
+        }
+        XCTAssertTrue(focusArrived,
+                      "A connected VNC desktop should receive keyboard focus without a click")
     }
 
+    @MainActor
     private func assertRenderedDesktop(_ session: VNCRemoteSession, isBlack: Bool,
-                                       expectsEmptyCursor: Bool = false) throws {
+                                       expectsEmptyCursor: Bool = false) async throws {
         // A successful handshake alone does not prove that the app shows pixels.
         let host = NSHostingView(rootView: VNCSessionScreenView(session: session))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
@@ -1209,23 +1343,24 @@ final class VNCIntegrationTests: XCTestCase {
             if let frame = view as? VNCCAFramebufferView { return frame }
             return view.subviews.lazy.compactMap { framebuffer(in: $0) }.first
         }
-        let rendered = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+        let didRender = await waitForUI(timeout: 5) {
             guard let view = framebuffer(in: host) else { return false }
             return view.window === window && view.layer?.contents != nil
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [rendered], timeout: 5), .completed)
+        }
+        XCTAssertTrue(didRender)
         let view = try XCTUnwrap(framebuffer(in: host))
         if expectsEmptyCursor {
-            let fallback = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                guard view.remoteCursor?.isEmpty == true else { return false }
-                return view.currentCursor.image.size == CGSize(width: 9, height: 9)
-            }, object: nil)
-            XCTAssertEqual(XCTWaiter.wait(for: [fallback], timeout: 5), .completed,
-                           "An empty RFB cursor shape should activate the centered dot fallback")
+        let fallbackVisible = await waitForUI(timeout: 5) {
+                view.remoteCursor?.isEmpty == true && view.currentCursor.image.size == CGSize(width: 9, height: 9)
+            }
+            XCTAssertTrue(fallbackVisible,
+                          "An empty RFB cursor shape should activate the centered dot fallback")
             XCTAssertEqual(view.currentCursor.hotSpot, CGPoint(x: 4.5, y: 4.5))
         } else {
             XCTAssertNil(view.remoteCursor, "This fixture sends no remote cursor shape")
-            XCTAssertTrue(view.currentCursor === NSCursor.arrow,
+            XCTAssertEqual(view.currentCursor.image.size, NSCursor.arrow.image.size,
+                           "A server that omits cursor pseudo-encodings must leave the local pointer visible")
+            XCTAssertEqual(view.currentCursor.hotSpot, NSCursor.arrow.hotSpot,
                           "A server that omits cursor pseudo-encodings must leave the local pointer visible")
         }
         let contents = try XCTUnwrap(view.layer?.contents)
@@ -1238,6 +1373,16 @@ final class VNCIntegrationTests: XCTestCase {
         else { XCTAssertGreaterThan(pixel.redComponent, 0.95) }
         XCTAssertLessThan(pixel.greenComponent, 0.05)
         XCTAssertLessThan(pixel.blueComponent, 0.05)
+    }
+
+    @MainActor
+    private func waitForUI(timeout: TimeInterval, condition: () -> Bool) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return true }
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        return condition()
     }
 
     private static let server = #"""

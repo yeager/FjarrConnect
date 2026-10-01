@@ -5,6 +5,25 @@ import Foundation
 #endif
 
 import Dispatch
+import CryptoKit
+
+/// Identity details from a TLS peer certificate after normal platform trust
+/// and hostname validation has succeeded. This type never contains credentials.
+public struct VNCTLSCertificateInfo: Sendable, Equatable {
+    public let subjectSummary: String?
+    public let sha256Fingerprint: String
+
+    init(subjectSummary: String?, derEncodedCertificate: Data) {
+        self.subjectSummary = subjectSummary
+        self.sha256Fingerprint = SHA256Fingerprint.string(for: derEncodedCertificate)
+    }
+}
+
+enum SHA256Fingerprint {
+    static func string(for data: Data) -> String {
+        SHA256.hash(data: data).map { String(format: "%02X", $0) }.joined(separator: ":")
+    }
+}
 
 #if canImport(Network)
 import Network
@@ -23,6 +42,26 @@ public enum VNCNegotiatedSecurity: String, Sendable {
     case veNCryptX509PlainSelected = "VeNCrypt X509Plain selected; TLS/certificate validation incomplete"
     case veNCryptX509VNCVerified = "VeNCrypt X509Vnc; TLS and certificate validation succeeded"
     case veNCryptX509PlainVerified = "VeNCrypt X509Plain; TLS and certificate validation succeeded"
+
+    public var protocolName: String {
+        switch self {
+        case .none: "None"
+        case .vncPassword: "VNC Authentication"
+        case .appleDiffieHellman: "Apple Diffie-Hellman"
+        case .ultraVNCMSLogonII: "UltraVNC MS-Logon II"
+        case .tight: "Tight"
+        case .veNCryptX509VNCSelected, .veNCryptX509VNCVerified: "VeNCrypt X509Vnc"
+        case .veNCryptX509PlainSelected, .veNCryptX509PlainVerified: "VeNCrypt X509Plain"
+        }
+    }
+
+    public var tlsCertificateWasVerified: Bool? {
+        switch self {
+        case .veNCryptX509VNCSelected, .veNCryptX509PlainSelected: false
+        case .veNCryptX509VNCVerified, .veNCryptX509PlainVerified: true
+        default: nil
+        }
+    }
 }
 
 #if canImport(ObjectiveC)
@@ -69,6 +108,16 @@ public final class VNCConnection: NSObjectOrAnyObject {
 
     /// Safe protocol summary for diagnostics; it never contains endpoint or credential data.
     public internal(set) var negotiatedSecurity: VNCNegotiatedSecurity?
+
+    /// Peer identity from a certificate accepted by Apple TLS chain and hostname validation.
+    public var verifiedTLSCertificate: VNCTLSCertificateInfo? {
+        (connection as? any TLSUpgradableNetworkConnection)?.verifiedTLSCertificate
+    }
+
+    /// Numeric Secure Transport code from a failed TLS handshake, without raw OS text.
+    public var tlsFailureCode: Int32? {
+        (connection as? any TLSUpgradableNetworkConnection)?.tlsFailureCode
+    }
 
 #if canImport(ObjectiveC)
 	@objc
@@ -314,6 +363,22 @@ public final class VNCConnection: NSObjectOrAnyObject {
 
 		stopMonitoringClipboard()
 	}
+}
+
+/// Bridges weak access to a VNC connection into callbacks queued on the main
+/// dispatch queue. The wrapped reference must only be read from that queue;
+/// this avoids claiming that VNCConnection's broader mutable state is Sendable.
+final class WeakMainQueueVNCConnection: @unchecked Sendable {
+    private weak var connection: VNCConnection?
+
+    var value: VNCConnection? {
+        dispatchPrecondition(condition: .onQueue(.main))
+        return connection
+    }
+
+    init(_ value: VNCConnection) {
+        connection = value
+    }
 }
 
 // MARK: - Internal Connection State API

@@ -302,6 +302,7 @@
 "rdp.error.nla" = "The server requires Network Level Authentication (NLA). Check that the account can use NLA and that the Windows server supports the selected sign-in method.";
 "rdp.error.license" = "The server rejected the Remote Desktop licence negotiation. Check the Remote Desktop licensing service and available client access licences.";
 "rdp.error.serverEndedSession" = "The server ended the RDP session after connecting. Check the remote account's session policy and the server's Remote Desktop logs.";
+"rdp.error.channel" = "The RDP server ended a virtual channel. Check which redirection channels the server allows and whether the profile uses a supported channel.";
 
 // Network service discovery
 "discovery.scan.title" = "Find servers";
@@ -439,6 +440,7 @@
 "health.title" = "Connection health";
 "health.tcpConnection" = "TCP connection";
 "health.tcpConnection.value" = "%d ms";
+"health.rdpRoundTrip" = "RDP round-trip time";
 "health.packetLoss" = "Packet loss";
 "health.packetLoss.value" = "%.1f%%";
 "health.packetLoss.unavailable" = "Unavailable for this TCP session";
@@ -447,6 +449,14 @@
 "health.reconnect.value" = "Attempt %d of %d";
 "health.reconnect.none" = "No reconnecting attempt";
 "health.unavailable" = "Unavailable";
+"vnc.security.section" = "VNC security";
+"vnc.tlsHandshakeFailed" = "The secure VNC handshake failed. Check that the server certificate is trusted and valid for this address, and that the server supports a compatible TLS configuration.";
+"vnc.security.unknown" = "Not negotiated";
+"vnc.security.none" = "Unencrypted";
+"vnc.security.verified" = "TLS certificate verified";
+"vnc.security.notVerified" = "TLS certificate has not been verified";
+"vnc.certificate.subject" = "Certificate name";
+"vnc.certificate.sha256" = "SHA-256 fingerprint";
 
 /* RDP network profile */
 "rdp.network" = "Network profile";

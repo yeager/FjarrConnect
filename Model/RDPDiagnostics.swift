@@ -54,6 +54,7 @@ enum DiagnosticReport {
                      health: SessionHealth? = nil, connectionPhase: String? = nil,
                      requestedSecurityProtocols: UInt32? = nil, selectedSecurityProtocol: UInt32? = nil,
                      vncSecurity: VNCNegotiatedSecurity? = nil,
+                     vncTLSFailureCode: Int32? = nil,
                      inputState: UInt32? = nil,
                      now: Date = .now) -> String {
         let formatter = ISO8601DateFormatter()
@@ -75,6 +76,7 @@ enum DiagnosticReport {
         let architecture = "unknown"
         #endif
         let connectionTime = health?.tcpConnectionMilliseconds.map(String.init) ?? "unavailable"
+        let roundTripTime = health?.roundTripMilliseconds.map(String.init) ?? "unavailable"
         let packetLoss = health?.packetLossPercent.map { String(format: "%.1f", locale: Locale(identifier: "en_US_POSIX"), $0) } ?? "unavailable"
         let knownPhases: Set<String> = ["CONNECTION_STATE_INITIAL", "CONNECTION_STATE_NEGO", "CONNECTION_STATE_NLA",
             "CONNECTION_STATE_AAD", "CONNECTION_STATE_MCS_CREATE_REQUEST", "CONNECTION_STATE_MCS_CREATE_RESPONSE",
@@ -116,12 +118,14 @@ enum DiagnosticReport {
             "protocol: \(profile.transport.rawValue)",
             "state: \(state)",
             "tcp-connect-ms: \(connectionTime)",
+            "rdp-round-trip-ms: \(roundTripTime)",
             "packet-loss-percent: \(packetLoss)",
             "graphics-codec: \(health?.codec ?? "unavailable")",
             "rdp-connection-phase: \(profile.transport == .rdp || profile.transport == .remoteApp ? safePhase : "unavailable")",
             "rdp-requested-security-protocols: \(profile.transport == .rdp || profile.transport == .remoteApp ? safeRequestedProtocols : "unavailable")",
             "rdp-selected-security-protocol: \(profile.transport == .rdp || profile.transport == .remoteApp ? safeSelectedProtocol : "unavailable")",
             "vnc-negotiated-security: \(profile.transport == .vnc ? vncSecurity?.rawValue ?? "unavailable" : "unavailable")",
+            "vnc-tls-error-code: \(profile.transport == .vnc ? vncTLSFailureCode.map { String($0) } ?? "unavailable" : "unavailable")",
             "rdp-arguments-parsed: \(profile.transport == .rdp || profile.transport == .remoteApp ? presence(1) : "unavailable")",
             "rdp-username-configured: \(profile.transport == .rdp || profile.transport == .remoteApp ? presence(2) : "unavailable")",
             "rdp-password-configured: \(profile.transport == .rdp || profile.transport == .remoteApp ? presence(4) : "unavailable")",
@@ -136,6 +140,7 @@ enum DiagnosticReport {
                      health: SessionHealth? = nil, connectionPhase: String? = nil,
                      requestedSecurityProtocols: UInt32? = nil, selectedSecurityProtocol: UInt32? = nil,
                      vncSecurity: VNCNegotiatedSecurity? = nil,
+                     vncTLSFailureCode: Int32? = nil,
                      inputState: UInt32? = nil) throws {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = "FjarrConnect-diagnostic.txt"
@@ -144,6 +149,7 @@ enum DiagnosticReport {
         try write(profile: profile, status: status, health: health, connectionPhase: connectionPhase,
                   requestedSecurityProtocols: requestedSecurityProtocols,
                   selectedSecurityProtocol: selectedSecurityProtocol, vncSecurity: vncSecurity,
+                  vncTLSFailureCode: vncTLSFailureCode,
                   inputState: inputState, to: url)
     }
 
@@ -151,11 +157,13 @@ enum DiagnosticReport {
                       health: SessionHealth? = nil, connectionPhase: String? = nil,
                       requestedSecurityProtocols: UInt32? = nil, selectedSecurityProtocol: UInt32? = nil,
                       vncSecurity: VNCNegotiatedSecurity? = nil,
+                      vncTLSFailureCode: Int32? = nil,
                       inputState: UInt32? = nil,
                       to url: URL, now: Date = .now) throws {
         try text(profile: profile, status: status, health: health, connectionPhase: connectionPhase,
                  requestedSecurityProtocols: requestedSecurityProtocols,
                  selectedSecurityProtocol: selectedSecurityProtocol, vncSecurity: vncSecurity,
+                 vncTLSFailureCode: vncTLSFailureCode,
                  inputState: inputState, now: now)
             .write(to: url, atomically: true, encoding: .utf8)
     }

@@ -54,6 +54,7 @@ final class RDPRuntime {
     typealias Phase = @convention(c) (UnsafeMutableRawPointer) -> UnsafePointer<CChar>?
     typealias ProtocolFlags = @convention(c) (UnsafeMutableRawPointer) -> UInt32
     typealias InputState = @convention(c) (UnsafeMutableRawPointer) -> UInt32
+    typealias Measurement = @convention(c) (UnsafeMutableRawPointer) -> UInt32
     let create: Create
     let start: Action
     let stop: Action
@@ -68,6 +69,7 @@ final class RDPRuntime {
     let requestedProtocols: ProtocolFlags
     let selectedProtocol: ProtocolFlags
     let inputState: InputState
+    let roundTripMilliseconds: Measurement
     private let library: UnsafeMutableRawPointer
 
     private static let loadState: LoadState = {
@@ -129,7 +131,7 @@ final class RDPRuntime {
             guard let symbol = dlsym(library, name) else { return nil }
             return unsafeBitCast(symbol, to: T.self)
         }
-        guard let abi = function("fc_rdp_abi", (@convention(c) () -> UInt32).self), abi() == 7,
+        guard let abi = function("fc_rdp_abi", (@convention(c) () -> UInt32).self), abi() == 8,
               let create = function("fc_rdp_create", Create.self),
               let start = function("fc_rdp_start", Action.self),
               let stop = function("fc_rdp_stop", Action.self),
@@ -143,7 +145,8 @@ final class RDPRuntime {
               let phase = function("fc_rdp_connection_phase", Phase.self),
               let requestedProtocols = function("fc_rdp_requested_protocols", ProtocolFlags.self),
               let selectedProtocol = function("fc_rdp_selected_protocol", ProtocolFlags.self),
-              let inputState = function("fc_rdp_input_state", InputState.self) else {
+              let inputState = function("fc_rdp_input_state", InputState.self),
+              let roundTripMilliseconds = function("fc_rdp_round_trip_milliseconds", Measurement.self) else {
             dlclose(library)
             onFailure?(.incompatibleABI)
             return nil
@@ -155,6 +158,7 @@ final class RDPRuntime {
         self.error = error; self.failure = failure; self.codec = codec; self.phase = phase
         self.requestedProtocols = requestedProtocols; self.selectedProtocol = selectedProtocol
         self.inputState = inputState
+        self.roundTripMilliseconds = roundTripMilliseconds
         // Objective-C classes remain registered for the lifetime of the process.
         // Do not dlclose a library that has registered view classes.
     }

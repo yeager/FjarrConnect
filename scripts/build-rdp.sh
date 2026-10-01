@@ -41,7 +41,8 @@ fetch() {
   test "$(git -C "$STAGE/$name" rev-parse HEAD)" = "$revision"
 }
 fetch openssl https://github.com/openssl/openssl.git f4dc4d58b48d346a8270183f89acf826d459b0ca
-fetch FreeRDP https://github.com/FreeRDP/FreeRDP.git d27a4f7c1c63b62a5e60e5d939ad116cfb58ffc1
+# Pin the 3.32.1 bug-fix release (including static-channel fragmentation fixes).
+fetch FreeRDP https://github.com/FreeRDP/FreeRDP.git bf217a504e54cc719880c228e82353382cd7d4fa
 COMMON=(-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_PREFIX_PATH="$PREFIX"
   -DCMAKE_OSX_ARCHITECTURES="$RDP_ARCH" -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0
   -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DBUILD_SHARED_LIBS=OFF)

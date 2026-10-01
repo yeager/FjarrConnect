@@ -35,6 +35,19 @@ extension VNCConnection {
 		clientToServerMessageQueue.enqueueKeyRepeat(keyEvent)
 	}
 
+	/// Sends the initial key-up while preserving the physical key state so
+	/// autorepeat events may still be forwarded until AppKit reports key-up.
+	func enqueueKeyTapRelease(_ key: VNCKeyCode) {
+		// Modifiers must remain down across the following key event for shortcuts
+		// such as Control+C and Shift+Arrow to keep their intended meaning.
+		guard settings.inputMode != .none, !key.isModifier else { return }
+
+		let keyCode = key.rawValue(forAppleRemoteDesktop: state.isAppleRemoteDesktop)
+		clientToServerMessageQueue.enqueueKeyTapRelease(
+			VNCProtocol.KeyEvent(isDown: false, key: keyCode)
+		)
+	}
+
     func enqueueMouseEvent(nonNormalizedX: UInt16,
                            nonNormalizedY: UInt16) {
         guard settings.inputMode != .none else { return }

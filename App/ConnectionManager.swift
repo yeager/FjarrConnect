@@ -2,6 +2,20 @@ import SwiftUI
 import Combine
 import Network
 
+/// The TCP endpoint whose setup time is shown in connection health. For RDP
+/// gateway profiles this is the gateway, since the desktop endpoint is reached
+/// through it rather than by a direct TCP connection.
+enum SessionHealthEndpoint {
+    static func resolve(for profile: ConnectionProfile) -> (host: String, port: UInt16) {
+        if (profile.transport == .rdp || profile.transport == .remoteApp),
+           let gateway = profile.rdp?.gatewayHost,
+           !gateway.isEmpty {
+            return (gateway, profile.rdp?.gatewayPort ?? 443)
+        }
+        return (profile.host, profile.port)
+    }
+}
+
 /// Each tab owns its connection material for its lifetime. Saved credentials are
 /// never copied to a profile or log; keeping them here permits an opted-in retry.
 final class SessionTab: ObservableObject, Identifiable {
@@ -54,7 +68,8 @@ final class SessionTab: ObservableObject, Identifiable {
     var health: SessionHealth {
         SessionHealth(tcpConnectionMilliseconds: tcpConnectionMilliseconds,
                       packetLossPercent: nil,
-                      codec: backend.negotiatedCodec)
+                      codec: backend.negotiatedCodec,
+                      roundTripMilliseconds: backend.roundTripMilliseconds)
     }
 
     func startRecording() {
@@ -113,10 +128,11 @@ final class SessionTab: ObservableObject, Identifiable {
 
     private func sampleTCPConnectionTime() {
         let profile = backend.profile
-        guard let port = NWEndpoint.Port(rawValue: profile.port) else { return }
+        let endpoint = SessionHealthEndpoint.resolve(for: profile)
+        guard let port = NWEndpoint.Port(rawValue: endpoint.port) else { return }
         healthProbe?.cancel()
         let began = DispatchTime.now().uptimeNanoseconds
-        let probe = NWConnection(host: NWEndpoint.Host(profile.host), port: port, using: .tcp)
+        let probe = NWConnection(host: NWEndpoint.Host(endpoint.host), port: port, using: .tcp)
         healthProbe = probe
         probe.stateUpdateHandler = { [weak self, weak probe] state in
             guard let probe else { return }
@@ -255,5 +271,12 @@ final class ConnectionManager: ObservableObject {
         tabs.removeAll()
         tabSubscriptions.removeAll()
         selectedID = nil
+    }
+
+    /// Stop current captures and wait for every movie container to finalize,
+    /// including writers belonging to tabs that were already closed.
+    func stopRecordingsAndWait(completion: @escaping () -> Void) {
+        tabs.forEach { $0.stopRecording() }
+        RecordingLibrary.whenNoActiveRecordings(completion)
     }
 }

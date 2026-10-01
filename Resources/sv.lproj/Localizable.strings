@@ -302,6 +302,7 @@
 "rdp.error.nla" = "Servern kräver nätverksautentisering (NLA). Kontrollera att kontot får använda NLA och att Windows-servern stöder den valda inloggningsmetoden.";
 "rdp.error.license" = "Servern avvisade licensförhandlingen för Fjärrskrivbord. Kontrollera licenstjänsten för Fjärrskrivbord och tillgängliga klientåtkomstlicenser.";
 "rdp.error.serverEndedSession" = "Servern avslutade RDP-sessionen efter anslutningen. Kontrollera fjärrkontots sessionspolicy och serverns loggar för Fjärrskrivbord.";
+"rdp.error.channel" = "RDP-servern avbröt en virtuell kanal. Kontrollera vilka omdirigeringskanaler servern tillåter och om profilen använder en kanal som stöds.";
 
 // Network service discovery
 "discovery.scan.title" = "Sök servrar";
@@ -439,6 +440,7 @@
 "health.title" = "Anslutningshälsa";
 "health.tcpConnection" = "TCP-anslutning";
 "health.tcpConnection.value" = "%d ms";
+"health.rdpRoundTrip" = "RDP-svarstid";
 "health.packetLoss" = "Paketförlust";
 "health.packetLoss.value" = "%.1f %%";
 "health.packetLoss.unavailable" = "Inte tillgängligt för denna TCP-session";
@@ -447,6 +449,14 @@
 "health.reconnect.value" = "Försök %d av %d";
 "health.reconnect.none" = "Ingen återanslutning pågår";
 "health.unavailable" = "Inte tillgängligt";
+"vnc.security.section" = "VNC-säkerhet";
+"vnc.tlsHandshakeFailed" = "Den krypterade VNC-anslutningen kunde inte upprättas. Kontrollera att servercertifikatet är betrott och giltigt för adressen samt att servern stöder kompatibla TLS-inställningar.";
+"vnc.security.unknown" = "Inte fastställd";
+"vnc.security.none" = "Ingen kryptering";
+"vnc.security.verified" = "TLS-certifikatet har verifierats";
+"vnc.security.notVerified" = "TLS-certifikatet har inte verifierats";
+"vnc.certificate.subject" = "Certifikatnamn";
+"vnc.certificate.sha256" = "SHA-256-fingeravtryck";
 
 /* RDP network profile */
 "rdp.network" = "Nätverksprofil";

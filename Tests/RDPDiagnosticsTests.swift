@@ -5,6 +5,7 @@ final class RDPDiagnosticsTests: XCTestCase {
     func testServerInitiatedLogoffHasItsOwnExplanation() {
         XCTAssertEqual(RDPRemoteSession.failureLocalizationKey(for: 8), "rdp.error.serverEndedSession")
         XCTAssertEqual(RDPRemoteSession.failureLocalizationKey(for: 9), "rdp.error.securityNegotiation")
+        XCTAssertEqual(RDPRemoteSession.failureLocalizationKey(for: 10), "rdp.error.channel")
         XCTAssertEqual(RDPRemoteSession.failureLocalizationKey(for: 3), "rdp.error.authentication")
         XCTAssertEqual(RDPRemoteSession.failureLocalizationKey(for: 99), "rdp.ended")
     }
@@ -57,9 +58,11 @@ final class RDPDiagnosticsTests: XCTestCase {
 
     func testDiagnosticReportIncludesAvailableHealthWithoutEndpointData() {
         let profile = ConnectionProfile(name: "Remote", transport: .rdp, host: "192.0.2.4")
-        let health = SessionHealth(tcpConnectionMilliseconds: 18, packetLossPercent: nil, codec: "RemoteFX")
+        let health = SessionHealth(tcpConnectionMilliseconds: 18, packetLossPercent: nil,
+                                   codec: "RemoteFX", roundTripMilliseconds: 42)
         let report = DiagnosticReport.text(profile: profile, status: .connected, health: health)
         XCTAssertTrue(report.contains("tcp-connect-ms: 18"))
+        XCTAssertTrue(report.contains("rdp-round-trip-ms: 42"))
         XCTAssertTrue(report.contains("packet-loss-percent: unavailable"))
         XCTAssertTrue(report.contains("graphics-codec: RemoteFX"))
         XCTAssertFalse(report.contains(profile.host))
@@ -120,12 +123,18 @@ final class RDPDiagnosticsTests: XCTestCase {
         let unavailable = DiagnosticReport.text(profile: profile, status: .connecting)
         XCTAssertTrue(unavailable.contains("vnc-negotiated-security: unavailable"))
 
+        let tlsFailure = DiagnosticReport.text(profile: profile, status: .disconnected(reason: "failure"),
+                                               vncTLSFailureCode: -9807)
+        XCTAssertTrue(tlsFailure.contains("vnc-tls-error-code: -9807"))
+        XCTAssertFalse(tlsFailure.contains("private.example"))
+
         let nonVNC = DiagnosticReport.text(
             profile: ConnectionProfile(name: "Remote", transport: .rdp, host: "private.example"),
             status: .connecting,
             vncSecurity: .veNCryptX509VNCVerified
         )
         XCTAssertTrue(nonVNC.contains("vnc-negotiated-security: unavailable"))
+        XCTAssertTrue(nonVNC.contains("vnc-tls-error-code: unavailable"))
     }
 
     func testDiagnosticReportIncludesOnlyCredentialPresenceBits() {

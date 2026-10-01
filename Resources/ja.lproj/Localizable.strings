@@ -287,6 +287,7 @@
 "rdp.error.nla" = "サーバーにはネットワーク レベル認証（NLA）が必要です。アカウントがNLAを使用でき、Windowsサーバーが選択したサインイン方法をサポートしていることを確認してください。";
 "rdp.error.license" = "サーバーがリモート デスクトップのライセンス ネゴシエーションを拒否しました。リモート デスクトップ ライセンス サービスと使用可能なクライアント アクセス ライセンスを確認してください。";
 "rdp.error.serverEndedSession" = "接続後にサーバーがRDPセッションを終了しました。リモートアカウントのセッションポリシーと、サーバーのリモート デスクトップ ログを確認してください。";
+"rdp.error.channel" = "RDPサーバーが仮想チャネルを終了しました。サーバーで許可されているリダイレクト チャネルと、プロファイルがサポート対象のチャネルを使用しているか確認してください。";
 
 // Network service discovery
 "discovery.scan.title" = "サーバを検索";
@@ -424,6 +425,7 @@
 "health.title" = "接続の状態";
 "health.tcpConnection" = "TCP接続";
 "health.tcpConnection.value" = "%d ms";
+"health.rdpRoundTrip" = "RDP 往復時間";
 "health.packetLoss" = "パケット損失";
 "health.packetLoss.value" = "%.1f %%";
 "health.packetLoss.unavailable" = "この TCP セッションでは利用できません";
@@ -432,6 +434,14 @@
 "health.reconnect.value" = "%d / %d 回目";
 "health.reconnect.none" = "再接続は実行されていません";
 "health.unavailable" = "利用できません";
+"vnc.security.section" = "VNC のセキュリティ";
+"vnc.tlsHandshakeFailed" = "VNC の安全なハンドシェイクに失敗しました。サーバー証明書が信頼され、このアドレスに対して有効であること、および互換性のある TLS 設定をサーバーがサポートしていることを確認してください。";
+"vnc.security.unknown" = "未ネゴシエート";
+"vnc.security.none" = "暗号化なし";
+"vnc.security.verified" = "TLS 証明書を検証済み";
+"vnc.security.notVerified" = "TLS 証明書は未検証";
+"vnc.certificate.subject" = "証明書名";
+"vnc.certificate.sha256" = "SHA-256 フィンガープリント";
 
 /* RDP network profile */
 "rdp.network" = "ネットワークプロファイル";

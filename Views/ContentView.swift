@@ -1,4 +1,5 @@
 import SwiftUI
+import RoyalVNCKit
 
 struct ContentView: View {
     @EnvironmentObject var profiles: ProfileStore
@@ -42,11 +43,9 @@ struct ContentView: View {
             syncSidebarVisibility()
         }
         .onChange(of: connection.tabs.map { $0.backend.status }) { _, _ in
-            manualSidebarVisibility = nil
             syncSidebarVisibility()
         }
         .onChange(of: connection.selected?.backend.status) { _, status in
-            manualSidebarVisibility = nil
             syncSidebarVisibility()
             guard status?.isFinished == true,
                   let session = connection.selected?.backend as? VNCRemoteSession,
@@ -112,13 +111,14 @@ struct ContentView: View {
                                                      selectedSessionStatus: connection.selected?.backend.status) {
                     VStack(spacing: 0) {
                         SessionTabBar(tabs: connection.tabs, selectedID: connection.selectedID,
+                                      largeControls: useLargeControls,
                                       select: { connection.selectedID = $0 }, close: { connection.requestClose($0) })
-                            .frame(height: 56)
+                            .frame(height: useLargeControls ? 72 : 56)
                             .background(.bar, ignoresSafeAreaEdges: [])
                         Divider()
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: 57, alignment: .top)
+                    .frame(height: useLargeControls ? 73 : 57, alignment: .top)
                 }
 
                 if let tab = connection.selected {
@@ -135,7 +135,6 @@ struct ContentView: View {
                                       openFiles: { urls in
                                           connection.connect(tab.backend.profile.fileProfile, initialFileUploads: urls)
                                       })
-                    .id(ObjectIdentifier(tab.backend))
                 } else {
                     welcome
                 }
@@ -487,6 +486,37 @@ private struct SessionDetailView: View {
     @State private var pendingFileURLs: [URL] = []
     @State private var useVNCUploadForDrop = false
     @State private var waitingForVNCFileListing = false
+
+    private var sessionHealthMenu: some View {
+        SessionHealthMenu(
+            health: tab.health,
+            reconnectAttempt: tab.reconnectAttempt,
+            isRDP: tab.backend.profile.transport == .rdp || tab.backend.profile.transport == .remoteApp,
+            isVNC: tab.backend.profile.transport == .vnc,
+            vncSecurity: (tab.backend as? VNCRemoteSession)?.negotiatedSecurity,
+            vncCertificate: (tab.backend as? VNCRemoteSession)?.verifiedTLSCertificate
+        )
+    }
+
+    private func saveDiagnosticReport() {
+        let backend = tab.backend
+        do {
+            try DiagnosticReport.save(
+                profile: backend.profile,
+                status: backend.status,
+                health: tab.health,
+                connectionPhase: backend.connectionPhase,
+                requestedSecurityProtocols: backend.requestedSecurityProtocols,
+                selectedSecurityProtocol: backend.selectedSecurityProtocol,
+                vncSecurity: (backend as? VNCRemoteSession)?.negotiatedSecurity,
+                vncTLSFailureCode: (backend as? VNCRemoteSession)?.tlsFailureCode,
+                inputState: (backend as? RDPRemoteSession)?.inputState
+            )
+        } catch {
+            diagnosticSaveFailed = true
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -496,7 +526,7 @@ private struct SessionDetailView: View {
                 }
                 Spacer()
                 Text(tab.backend.status.label).font(.callout).foregroundStyle(.secondary)
-                SessionHealthMenu(health: tab.health, reconnectAttempt: tab.reconnectAttempt)
+                sessionHealthMenu
                 if let rdp = tab.backend as? RDPRemoteSession {
                     Button { rdp.sendSecureAttentionSequence() } label: {
                         Image(systemName: "keyboard")
@@ -561,20 +591,7 @@ private struct SessionDetailView: View {
                         .lineLimit(4)
                         .frame(maxHeight: 120, alignment: .topLeading)
                     Spacer()
-                    Button("diagnostics.save") {
-                        do {
-                            try DiagnosticReport.save(profile: tab.backend.profile,
-                                                      status: tab.backend.status,
-                                                      health: tab.health,
-                                                      connectionPhase: tab.backend.connectionPhase,
-                                                      requestedSecurityProtocols: tab.backend.requestedSecurityProtocols,
-                                                      selectedSecurityProtocol: tab.backend.selectedSecurityProtocol,
-                                                      vncSecurity: (tab.backend as? VNCRemoteSession)?.negotiatedSecurity,
-                                                      inputState: (tab.backend as? RDPRemoteSession)?.inputState)
-                        } catch {
-                            diagnosticSaveFailed = true
-                        }
-                    }
+                    Button("diagnostics.save", action: saveDiagnosticReport)
                 }.padding().frame(maxWidth: .infinity, alignment: .leading)
             }
             if let notice = tab.backend.notice {
@@ -665,6 +682,10 @@ private struct SessionDetailView: View {
 private struct SessionHealthMenu: View {
     let health: SessionHealth
     let reconnectAttempt: Int?
+    let isRDP: Bool
+    let isVNC: Bool
+    let vncSecurity: VNCNegotiatedSecurity?
+    let vncCertificate: VNCTLSCertificateInfo?
 
     var body: some View {
         Menu {
@@ -676,9 +697,16 @@ private struct SessionHealthMenu: View {
                     String(format: NSLocalizedString("health.tcpConnection.value", comment: ""), $0)
                 } ?? NSLocalizedString("health.unavailable", comment: "")
             )
+            if isRDP {
+                healthRow("health.rdpRoundTrip",
+                          value: health.roundTripMilliseconds.map {
+                              String(format: NSLocalizedString("health.tcpConnection.value", comment: ""), $0)
+                          } ?? NSLocalizedString("health.unavailable", comment: ""))
+            }
             healthRow("health.packetLoss", value: health.packetLossPercent.map { String(format: NSLocalizedString("health.packetLoss.value", comment: ""), $0) } ?? NSLocalizedString("health.packetLoss.unavailable", comment: ""))
             healthRow("health.codec", value: health.codec ?? NSLocalizedString("health.unavailable", comment: ""))
             healthRow("health.reconnect", value: reconnectAttempt.map { String(format: NSLocalizedString("health.reconnect.value", comment: ""), $0, 3) } ?? NSLocalizedString("health.reconnect.none", comment: ""))
+            if isVNC { VNCConnectionSecuritySection(security: vncSecurity, certificate: vncCertificate) }
         } label: {
             Image(systemName: "chart.bar.xaxis")
         }
@@ -690,6 +718,31 @@ private struct SessionHealthMenu: View {
     @ViewBuilder
     private func healthRow(_ key: LocalizedStringKey, value: String) -> some View {
         HStack { Text(key); Spacer(); Text(value).foregroundStyle(.secondary) }
+    }
+}
+
+private struct VNCConnectionSecuritySection: View {
+    let security: VNCNegotiatedSecurity?
+    let certificate: VNCTLSCertificateInfo?
+
+    var body: some View {
+        Section("vnc.security.section") {
+            if security == VNCNegotiatedSecurity.none {
+                Label("vnc.security.none", systemImage: "exclamationmark.shield")
+            } else {
+                Text(security?.protocolName ?? NSLocalizedString("vnc.security.unknown", comment: ""))
+            }
+            if let certificateWasVerified = security?.tlsCertificateWasVerified {
+                Label(certificateWasVerified ? "vnc.security.verified" : "vnc.security.notVerified",
+                      systemImage: certificateWasVerified ? "checkmark.shield" : "exclamationmark.shield")
+            }
+            if let subject = certificate?.subjectSummary {
+                Text("\(NSLocalizedString("vnc.certificate.subject", comment: "")): \(subject)")
+            }
+            if let fingerprint = certificate?.sha256Fingerprint {
+                Text("\(NSLocalizedString("vnc.certificate.sha256", comment: "")): \(fingerprint)")
+            }
+        }
     }
 }
 

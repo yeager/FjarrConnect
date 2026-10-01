@@ -116,7 +116,7 @@ struct RDPOptions: Codable, Hashable {
 
         var freeRDPValue: String? {
             switch self {
-            case .automatic: return nil
+            case .automatic: return "auto"
             case .slow: return "modem"
             case .balanced: return "broadband-high"
             case .lan: return "lan"

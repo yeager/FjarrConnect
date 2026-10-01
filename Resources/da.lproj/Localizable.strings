@@ -302,6 +302,7 @@
 "rdp.error.nla" = "Serveren kræver netværksgodkendelse (NLA). Kontrollér, at kontoen må bruge NLA, og at Windows-serveren understøtter den valgte loginmetode.";
 "rdp.error.license" = "Serveren afviste licensforhandlingen for Fjernskrivebord. Kontrollér licenstjenesten for Fjernskrivebord og tilgængelige klientadgangslicenser.";
 "rdp.error.serverEndedSession" = "Serveren afsluttede RDP-sessionen efter forbindelsen. Kontrollér fjernkontoens sessionspolitik og serverens logfiler for Fjernskrivebord.";
+"rdp.error.channel" = "RDP-serveren afbrød en virtuel kanal. Kontrollér, hvilke omdirigeringskanaler serveren tillader, og om profilen bruger en understøttet kanal.";
 
 // Network service discovery
 "discovery.scan.title" = "Find servere";
@@ -439,6 +440,7 @@
 "health.title" = "Forbindelsestilstand";
 "health.tcpConnection" = "TCP-forbindelse";
 "health.tcpConnection.value" = "%d ms";
+"health.rdpRoundTrip" = "RDP-svartid";
 "health.packetLoss" = "Pakketab";
 "health.packetLoss.value" = "%.1f %%";
 "health.packetLoss.unavailable" = "Ikke tilgængelig for denne TCP-session";
@@ -447,6 +449,14 @@
 "health.reconnect.value" = "Forsøg %d af %d";
 "health.reconnect.none" = "Ingen genforbindelse i gang";
 "health.unavailable" = "Ikke tilgængelig";
+"vnc.security.section" = "VNC-sikkerhed";
+"vnc.tlsHandshakeFailed" = "Den sikre VNC-forbindelse kunne ikke oprettes. Kontrollér, at serverens certifikat er betroet og gyldigt for adressen, og at serveren understøtter kompatible TLS-indstillinger.";
+"vnc.security.unknown" = "Ikke forhandlet";
+"vnc.security.none" = "Ukrypteret";
+"vnc.security.verified" = "TLS-certifikatet er verificeret";
+"vnc.security.notVerified" = "TLS-certifikatet er ikke verificeret";
+"vnc.certificate.subject" = "Certifikatnavn";
+"vnc.certificate.sha256" = "SHA-256-fingeraftryk";
 
 /* RDP network profile */
 "rdp.network" = "Netværksprofil";

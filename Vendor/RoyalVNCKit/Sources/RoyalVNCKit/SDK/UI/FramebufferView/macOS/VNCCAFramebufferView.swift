@@ -232,7 +232,17 @@ public final class VNCCAFramebufferView: NSView, VNCFramebufferView {
 			self.applicationResignActiveObserver = nil
 		}
 
-		guard let window else { return }
+		guard let window else {
+			// A tab switch or session teardown can detach the framebuffer without
+			// first making it resign first responder. Never leave remote keys held.
+			releasePressedKeys()
+			return
+		}
+		if remoteCursor == nil {
+			// NSView can reset cursor state while the hosting hierarchy attaches.
+			// Keep a usable local pointer until the server sends its own shape.
+			currentCursor = .arrow
+		}
 		windowResignKeyObserver = NotificationCenter.default.addObserver(
 			forName: NSWindow.didResignKeyNotification,
 			object: window,
@@ -570,6 +580,7 @@ extension VNCCAFramebufferView {
 				connection.enqueueKeyRepeat(keyCode)
 			} else {
 				connection.keyDown(keyCode)
+				connection.enqueueKeyTapRelease(keyCode)
 			}
 		}
 	}

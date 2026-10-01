@@ -8,11 +8,14 @@ import Foundation
 import CFNetwork
 import CoreFoundation
 import Dispatch
+import Security
 
 /// Apple socket streams can enable TLS on an open stream, preserving the TCP
 /// connection required by VeNCrypt. This transport is intentionally separate
 /// from `NWConnection`, whose parameters cannot be changed after it starts.
-final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection {
+/// Immutable settings, locked lifecycle state, and per-stream serial queues make
+/// cross-task operations safe; the class itself does not expose mutable state.
+final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection, @unchecked Sendable {
 	let settings: NetworkConnectionSettings
 
 	private let state = CFStreamNetworkState()
@@ -23,12 +26,19 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection {
 		self.settings = settings
 	}
 
+    static func safeTLSFailureCode(domain: Int, code: Int32) -> Int32? {
+        domain == Int(kCFStreamErrorDomainSSL) ? code : nil
+    }
+
 	var status: NetworkConnectionStatus { state.status }
 
 	var isReady: Bool {
 		if case .ready = state.status { return true }
 		return false
 	}
+
+    var verifiedTLSCertificate: VNCTLSCertificateInfo? { state.verifiedTLSCertificate }
+    var tlsFailureCode: Int32? { state.tlsFailureCode }
 
 	func setStatusUpdateHandler(_ statusUpdateHandler: NetworkConnectionStatusUpdateHandler?) {
 		state.setStatusUpdateHandler(statusUpdateHandler)
@@ -128,21 +138,56 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection {
 				var buffer = [UInt8](repeating: 0, count: maximumLength)
 				var received = 0
 
-				repeat {
+					repeat {
 					let count = buffer.withUnsafeMutableBufferPointer {
 						CFReadStreamRead(readStream, $0.baseAddress?.advanced(by: received), maximumLength - received)
+					}
+					guard count >= 0 else {
+	                    self.captureTLSFailure(from: readStream)
+						continuation.resume(throwing: VNCError.protocol(.noData))
+						return
 					}
 					guard count > 0 else {
 						continuation.resume(throwing: VNCError.protocol(.noData))
 						return
 					}
 					received += count
+	                self.captureVerifiedCertificate(from: readStream)
 				} while received < minimumLength
 
 				continuation.resume(returning: Data(buffer.prefix(received)))
 			}
 		}
 	}
+
+    private func captureVerifiedCertificate(from readStream: CFReadStream) {
+        guard state.tlsUpgradeWasConfigured, state.verifiedTLSCertificate == nil,
+              let trustValue = CFReadStreamCopyProperty(
+                readStream, CFStreamPropertyKey(kCFStreamPropertySSLPeerTrust)
+              ),
+              CFGetTypeID(trustValue) == SecTrustGetTypeID() else { return }
+        let trust = unsafeBitCast(trustValue, to: SecTrust.self)
+        guard let certificate = leafCertificate(from: trust) else { return }
+
+        let subject = SecCertificateCopySubjectSummary(certificate) as String?
+        let der = SecCertificateCopyData(certificate) as Data
+        state.saveVerifiedTLSCertificate(VNCTLSCertificateInfo(
+            subjectSummary: subject,
+            derEncodedCertificate: der
+        ))
+    }
+
+    private func captureTLSFailure(from readStream: CFReadStream) {
+        guard state.tlsUpgradeWasConfigured else { return }
+        let streamError = CFReadStreamGetError(readStream)
+        guard let code = Self.safeTLSFailureCode(domain: streamError.domain, code: streamError.error) else { return }
+        state.saveTLSFailureCode(code)
+    }
+
+    private func leafCertificate(from trust: SecTrust) -> SecCertificate? {
+        guard #available(macOS 12.0, *) else { return nil }
+        return (SecTrustCopyCertificateChain(trust) as? [SecCertificate])?.first
+    }
 
 	func write(data: Data) async throws {
 		let state = self.state
@@ -161,6 +206,7 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection {
 						CFWriteStreamWrite(writeStream, $0.baseAddress?.advanced(by: offset), bytes.count - offset)
 					}
 					guard count > 0 else {
+	                self.captureTLSFailure(from: writeStream)
 						continuation.resume(throwing: VNCError.connection(.failed(nil)))
 						return
 					}
@@ -171,6 +217,13 @@ final class CFStreamNetworkConnection: TLSUpgradableNetworkConnection {
 			}
 		}
 	}
+
+    private func captureTLSFailure(from writeStream: CFWriteStream) {
+        guard state.tlsUpgradeWasConfigured else { return }
+        let streamError = CFWriteStreamGetError(writeStream)
+        guard let code = Self.safeTLSFailureCode(domain: streamError.domain, code: streamError.error) else { return }
+        state.saveTLSFailureCode(code)
+    }
 }
 
 /// Synchronizes state shared by the lifecycle, read and write queues. The
@@ -185,6 +238,38 @@ private final class CFStreamNetworkState: @unchecked Sendable {
 	private var storedLifecycleQueue = DispatchQueue(label: "com.royalapps.royalvnc.cfstream.lifecycle")
 	private var didUpgradeToTLS = false
 	private var wasCancelled = false
+    private var storedVerifiedTLSCertificate: VNCTLSCertificateInfo?
+    private var storedTLSFailureCode: Int32?
+
+    var verifiedTLSCertificate: VNCTLSCertificateInfo? {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedVerifiedTLSCertificate
+    }
+
+    var tlsUpgradeWasConfigured: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return didUpgradeToTLS
+    }
+
+    var tlsFailureCode: Int32? {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedTLSFailureCode
+    }
+
+    func saveVerifiedTLSCertificate(_ certificate: VNCTLSCertificateInfo) {
+        lock.lock()
+        if storedVerifiedTLSCertificate == nil { storedVerifiedTLSCertificate = certificate }
+        lock.unlock()
+    }
+
+    func saveTLSFailureCode(_ code: Int32) {
+        lock.lock()
+        if storedTLSFailureCode == nil { storedTLSFailureCode = code }
+        lock.unlock()
+    }
 
 	var status: NetworkConnectionStatus {
 		lock.lock()

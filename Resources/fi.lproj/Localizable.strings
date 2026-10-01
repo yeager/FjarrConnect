@@ -287,6 +287,7 @@
 "rdp.error.nla" = "Palvelin vaatii verkkotason todennuksen (NLA). Tarkista, että tili saa käyttää NLA:ta ja että Windows-palvelin tukee valittua kirjautumistapaa.";
 "rdp.error.license" = "Palvelin hylkäsi etätyöpöydän lisenssineuvottelun. Tarkista etätyöpöydän lisenssipalvelu ja käytettävissä olevat asiakaskäyttöoikeudet.";
 "rdp.error.serverEndedSession" = "Palvelin päätti RDP-istunnon yhteyden muodostamisen jälkeen. Tarkista etätilin istuntokäytäntö ja palvelimen etätyöpöytälokit.";
+"rdp.error.channel" = "RDP-palvelin katkaisi virtuaalikanavan. Tarkista, mitä uudelleenohjauskanavia palvelin sallii ja käyttääkö profiili tuettua kanavaa.";
 
 // Network service discovery
 "discovery.scan.title" = "Etsi palvelimia";
@@ -424,6 +425,7 @@
 "health.title" = "Yhteyden tila";
 "health.tcpConnection" = "TCP-yhteys";
 "health.tcpConnection.value" = "%d ms";
+"health.rdpRoundTrip" = "RDP-edestakainen viive";
 "health.packetLoss" = "Pakettihäviö";
 "health.packetLoss.value" = "%.1f %%";
 "health.packetLoss.unavailable" = "Ei saatavilla tälle TCP-istunnolle";
@@ -432,6 +434,14 @@
 "health.reconnect.value" = "Yritys %d / %d";
 "health.reconnect.none" = "Uudelleenyhdistämistä ei ole käynnissä";
 "health.unavailable" = "Ei saatavilla";
+"vnc.security.section" = "VNC-suojaus";
+"vnc.tlsHandshakeFailed" = "Suojattua VNC-yhteyttä ei voitu muodostaa. Tarkista, että palvelimen varmenne on luotettu ja voimassa tälle osoitteelle ja että palvelin tukee yhteensopivia TLS-asetuksia.";
+"vnc.security.unknown" = "Ei neuvoteltu";
+"vnc.security.none" = "Salaamaton yhteys";
+"vnc.security.verified" = "TLS-varmenne on vahvistettu";
+"vnc.security.notVerified" = "TLS-varmennetta ei ole vahvistettu";
+"vnc.certificate.subject" = "Varmenteen nimi";
+"vnc.certificate.sha256" = "SHA-256-sormenjälki";
 
 /* RDP network profile */
 "rdp.network" = "Verkkoprofiili";

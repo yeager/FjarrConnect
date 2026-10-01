@@ -5,12 +5,14 @@ import SwiftUI
 struct SessionTabBar: NSViewRepresentable {
     let tabs: [SessionTab]
     let selectedID: UUID?
+    let largeControls: Bool
     let select: (UUID) -> Void
     let close: (UUID) -> Void
 
     func makeNSView(context: Context) -> TabScrollView { TabScrollView() }
     func updateNSView(_ view: TabScrollView, context: Context) {
-        view.update(tabs: tabs, selectedID: selectedID, select: select, close: close)
+        view.update(tabs: tabs, selectedID: selectedID, largeControls: largeControls,
+                    select: select, close: close)
     }
 
     final class TabScrollView: NSScrollView {
@@ -38,7 +40,8 @@ struct SessionTabBar: NSViewRepresentable {
         }
         required init?(coder: NSCoder) { nil }
 
-        func update(tabs: [SessionTab], selectedID: UUID?, select: @escaping (UUID) -> Void, close: @escaping (UUID) -> Void) {
+        func update(tabs: [SessionTab], selectedID: UUID?, largeControls: Bool,
+                    select: @escaping (UUID) -> Void, close: @escaping (UUID) -> Void) {
             let ids = Set(tabs.map(\.id))
             for id in Array(rows.keys) where !ids.contains(id) {
                 if let row = rows.removeValue(forKey: id) { strip.removeArrangedSubview(row); row.removeFromSuperview() }
@@ -48,6 +51,7 @@ struct SessionTabBar: NSViewRepresentable {
                 if let existing = rows[tab.id] { row = existing }
                 else { row = TabRow(); rows[tab.id] = row; strip.addArrangedSubview(row) }
                 row.update(profile: tab.backend.profile, selected: tab.id == selectedID,
+                           largeControls: largeControls,
                            select: { select(tab.id) }, close: { close(tab.id) })
             }
             if selectedID != previousSelection, let selectedID, let row = rows[selectedID] {
@@ -61,11 +65,18 @@ struct SessionTabBar: NSViewRepresentable {
     private final class TabRow: NSView {
         let selectButton = TabButton()
         let closeButton = TabButton()
+        private let stack = NSStackView()
+        private var selectButtonHeight: NSLayoutConstraint!
+        private var selectButtonMaxWidth: NSLayoutConstraint!
+        private var closeButtonWidth: NSLayoutConstraint!
+        private var closeButtonHeight: NSLayoutConstraint!
+
         init() {
             super.init(frame: .zero)
             wantsLayer = true
             layer?.cornerRadius = 8
-            let stack = NSStackView(views: [selectButton, closeButton])
+            stack.addArrangedSubview(selectButton)
+            stack.addArrangedSubview(closeButton)
             stack.orientation = .horizontal
             stack.alignment = .centerY
             stack.spacing = 8
@@ -78,21 +89,35 @@ struct SessionTabBar: NSViewRepresentable {
             closeButton.imageScaling = .scaleProportionallyDown
             closeButton.toolTip = NSLocalizedString("action.closeSession", comment: "")
             closeButton.setAccessibilityLabel(closeButton.toolTip)
+            selectButtonHeight = selectButton.heightAnchor.constraint(equalToConstant: 24)
+            selectButtonMaxWidth = selectButton.widthAnchor.constraint(lessThanOrEqualToConstant: 240)
+            closeButtonWidth = closeButton.widthAnchor.constraint(equalToConstant: 24)
+            closeButtonHeight = closeButton.heightAnchor.constraint(equalToConstant: 24)
             NSLayoutConstraint.activate([
                 stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
                 stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
                 stack.topAnchor.constraint(equalTo: topAnchor, constant: 8),
                 stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
-                selectButton.heightAnchor.constraint(equalToConstant: 24),
-                selectButton.widthAnchor.constraint(lessThanOrEqualToConstant: 240),
-                closeButton.widthAnchor.constraint(equalToConstant: 24),
-                closeButton.heightAnchor.constraint(equalToConstant: 24)
+                selectButtonHeight,
+                selectButtonMaxWidth,
+                closeButtonWidth,
+                closeButtonHeight
             ])
         }
         required init?(coder: NSCoder) { nil }
 
-        func update(profile: ConnectionProfile, selected: Bool, select: @escaping () -> Void, close: @escaping () -> Void) {
+        func update(profile: ConnectionProfile, selected: Bool, largeControls: Bool,
+                    select: @escaping () -> Void, close: @escaping () -> Void) {
             let tabTitle = profile.sessionTabTitle
+            let buttonSize: CGFloat = largeControls ? 32 : 24
+            selectButton.controlSize = largeControls ? .large : .regular
+            closeButton.controlSize = largeControls ? .large : .regular
+            selectButton.font = .systemFont(ofSize: largeControls ? NSFont.systemFontSize + 3 : NSFont.systemFontSize)
+            stack.spacing = largeControls ? 12 : 8
+            selectButtonHeight.constant = buttonSize
+            selectButtonMaxWidth.constant = largeControls ? 300 : 240
+            closeButtonWidth.constant = buttonSize
+            closeButtonHeight.constant = buttonSize
             selectButton.title = tabTitle
             selectButton.image = NSImage(systemSymbolName: profile.transport.symbol, accessibilityDescription: nil)
             selectButton.toolTip = tabTitle

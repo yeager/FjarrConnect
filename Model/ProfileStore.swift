@@ -36,6 +36,29 @@ enum ExternalProfileImporter {
         if let username = values["username"], ConnectionOptions.validValue(username), !username.isEmpty {
             profile.username = username
         }
+        var options = RDPOptions()
+        let gatewayEnabled = values["gatewayusagemethod"].flatMap(Int.init).map { $0 != 0 } ?? true
+        if gatewayEnabled, let host = values["gatewayhostname"], ConnectionURI.validHost(host) {
+            options.gatewayHost = host
+            if let username = values["gatewayusername"],
+               ConnectionOptions.validValue(username), !username.isEmpty {
+                options.gatewayUsername = username
+            }
+        }
+        if values["remoteapplicationmode"].flatMap(Int.init) == 1 {
+            guard let program = values["remoteapplicationprogram"],
+                  ConnectionOptions.validValue(program), !program.isEmpty else { return nil }
+            profile.transport = .remoteApp
+            options.remoteApp = program
+            options.dynamicResolution = false
+            if let name = values["remoteapplicationname"],
+               ConnectionOptions.validValue(name), !name.isEmpty {
+                profile.name = name
+            }
+        }
+        if options.gatewayHost != nil || options.remoteAppProgram != nil {
+            profile.rdp = options
+        }
         return profile
     }
 
@@ -50,15 +73,22 @@ enum ExternalProfileImporter {
         return profile
     }
 
-    /// Microsoft .rdp uses `name:type:value`; only string-valued connection
-    /// fields are read. Password fields and every unrecognised key are ignored.
+    /// Microsoft .rdp uses `name:type:value`; only allowlisted connection
+    /// fields and the RemoteApp mode flag are read. Password fields and every
+    /// unrecognised key are ignored.
     private static func typedValues(_ text: String) -> [String: String] {
         var values: [String: String] = [:]
         for line in text.split(whereSeparator: \.isNewline) {
             let pieces = line.split(separator: ":", maxSplits: 2, omittingEmptySubsequences: false)
-            guard pieces.count == 3, pieces[1].lowercased() == "s" else { continue }
+            guard pieces.count == 3 else { continue }
             let key = pieces[0].trimmingCharacters(in: .whitespaces).lowercased()
-            guard key == "full address" || key == "username", values[key] == nil else { continue }
+            let type = pieces[1].lowercased()
+            let stringKeys: Set<String> = [
+                "full address", "username", "gatewayhostname", "gatewayusername",
+                "remoteapplicationprogram", "remoteapplicationname"
+            ]
+            guard (stringKeys.contains(key) && type == "s" || key == "remoteapplicationmode" && type == "i"),
+                  values[key] == nil else { continue }
             values[key] = pieces[2].trimmingCharacters(in: .whitespaces)
         }
         return values

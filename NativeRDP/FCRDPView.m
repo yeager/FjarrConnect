@@ -31,6 +31,7 @@
 typedef struct {
     rdpClientContext common;
     __unsafe_unretained FCRDPView *view; // Worker retains the view until context_free.
+    pRTTMeasureResponse originalRTTMeasureResponse;
     CliprdrClientContext *clipboard;
     wClipboard *fileClipboard;
     UINT32 fileGroupDescriptorFormat;
@@ -44,6 +45,8 @@ static FCRDPView *FCView(rdpContext *context) { return ((FCContext *)context)->v
 static BOOL FCPreConnect(freerdp *instance);
 static BOOL FCPostConnect(freerdp *instance);
 static void FCPostDisconnect(freerdp *instance);
+static BOOL FCRTTMeasureResponse(rdpAutoDetect *autodetect, RDP_TRANSPORT_TYPE transport,
+                                 UINT16 sequenceNumber);
 static DWORD FCCertificate(freerdp *, const char *, UINT16, const char *, const char *, const char *, const char *, DWORD);
 static DWORD FCChangedCertificate(freerdp *, const char *, UINT16, const char *, const char *, const char *, const char *, const char *, const char *, const char *, DWORD);
 static BOOL FCAuthenticate(freerdp *, char **, char **, char **, rdp_auth_reason);
@@ -272,6 +275,7 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
 @property(atomic) uint32_t requestedWidth;
 @property(atomic) uint32_t requestedHeight;
 @property(atomic) int negotiatedCodec;
+@property(atomic) uint32_t roundTripMilliseconds;
 @property(nonatomic) NSCursor *remoteCursor;
 @property(nonatomic, strong) id windowResignKeyObserver;
 @property(nonatomic, strong) id applicationResignActiveObserver;
@@ -439,7 +443,17 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
     _clipboardChange = NSPasteboard.generalPasteboard.changeCount;
     __weak FCRDPView *weakSelf = self;
     _clipboardTimer = [NSTimer scheduledTimerWithTimeInterval:0.3 repeats:YES block:^(NSTimer *timer) { [weakSelf clipboardTick]; }];
-    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{ @autoreleasepool { [self runConnection]; } });
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        @autoreleasepool { [self runConnection]; }
+        // runConnection may release Objective-C state from FreeRDP callbacks.
+        // Publish completion only after its autorelease pool has drained so a
+        // caller observing status 3 can safely tear down the hosting view.
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self->_clipboardTimer invalidate];
+            self->_clipboardTimer = nil;
+            self.connectionStatus = 3;
+        });
+    });
 }
 - (void)stop {
     self.cancelled = YES;
@@ -890,7 +904,7 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
     entry.Version = RDP_CLIENT_INTERFACE_VERSION; entry.Size = sizeof(entry);
     entry.ContextSize = sizeof(FCContext);
     rdpContext *base = freerdp_client_context_new(&entry);
-    if (!base) { self.errorCode = 0xFFFFFFFF; self.connectionStatus = 3; return; }
+    if (!base) { self.errorCode = 0xFFFFFFFF; return; }
     FCContext *ctx = (FCContext *)base; ctx->view = self;
     ctx->fileClipboard = ClipboardCreate();
     if (ctx->fileClipboard)
@@ -920,14 +934,19 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
     freerdp_settings_set_bool(base->settings, FreeRDP_CertificateCallbackPreferPEM, FALSE);
     freerdp_settings_set_bool(base->settings, FreeRDP_AutoReconnectionEnabled, FALSE);
     freerdp_settings_set_bool(base->settings, FreeRDP_UnicodeInput, TRUE);
-    // A direct server may advertise RDSTLS before NLA when the client offers
-    // it. The embedded runtime does not use the RDSTLS gateway transport, so
-    // restrict direct connections to the NLA/TLS negotiation path.
+    // The embedded runtime does not use the RDSTLS gateway transport, so keep
+    // it disabled for direct connections. Preserve HYBRID_EX: GNOME Remote
+    // Desktop can select it when the client offers extended NLA security.
     freerdp_settings_set_bool(base->settings, FreeRDP_RdstlsSecurity, FALSE);
     // Keep FreeRDP's network autodetection enabled: Windows sends RTT requests
     // during desktop activation and the core must be able to answer them.
     [_lock lock]; _context = ctx; BOOL cancelled = self.cancelled; [_lock unlock];
     BOOL connected = parsed == 0 && !cancelled && freerdp_connect(instance);
+    // Keep negotiated protocol flags available while a live session is active.
+    // Capturing these only after the worker disconnects made successful
+    // sessions appear to have selected the legacy zero-valued RDP protocol.
+    self.requestedProtocols = freerdp_settings_get_uint32(base->settings, FreeRDP_RequestedProtocols);
+    self.selectedProtocol = freerdp_settings_get_uint32(base->settings, FreeRDP_SelectedProtocol);
     if (connected) {
         self.connectionStatus = 2;
         while (!self.cancelled && !freerdp_shall_disconnect_context(base)) {
@@ -944,16 +963,13 @@ static void FCCleanupStaleRemoteClipboardFiles(void) {
     }
     self.errorCode = self.cancelled ? 0 : (parsed == 0 ? freerdp_get_last_error(base) : 0xFFFFFFFF);
     if (!connected && !self.cancelled && self.errorCode == 0) self.errorCode = FREERDP_ERROR_CONNECT_FAILED;
-    self.requestedProtocols = freerdp_settings_get_uint32(base->settings, FreeRDP_RequestedProtocols);
-    self.selectedProtocol = freerdp_settings_get_uint32(base->settings, FreeRDP_SelectedProtocol);
     freerdp_disconnect(instance);
     [self discardRemoteClipboardFileTransfer];
     [_lock lock]; _context = NULL; [_input removeAllObjects]; [_queuedKeyRepeats removeAllObjects]; [_lock unlock];
     if (ctx->fileClipboard) { ClipboardDestroy(ctx->fileClipboard); ctx->fileClipboard = NULL; }
     freerdp_client_context_free(base);
     self.clipboardText = nil; self.clipboardImage = nil;
-    self.clipboardFileSnapshot = nil; self.clipboardFileTransferSnapshot = nil; self.connectionStatus = 3;
-    dispatch_async(dispatch_get_main_queue(), ^{ [self->_clipboardTimer invalidate]; self->_clipboardTimer = nil; });
+    self.clipboardFileSnapshot = nil; self.clipboardFileTransferSnapshot = nil;
 }
 - (void)setFrameSize:(NSSize)newSize {
     [super setFrameSize:newSize];
@@ -1395,9 +1411,28 @@ static void FCStateChanged(void *context, const StateChangedEventArgs *event) {
     view.connectionStage = MAX(view.connectionStage, event->newState);
 }
 static BOOL FCPreConnect(freerdp *instance) {
+    rdpAutoDetect *autodetect = autodetect_get(instance->context);
+    FCContext *ctx = (FCContext *)instance->context;
+    if (autodetect) {
+        ctx->originalRTTMeasureResponse = autodetect->RTTMeasureResponse;
+        autodetect->RTTMeasureResponse = FCRTTMeasureResponse;
+    }
     if (PubSub_SubscribeStateChanged(instance->context->pubSub, FCStateChanged) < 0) return FALSE;
     return PubSub_SubscribeChannelConnected(instance->context->pubSub, FCChannelConnected) >= 0 &&
            PubSub_SubscribeChannelDisconnected(instance->context->pubSub, FCChannelDisconnected) >= 0;
+}
+static BOOL FCRTTMeasureResponse(rdpAutoDetect *autodetect, RDP_TRANSPORT_TYPE transport,
+                                 UINT16 sequenceNumber) {
+    if (!autodetect || !autodetect->context) return FALSE;
+    FCContext *ctx = (FCContext *)autodetect->context;
+    if (ctx->originalRTTMeasureResponse &&
+        !ctx->originalRTTMeasureResponse(autodetect, transport, sequenceNumber)) return FALSE;
+    // FreeRDP updates this value from its RTT probe response before dispatching
+    // the callback. Reading it here avoids racing the network thread from Swift.
+    if (autodetect->netCharAverageRTT > 0) {
+        FCView(autodetect->context).roundTripMilliseconds = autodetect->netCharAverageRTT;
+    }
+    return TRUE;
 }
 static BOOL FCPostConnect(freerdp *instance) {
     if (!gdi_init(instance, PIXEL_FORMAT_BGRX32)) return FALSE;
@@ -1421,7 +1456,7 @@ static void FCPostDisconnect(freerdp *instance) {
     PubSub_UnsubscribeChannelDisconnected(instance->context->pubSub, FCChannelDisconnected);
     gdi_free(instance);
 }
-uint32_t fc_rdp_abi(void) { return 7; }
+uint32_t fc_rdp_abi(void) { return 8; }
 void *fc_rdp_create(const char *arguments, const char *translations) {
     if (!arguments || !translations || !NSThread.isMainThread) return NULL;
     NSData *json = [NSData dataWithBytes:translations length:strlen(translations)];
@@ -1457,6 +1492,9 @@ uint32_t fc_rdp_selected_protocol(void *view) {
 uint32_t fc_rdp_input_state(void *view) {
     return ((__bridge FCRDPView *)view).inputState;
 }
+uint32_t fc_rdp_round_trip_milliseconds(void *view) {
+    return ((__bridge FCRDPView *)view).roundTripMilliseconds;
+}
 
 int fc_rdp_failure(void *view) {
     const UINT32 error = fc_rdp_error(view);
@@ -1466,6 +1504,20 @@ int fc_rdp_failure(void *view) {
     if (GET_FREERDP_ERROR_CLASS(error) == FREERDP_ERROR_ERRINFO_CLASS &&
         GET_FREERDP_ERROR_TYPE(error) >= ERRINFO_LICENSE_INTERNAL &&
         GET_FREERDP_ERROR_TYPE(error) <= ERRINFO_LICENSE_NO_REMOTE_CONNECTIONS) return 7;
+    if (GET_FREERDP_ERROR_CLASS(error) == FREERDP_ERROR_ERRINFO_CLASS) {
+        const UINT32 type = GET_FREERDP_ERROR_TYPE(error);
+        // These FreeRDP Error Info codes specifically describe virtual-channel
+        // framing, compression, or channel-ID failures. Other Error Info codes
+        // remain generic because they can describe unrelated protocol errors.
+        switch (type) {
+            case ERRINFO_VCHANNEL_DATA_TOO_SHORT:
+            case ERRINFO_VIRTUAL_CHANNEL_DECOMPRESSION:
+            case ERRINFO_INVALID_VC_COMPRESSION_TYPE:
+            case ERRINFO_INVALID_CHANNEL_ID:
+            case ERRINFO_VCHANNELS_TOO_MANY:
+                return 10;
+        }
+    }
     switch (error) {
         case FREERDP_ERROR_DNS_ERROR: case FREERDP_ERROR_DNS_NAME_NOT_FOUND: return 1;
         case FREERDP_ERROR_CONNECT_TRANSPORT_FAILED:

@@ -8,12 +8,12 @@ import Dispatch
 extension VNCConnection {
     func startMonitoringClipboard() {
         guard settings.isClipboardRedirectionEnabled else { return }
-        DispatchQueue.main.async { [weak self] in
+        DispatchQueue.main.async(execute: DispatchWorkItem { [weak self] in
             guard let self else { return }
             serverClipboardCapabilities = nil
             pendingClipboardText = nil
             clipboardMonitor.startMonitoring()
-        }
+        })
     }
 
     func stopMonitoringClipboard() {
@@ -141,10 +141,11 @@ public extension VNCConnection {
     /// Sends text without requiring a system clipboard write. The result is false if
     /// clipboard policy, negotiated formats or size limits prevent sending it.
     func sendClipboardText(_ text: String) async -> Bool {
-        await withCheckedContinuation { continuation in
-            DispatchQueue.main.async(execute: DispatchWorkItem { [weak self] in
-                continuation.resume(returning: self?.sendClipboardOnMainQueue(text) ?? false)
-            })
+        let connection = WeakMainQueueVNCConnection(self)
+        return await withCheckedContinuation { continuation in
+            DispatchQueue.main.async {
+                continuation.resume(returning: connection.value?.sendClipboardOnMainQueue(text) ?? false)
+            }
         }
     }
 }

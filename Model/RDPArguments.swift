@@ -22,7 +22,9 @@ enum RDPArguments {
             // command-line options. FreeRDP has no CLI switch for this policy.
             args.append("/fc:clipboard-files")
         }
-        if let network = profile.rdp?.selectedNetworkProfile.freeRDPValue { args.append("/network:\(network)") }
+        if let network = (profile.rdp?.selectedNetworkProfile ?? .automatic).freeRDPValue {
+            args.append("/network:\(network)")
+        }
         if let security = profile.rdp?.selectedSecurityMode.freeRDPValue { args.append("/sec:\(security)") }
         if profile.transport == .remoteApp, let remoteApp = profile.rdp?.remoteAppProgram { args.append("/app:\(remoteApp)") }
         for (index, path) in (profile.rdp?.sharedFolders ?? []).enumerated() {

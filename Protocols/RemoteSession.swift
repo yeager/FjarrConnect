@@ -40,6 +40,7 @@ struct SessionHealth: Equatable {
     var tcpConnectionMilliseconds: Int?
     var packetLossPercent: Double?
     var codec: String?
+    var roundTripMilliseconds: Int? = nil
 }
 
 /// Marker adopted only by live graphical backends. Test doubles and terminal
@@ -51,6 +52,7 @@ protocol RemoteSession: ObservableObject, AnyObject where ObjectWillChangePublis
     var status: SessionStatus { get }
     var notice: String? { get }
     var negotiatedCodec: String? { get }
+    var roundTripMilliseconds: Int? { get }
     var connectionPhase: String? { get }
     var requestedSecurityProtocols: UInt32? { get }
     var selectedSecurityProtocol: UInt32? { get }
@@ -64,6 +66,7 @@ extension RemoteSession {
     var notice: String? { nil }
     func setActive(_ active: Bool) {}
     var negotiatedCodec: String? { nil }
+    var roundTripMilliseconds: Int? { nil }
     var connectionPhase: String? { nil }
     var requestedSecurityProtocols: UInt32? { nil }
     var selectedSecurityProtocol: UInt32? { nil }

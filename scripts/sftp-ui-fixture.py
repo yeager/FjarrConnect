@@ -19,7 +19,7 @@ def fixture():
     descriptor = os.open(manifest, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     server = None
     try:
-        with os.fdopen(descriptor, 'w') as output, tempfile.TemporaryDirectory(prefix='fjarr-sftp-ui-', dir='/tmp') as temporary:
+        with os.fdopen(descriptor, 'w') as output, tempfile.TemporaryDirectory(prefix='fc-', dir='/tmp') as temporary:
             root = Path(temporary).resolve()
             remote = root / 'remote'
             remote.mkdir(mode=0o700)
@@ -27,7 +27,10 @@ def fixture():
             (remote / 'first.txt').write_bytes(b'First remote file\n')
             (remote / 'folder').mkdir()
             (remote / 'folder' / 'nested.txt').write_bytes(b'Nested remote file\n')
-            source = root / 'upload source.txt'
+            # Keep the Go to Folder path short. XCTest's keyboard synthesis can
+            # truncate long paths in NSOpenPanel, leaving the picker open on an
+            # incomplete location and making the upload test nondeterministic.
+            source = root / 'u.txt'
             source.write_bytes('Uploaded through the real file picker: åäö 日本語\n'.encode())
             for name in ('host', 'client'):
                 subprocess.run(['/usr/bin/ssh-keygen', '-q', '-t', 'ed25519', '-N', '', '-f', str(root / name)], check=True)

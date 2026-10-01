@@ -44,7 +44,9 @@ jobs:
           VERSION=$(sed -n 's/.*MARKETING_VERSION: "\([^"]*\)"/\1/p' project.yml)
           test "$GITHUB_REF_NAME" = "v$VERSION"
       - name: Install build tools
-        run: brew install xcodegen xcbeautify
+        run: |
+          brew list --formula xcodegen >/dev/null 2>&1 || brew install xcodegen
+          brew list --formula xcbeautify >/dev/null 2>&1 || brew install xcbeautify
       - name: Check resources and generate project
         run: |
           python3 scripts/check-resources.py
@@ -56,7 +58,7 @@ jobs:
           python3 scripts/with-vnc-test-fixture.py xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
             -configuration Debug -destination 'platform=macOS' \
             -derivedDataPath build/test -resultBundlePath build/TestResults.xcresult \
-            ARCHS="$(uname -m)" ONLY_ACTIVE_ARCH=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO test | xcbeautify
+            ARCHS="$(uname -m)" ONLY_ACTIVE_ARCH=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=YES test | xcbeautify
           test_status=${PIPESTATUS[0]}
           set -e
           if [ "$test_status" -ne 0 ]; then
@@ -66,7 +68,7 @@ jobs:
               exit "$test_status"
             fi
           fi
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           pattern: rdp-*
           path: build/rdp-artifacts
@@ -90,7 +92,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           pattern: release-assets-*
           merge-multiple: true

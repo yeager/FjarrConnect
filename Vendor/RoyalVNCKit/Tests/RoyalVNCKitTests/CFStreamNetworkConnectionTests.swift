@@ -5,6 +5,13 @@ import XCTest
 @testable import RoyalVNCKit
 
 final class CFStreamNetworkConnectionTests: XCTestCase {
+    func testOnlySecureTransportErrorsBecomeTLSDiagnosticCodes() {
+        XCTAssertEqual(CFStreamNetworkConnection.safeTLSFailureCode(
+            domain: Int(kCFStreamErrorDomainSSL), code: -9807
+        ), -9807)
+        XCTAssertNil(CFStreamNetworkConnection.safeTLSFailureCode(domain: 1, code: 54))
+    }
+
     func testTLSUpgradeCanBeEnabledOnlyOnceOnConnectedStream() async throws {
         let peer = try DelayedCFStreamPeer()
         defer { peer.stop() }

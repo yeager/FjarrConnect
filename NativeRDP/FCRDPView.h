@@ -25,3 +25,5 @@ FC_EXPORT uint32_t fc_rdp_input_state(void *view);
 // The graphics codec negotiated by this RDP connection, or an empty string
 // before negotiation. The returned string is owned by the runtime.
 FC_EXPORT const char *fc_rdp_codec(void *view);
+// FreeRDP's measured RDP network round-trip time, or zero before a sample exists.
+FC_EXPORT uint32_t fc_rdp_round_trip_milliseconds(void *view);

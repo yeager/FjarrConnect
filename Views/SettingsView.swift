@@ -241,7 +241,7 @@ private struct RecordingLibraryView: View {
 
     private func reload() { recordings = RecordingLibrary.files() }
     private func delete(_ recording: RecordingFile) {
-        do { try FileManager.default.removeItem(at: recording.url); reload() }
+        do { try RecordingLibrary.delete(recording.url); reload() }
         catch { message = NSLocalizedString("record.error", comment: "") }
     }
     private func cleanup() {

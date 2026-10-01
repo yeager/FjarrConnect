@@ -26,10 +26,14 @@ architecture. Unzip the archive and move FjärrConnect to Applications.
 
 The current checkout contains unreleased changes for 0.2.33. They add clearer, localized
 messages when the embedded RDP component is missing, incompatible with the Mac or app,
-or rejected by macOS. RDP file clipboard remains an explicit per-profile opt-in and
-requires a Windows server that advertises file clipboard support. Local protocol tests
-cover both directions; the live RDP test host currently resets the connection during
-security negotiation, so an authenticated desktop session has not been verified.
+or rejected by macOS. FreeRDP 3.32.1 was tested against a GNOME Remote Desktop server:
+it negotiated NLA Extended (`0x08`), authenticated, received a desktop frame and rendered
+the embedded native view in a macOS window. This verifies the server and native RDP
+component, but not the full SwiftUI app flow. ARM64 and x86_64 runtime
+smoke checks pass; x86_64 has not been tested on physical Intel hardware. RDP file
+clipboard remains an explicit per-profile opt-in and requires a Windows server that
+advertises file clipboard support. Local protocol tests cover both directions; live
+file transfer has not been verified.
 
 Version 0.2.31 changed Command+2 handling in focused VNC sessions. Version 0.2.33
 adds Swedish right Option+2 input (`@`) to VNC. Version 0.2.30 added the
@@ -99,10 +103,12 @@ for version-specific changes and current limitations.
   `~/Movies/FjarrConnect`. Recording stops on disconnect or when the tab closes. SSH and
   SFTP cannot be recorded. **Settings → Advanced** includes a searchable recording library,
   export, deletion and a local retention policy.
-- **Connection health:** the active session's status menu shows the time required to establish a TCP connection to the
-  profile endpoint, the RDP graphics codec reported after negotiation, and automatic
-  reconnection progress. Packet loss is explicitly unavailable for the bundled
-  TCP runtimes rather than estimated or guessed.
+- **Connection health:** the active session's status menu shows TCP connection setup
+  time, RDP round-trip time when FreeRDP receives a measurement from the server, the
+  negotiated RDP graphics codec, and automatic reconnection progress. For VNC it also
+  shows the negotiated security type and, after VeNCrypt TLS verification, the peer
+  certificate name and SHA-256 fingerprint. Packet loss is unavailable for these TCP
+  sessions and is not estimated.
 - **Localized interface:** English, Swedish, Danish, Norwegian Bokmål, German, Finnish, French,
   Spanish and Japanese. Follows your macOS language preference; a language can also be
   selected for FjärrConnect in **System Settings → General → Language & Region → Applications**.
@@ -135,11 +141,13 @@ images are supported when the server advertises the RFB extended-clipboard forma
 clipboard file transfer is not supported. Use the file panel or SFTP for files.
 Some Mac Screen Sharing servers do not send cursor-shape updates. FjärrConnect keeps
 the local arrow visible until the server provides a shape.
-Held VNC keys are released when the app or its window loses focus, preventing a key
-from repeating remotely if macOS does not deliver its matching key-up event.
+Ordinary VNC key presses receive a queued release immediately; modifier keys remain held
+until macOS releases them. AppKit autorepeat events are sent as balanced press/release
+pairs. FjärrConnect also releases tracked keys when the session becomes inactive or its
+view leaves the window, so a missing key-up does not leave a key repeating remotely.
 
 **RDP is bundled:** no Homebrew installation is needed for the downloaded app.
-Each app includes the matching FreeRDP 3.32.0 runtime and loads it in the app process.
+Each app includes the matching FreeRDP 3.32.1 runtime and loads it in the app process.
 No Homebrew installation or separate RDP window is used. Unknown or changed
 certificates show the server identity and SHA-256 fingerprint with **Cancel**,
 **Connect once**, and **Trust and connect** in the chosen interface language.
@@ -455,8 +463,9 @@ credentials** makes macOS authenticate locally before FjarrConnect reads the
 profile’s desktop or gateway password from Keychain.
 
 The same settings page imports Microsoft `.rdp` files and common INI-style `.vnc`
-files. It reads only host, port and username; password fields and other client-specific
-settings are ignored.
+files. It reads host, username, RDP gateway and RemoteApp settings; password fields
+and other client-specific settings are ignored. RemoteApp imports remain separate
+sessions and do not use dynamic desktop resizing.
 
 Saving reports errors instead of silently losing changes. An unreadable or corrupt
 profile file is preserved and blocks further saves so it cannot be overwritten by
@@ -496,8 +505,11 @@ Run Mac tests for the host architecture:
 python3 scripts/with-vnc-test-fixture.py xcodebuild -project FjarrConnect.xcodeproj -scheme FjarrConnect \
   -configuration Debug -destination 'platform=macOS' \
   ARCHS="$(uname -m)" ONLY_ACTIVE_ARCH=YES \
-  CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO test
+  CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=YES test
 ```
+
+The test runner is ad hoc signed so macOS can verify its bundle resources. This
+does not require a Developer ID certificate.
 
 The wrapper starts a VNC banner fixture on `127.0.0.1:45905` for the network
 discovery UI test and a private OpenSSH server for the file-browser UI test.

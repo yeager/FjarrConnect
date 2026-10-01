@@ -50,6 +50,10 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
     var negotiatedSecurity: VNCNegotiatedSecurity? {
         connection?.negotiatedSecurity
     }
+    var verifiedTLSCertificate: VNCTLSCertificateInfo? {
+        connection?.verifiedTLSCertificate
+    }
+    var tlsFailureCode: Int32? { connection?.tlsFailureCode }
     private var frameCheck: DispatchWorkItem?
     private var clipboardGate = VNCClipboardSessionGate()
 
@@ -316,9 +320,10 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
                 // visible while giving every locale a safe, useful next step.
                 let reason = self.credentialFailure ?? connectionState.error.map { error in
                     Self.connectionFailureMessage(host: self.profile.host,
-                                                   port: self.profile.port,
-                                                   error: error,
-                                                   authentication: self.requestedAuthentication)
+                    port: self.profile.port,
+                    error: error,
+                    authentication: self.requestedAuthentication,
+                    tlsFailureCode: connection.tlsFailureCode)
                 }
                 self.status = .disconnected(reason: reason)
             }
@@ -659,9 +664,12 @@ final class VNCRemoteSession: NSObject, RemoteSession, VNCConnectionDelegate, VN
 
     static func connectionFailureMessage(host: String, port: UInt16,
                                          error: Error? = nil,
-                                         authentication: VNCAuthenticationType? = nil) -> String {
+                                         authentication: VNCAuthenticationType? = nil,
+                                         tlsFailureCode: Int32? = nil) -> String {
         let explanation: String
-        if let error,
+        if tlsFailureCode != nil {
+            explanation = NSLocalizedString("vnc.tlsHandshakeFailed", comment: "")
+        } else if let error,
            case VNCError.authentication(.clientCouldNotDecideOnSecurityType) = error {
             explanation = NSLocalizedString("vnc.unsupportedSecurity", comment: "")
         } else if authentication == .appleRemoteDesktop,

@@ -11,6 +11,33 @@ final class ConnectionTests: XCTestCase {
         XCTAssertNotNil(WakeOnLAN.magicPacket(mac: "01-23-45-67-89-ab"))
         XCTAssertNil(WakeOnLAN.magicPacket(mac: "not-a-mac"))
     }
+
+    func testHealthProbeUsesRDPGatewayWhenConfigured() {
+        var profile = ConnectionProfile(name: "Gateway RDP", transport: .rdp,
+                                        host: "desktop.internal", port: 3389)
+        profile.rdp = RDPOptions(gatewayHost: "gateway.example", gatewayPort: 4443)
+        let endpoint = SessionHealthEndpoint.resolve(for: profile)
+        XCTAssertEqual(endpoint.host, "gateway.example")
+        XCTAssertEqual(endpoint.port, 4443)
+
+        profile.rdp?.gatewayPort = nil
+        XCTAssertEqual(SessionHealthEndpoint.resolve(for: profile).port, 443)
+    }
+
+    func testHealthProbeUsesDesktopEndpointWithoutGatewayAndIgnoresGatewayForNonRDP() {
+        var profile = ConnectionProfile(name: "Direct RDP", transport: .rdp,
+                                        host: "desktop.internal", port: 3390)
+        profile.rdp = RDPOptions(gatewayHost: "gateway.example")
+        XCTAssertEqual(SessionHealthEndpoint.resolve(for: profile).host, "gateway.example")
+
+        profile = ConnectionProfile(name: "VNC", transport: .vnc,
+                                    host: "screen.internal", port: 5901)
+        profile.rdp = RDPOptions(gatewayHost: "ignored.example")
+        let endpoint = SessionHealthEndpoint.resolve(for: profile)
+        XCTAssertEqual(endpoint.host, "screen.internal")
+        XCTAssertEqual(endpoint.port, 5901)
+    }
+
     func testLegacyProfileDefaultsToNotFavorite() throws {
         let json = """
         {"id":"11111111-1111-1111-1111-111111111111","name":"Studio","transport":"vnc","host":"studio.local","port":5900}
@@ -303,6 +330,38 @@ final class ConnectionTests: XCTestCase {
         XCTAssertEqual(importedRDP.host, "desktop.local")
         XCTAssertEqual(importedRDP.port, 3390)
         XCTAssertEqual(importedRDP.username, "DOMAIN\\admin")
+        XCTAssertNil(importedRDP.rdp)
+
+        let remoteApp = Data("""
+        full address:s:rdp-gateway.example:3389
+        username:s:DOMAIN\\desktop-user
+        password 51:b:desktop-secret
+        gatewayhostname:s:gateway.example
+        gatewayusagemethod:i:1
+        gatewayusername:s:DOMAIN\\gateway-user
+        gatewaypassword 51:b:gateway-secret
+        remoteapplicationmode:i:1
+        remoteapplicationprogram:s:||wordpad
+        remoteapplicationname:s:WordPad
+        """.utf8)
+        let importedRemoteApp = try XCTUnwrap(
+            ExternalProfileImporter.profile(data: remoteApp, fileExtension: "rdp")
+        )
+        XCTAssertEqual(importedRemoteApp.transport, .remoteApp)
+        XCTAssertEqual(importedRemoteApp.name, "WordPad")
+        XCTAssertEqual(importedRemoteApp.username, "DOMAIN\\desktop-user")
+        XCTAssertEqual(importedRemoteApp.rdp?.gatewayHost, "gateway.example")
+        XCTAssertEqual(importedRemoteApp.rdp?.gatewayUsername, "DOMAIN\\gateway-user")
+        XCTAssertEqual(importedRemoteApp.rdp?.remoteAppProgram, "||wordpad")
+        XCTAssertFalse(importedRemoteApp.rdp?.resizesRemoteDesktop ?? true)
+        XCTAssertFalse(String(decoding: try JSONEncoder().encode(importedRemoteApp), as: UTF8.self)
+            .contains("secret"))
+
+        let incompleteRemoteApp = Data("""
+        full address:s:desktop.local
+        remoteapplicationmode:i:1
+        """.utf8)
+        XCTAssertNil(ExternalProfileImporter.profile(data: incompleteRemoteApp, fileExtension: "rdp"))
 
         let vnc = Data("""
         [Connection]

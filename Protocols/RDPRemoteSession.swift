@@ -21,6 +21,7 @@ final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource, S
         case 7: return "rdp.error.license"
         case 8: return "rdp.error.serverEndedSession"
         case 9: return "rdp.error.securityNegotiation"
+        case 10: return "rdp.error.channel"
         default: return "rdp.ended"
         }
     }
@@ -34,6 +35,7 @@ final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource, S
     private var connectionDeadlineTimer: Timer?
     private var active = false
     private let runtime: RDPRuntime?
+    @Published private(set) var roundTripMilliseconds: Int?
 
     var recordingView: NSView? { screen }
     var negotiatedCodec: String? {
@@ -107,6 +109,12 @@ final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource, S
     }
     private func updateStatus() {
         guard let pointer, let runtime else { return }
+        // FreeRDP receives RTT probes independently of connection state. Read
+        // the native snapshot from this main-thread timer and publish changes
+        // so SwiftUI refreshes the health menu as soon as a sample arrives.
+        let value = runtime.roundTripMilliseconds(pointer)
+        let measurement = value > 0 ? Int(value) : nil
+        if roundTripMilliseconds != measurement { roundTripMilliseconds = measurement }
         let receivedFrame = runtime.hasFrame(pointer) != 0
         if hasReceivedFrame != receivedFrame { hasReceivedFrame = receivedFrame }
         switch runtime.status(pointer) {
@@ -138,6 +146,7 @@ final class RDPRemoteSession: NSObject, RemoteSession, SessionRecordingSource, S
         timer?.invalidate(); timer = nil
         if let pointer { runtime?.stop(pointer) }
         credentials = SessionCredentials()
+        roundTripMilliseconds = nil
         status = .disconnected(reason: nil)
     }
     deinit { connectionDeadlineTimer?.invalidate(); timer?.invalidate(); if let pointer { runtime?.stop(pointer) } }

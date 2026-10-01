@@ -23,8 +23,28 @@ enum CloseConfirmation {
 
 final class FjarrConnectAppDelegate: NSObject, NSApplicationDelegate {
     var shouldTerminate: () -> Bool = { true }
+    var prepareForTermination: (@escaping () -> Void) -> Void = { $0() }
+    var replyToTermination: (NSApplication, Bool) -> Void = { application, shouldTerminate in
+        application.reply(toApplicationShouldTerminate: shouldTerminate)
+    }
+    private var terminationInProgress = false
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        shouldTerminate() ? .terminateNow : .terminateCancel
+        guard shouldTerminate() else { return .terminateCancel }
+        guard !terminationInProgress else { return .terminateLater }
+        terminationInProgress = true
+        prepareForTermination { [weak self, weak sender] in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.terminationInProgress = false
+                if let sender { self.replyToTermination(sender, true) }
+            }
+        }
+        return .terminateLater
     }
 }
 

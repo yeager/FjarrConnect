@@ -70,6 +70,15 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertTrue(quickConnect.isHittable)
         XCTAssertTrue(welcome.waitForExistence(timeout: 5))
 
+        let mainWindow = app.windows["FjärrConnect"]
+        XCTAssertTrue(mainWindow.exists)
+        mainWindow.typeKey("w", modifierFlags: .command)
+        XCTAssertTrue(mainWindow.waitForNonExistence(timeout: 5),
+                      "The test must exercise About when the main scene is closed")
+        XCTAssertNotEqual(app.state, .notRunning,
+                          "Closing the last window should leave the app menu available")
+        app.activate()
+
         // macOS uses the bundle name without the UI's diacritic in the app menu.
         let appMenu = app.menuBars.menuBarItems["FjarrConnect"]
         XCTAssertTrue(appMenu.waitForExistence(timeout: 5))
@@ -84,8 +93,8 @@ final class ConnectionUITests: XCTestCase {
         XCTAssertTrue(aboutPanel.staticTexts.matching(
             NSPredicate(format: "value BEGINSWITH %@", "Version ")).firstMatch.exists,
                       "The About dialog should show the application version")
-        XCTAssertTrue(app.windows.matching(identifier: "main").firstMatch.exists,
-                      "The main application window should remain open behind About")
+        XCTAssertTrue(mainWindow.waitForExistence(timeout: 5),
+                      "Opening About should also reopen the main application window")
         XCTAssertTrue(quickConnect.waitForExistence(timeout: 5),
                       "Opening About must not replace or close the main window")
         XCTAssertGreaterThan(quickConnect.frame.width, 0,
@@ -255,9 +264,9 @@ final class ConnectionUITests: XCTestCase {
         throw XCTSkip("No matching embedded FreeRDP runtime for this test architecture")
 #endif
         let runtimeCandidates = [
-            root.appendingPathComponent("build/debug-\(architecture)/Build/Products/Debug/FjarrConnect.app/Contents/Frameworks/libFjarrRDP.dylib"),
-            root.appendingPathComponent("build/rdp-\(architecture)/FreeRDP-build/libFjarrRDP.dylib"),
             root.appendingPathComponent("build/rdp-output/\(architecture)/libFjarrRDP.dylib"),
+            root.appendingPathComponent("build/rdp-\(architecture)/FreeRDP-build/libFjarrRDP.dylib"),
+            root.appendingPathComponent("build/debug-\(architecture)/Build/Products/Debug/FjarrConnect.app/Contents/Frameworks/libFjarrRDP.dylib"),
             root.appendingPathComponent("build/verify-release-\(architecture)/Build/Products/Release/FjarrConnect.app/Contents/Frameworks/libFjarrRDP.dylib")
         ]
         guard let runtime = runtimeCandidates.first(where: { FileManager.default.fileExists(atPath: $0.path) }) else {

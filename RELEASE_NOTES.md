@@ -1,3 +1,18 @@
+Unreleased
+
+- Release ordinary VNC keys immediately and send autorepeat as balanced press/release
+  pairs, so a dropped physical key-up cannot leave a key repeating on a remote Mac.
+- Import RDP gateway and RemoteApp settings from `.rdp` files while continuing to ignore
+  desktop and gateway password fields.
+- Pin FreeRDP 3.32.1 and verify it against a GNOME Remote Desktop server: NLA Extended
+  (`0x08`) authenticated, delivered a desktop frame and rendered the native view in a
+  macOS window. The full SwiftUI app flow and live RDP
+  file transfer remain unverified; x86_64 was not tested on physical Intel hardware.
+- Show FreeRDP's measured RDP round-trip time when the server provides a sample;
+  keep packet loss unavailable instead of estimating it from TCP.
+- Show the negotiated VNC security type and verified VeNCrypt TLS certificate name
+  and SHA-256 fingerprint in the session health menu.
+
 FjärrConnect 0.2.33
 
 - Explain when the embedded RDP component is missing, built for the wrong Mac
@@ -12,9 +27,11 @@ Known limitation: live testing against the Mac Screen Sharing host was unavailab
 for this release because the server stopped responding after authentication. Local
 VNC protocol and keyboard tests pass.
 
-Live RDP testing also remains incomplete: the test server reset the connection
-during security negotiation, before authentication. Local runtime and protocol
-smoke tests pass, but a live Windows desktop session has not been verified.
+At the time of the 0.2.33 release, an authenticated desktop session and RDP file
+clipboard had not been verified in that build. The current checkout's FreeRDP 3.32.1
+native-view test authenticated to GNOME Remote Desktop, selected NLA Extended and
+displayed a desktop frame. The x86_64 runtime has not been tested on an Intel Mac, and
+live RDP file transfer remains unverified.
 
 Download `FjarrConnect-0.2.33-macOS-arm64.zip` for Apple Silicon or
 `FjarrConnect-0.2.33-macOS-x86_64.zip` for Intel. Each app contains only its target

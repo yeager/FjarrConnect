@@ -52,6 +52,8 @@ protocol NetworkConnection: NetworkConnectionReading, NetworkConnectionWriting {
 /// A connection that can encrypt its already-established byte stream without
 /// replacing the underlying TCP session. VeNCrypt needs this exact operation.
 protocol TLSUpgradableNetworkConnection: NetworkConnection {
+	var verifiedTLSCertificate: VNCTLSCertificateInfo? { get }
+	var tlsFailureCode: Int32? { get }
 	func upgradeToTLS(serverName: String) async throws
 }
 

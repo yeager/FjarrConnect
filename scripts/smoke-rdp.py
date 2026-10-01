@@ -19,6 +19,9 @@ import threading
 ROOT = Path(__file__).resolve().parent.parent
 library = Path(sys.argv[1]).resolve()
 assert library.is_file(), library
+runtime_strings = subprocess.check_output(['strings', str(library)], text=True, errors='replace')
+assert 'FC_DIAG ' not in runtime_strings, (
+    f'FreeRDP runtime contains temporary FC_DIAG instrumentation: {library}')
 architectures = subprocess.check_output(['lipo', '-archs', str(library)], text=True).split()
 assert len(architectures) == 1, f'Expected one runtime architecture, found {architectures}'
 architecture = architectures[0]
@@ -60,7 +63,7 @@ if not version_header.is_file():  # Build artifacts from older CI runs omitted t
     version_header = freerdp / 'include/freerdp/version.h'
 assert version_header.is_file(), f'FreeRDP version header not found: {version_header}'
 version = re.search(r'^#define FREERDP_VERSION "([^"]+)"', version_header.read_text(), re.MULTILINE)
-assert version and version.group(1) == '3.32.0', (
+assert version and version.group(1) == '3.32.1', (
     f'{architecture} runtime was built from unexpected FreeRDP version: '
     f'{version.group(1) if version else "unknown"}')
 openssl_header = freerdp_build / 'openssl/include/opensslv.h'
@@ -76,14 +79,19 @@ else:
 def translations(language):
     source = (ROOT / f'Resources/{language}.lproj/Localizable.strings').read_text()
     quoted = r'"(?:[^"\\]|\\.)*"'
-    return {json.loads(key): json.loads(value) for key, value in
-            re.findall(f'({quoted})\\s*=\\s*({quoted})\\s*;', source)}
+    result = {json.loads(key): json.loads(value) for key, value in
+              re.findall(f'({quoted})\\s*=\\s*({quoted})\\s*;', source)}
+    assert result.get('rdp.error.channel'), f'{language}: missing localized virtual-channel diagnostic'
+    return result
 
 
 with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
     directory = Path(temporary)
     probe = directory / 'FjarrRDPProbe'
     subprocess.run(['xcrun', 'clang', '-arch', architecture, '-fobjc-arc', '-framework', 'AppKit',
+                    # FreeRDP 3.32 headers retain deprecated ABI-compatibility fields;
+                    # this probe does not use them.
+                    '-Wno-deprecated-declarations',
                     '-I', str(ROOT / 'NativeRDP'), '-isystem', str(freerdp / 'include'),
                     '-isystem', str(freerdp / 'winpr/include'), '-isystem', str(freerdp_build / 'freerdp/include'),
                     '-isystem', str(freerdp_build / 'freerdp/winpr/include'), str(ROOT / 'NativeRDP/Tests/Probe.m'),
@@ -96,6 +104,12 @@ with tempfile.TemporaryDirectory(prefix='fjarr-rdp-smoke-') as temporary:
     assert phase_check.returncode == 0, (
         f'RDP connection phase reporting failed: {phase_check.stdout}\n{phase_check.stderr}')
     print(f'RDP {architecture}: {phase_check.stdout.strip()}')
+    rtt_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
+                               input='', text=True, capture_output=True, timeout=15,
+                               env=dict(os.environ, FC_TEST_RDP_RTT_BRIDGE='1'))
+    assert rtt_check.returncode == 0, (
+        f'RDP round-trip metric bridge failed: {rtt_check.stdout}\n{rtt_check.stderr}')
+    print(f'RDP {architecture}: {rtt_check.stdout.strip()}')
     security_check = subprocess.run([str(probe), str(empty_translations), str(directory / 'desktop.png')],
                                     input='', text=True, capture_output=True, timeout=15,
                                     env=dict(os.environ, FC_TEST_SECURITY_PROTOCOLS='1'))

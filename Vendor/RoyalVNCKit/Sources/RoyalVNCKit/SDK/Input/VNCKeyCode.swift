@@ -133,9 +133,18 @@ public struct VNCKeyCode: Equatable {
 		Self.f19.rawValue: "F19"
 	]
 
-    public init(_ rawValue: UInt32) {
-        self.rawValue = rawValue
-    }
+	public init(_ rawValue: UInt32) {
+		self.rawValue = rawValue
+	}
+
+	var isModifier: Bool {
+		[
+			Self.shift, Self.rightShift,
+			Self.control, Self.rightControl,
+			Self.option, Self.optionForARD, Self.rightOption, Self.rightOptionForARD,
+			Self.command, Self.commandForARD, Self.rightCommand, Self.rightCommandForARD
+		].contains(self)
+	}
 
     public init(asciiCharacter: UInt8) {
         self.init(.init(asciiCharacter))

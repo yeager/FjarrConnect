@@ -302,6 +302,7 @@
 "rdp.error.nla" = "Serveren krever godkjenning på nettverksnivå (NLA). Kontroller at kontoen kan bruke NLA og at Windows-serveren støtter den valgte påloggingsmetoden.";
 "rdp.error.license" = "Serveren avviste lisensforhandlingen for Eksternt skrivebord. Kontroller lisenstjenesten for Eksternt skrivebord og tilgjengelige klienttilgangslisenser.";
 "rdp.error.serverEndedSession" = "Serveren avsluttet RDP-økten etter tilkoblingen. Kontroller øktpolicyen for den eksterne kontoen og serverens logger for Eksternt skrivebord.";
+"rdp.error.channel" = "RDP-serveren avbrøt en virtuell kanal. Kontroller hvilke omdirigeringskanaler serveren tillater, og om profilen bruker en støttet kanal.";
 
 // Network service discovery
 "discovery.scan.title" = "Finn servere";
@@ -439,6 +440,7 @@
 "health.title" = "Tilkoblingsstatus";
 "health.tcpConnection" = "TCP-tilkobling";
 "health.tcpConnection.value" = "%d ms";
+"health.rdpRoundTrip" = "RDP-tur-retur-tid";
 "health.packetLoss" = "Pakketap";
 "health.packetLoss.value" = "%.1f %%";
 "health.packetLoss.unavailable" = "Ikke tilgjengelig for denne TCP-økten";
@@ -447,6 +449,14 @@
 "health.reconnect.value" = "Forsøk %d av %d";
 "health.reconnect.none" = "Ingen ny tilkobling pågår";
 "health.unavailable" = "Ikke tilgjengelig";
+"vnc.security.section" = "VNC-sikkerhet";
+"vnc.tlsHandshakeFailed" = "Den sikre VNC-tilkoblingen kunne ikke opprettes. Kontroller at serversertifikatet er klarert og gyldig for adressen, og at serveren støtter kompatible TLS-innstillinger.";
+"vnc.security.unknown" = "Ikke forhandlet";
+"vnc.security.none" = "Ukryptert";
+"vnc.security.verified" = "TLS-sertifikatet er verifisert";
+"vnc.security.notVerified" = "TLS-sertifikatet er ikke verifisert";
+"vnc.certificate.subject" = "Sertifikatnavn";
+"vnc.certificate.sha256" = "SHA-256-fingeravtrykk";
 
 /* RDP network profile */
 "rdp.network" = "Nettverksprofil";

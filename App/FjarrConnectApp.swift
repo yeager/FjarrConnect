@@ -3,6 +3,7 @@ import SwiftUI
 
 @main
 struct FjarrConnectApp: App {
+    @Environment(\.openWindow) private var openWindow
     @NSApplicationDelegateAdaptor(FjarrConnectAppDelegate.self) private var appDelegate
     @StateObject private var profiles = FjarrConnectApp.makeProfileStore()
     @StateObject private var discovery = BonjourBrowser()
@@ -48,6 +49,13 @@ struct FjarrConnectApp: App {
                 .onAppear {
                     markSmokeLaunchReadyIfRequested()
                     appDelegate.shouldTerminate = connection.confirmClosingAll
+                    appDelegate.prepareForTermination = { completion in
+                        connection.stopRecordingsAndWait {
+                            connection.disconnectAll()
+                            discovery.stop()
+                            completion()
+                        }
+                    }
                     releaseUpdates.checkOnLaunchIfEnabled()
                     #if DEBUG
                     if ProcessInfo.processInfo.environment["FJARRCONNECT_DISABLE_DISCOVERY"] == "1" ||
@@ -72,7 +80,13 @@ struct FjarrConnectApp: App {
 
         .commands {
             CommandGroup(replacing: .appInfo) {
-                Button("about.menu", action: AboutPanel.show)
+                Button("about.menu") {
+                    // The standard About panel is independent of the SwiftUI
+                    // Window scene. Reopen the main scene first so About never
+                    // leaves the user looking at an otherwise empty app.
+                    openWindow(id: "main")
+                    Task { @MainActor in await showAboutAfterMainWindowOpens() }
+                }
             }
             CommandGroup(after: .appInfo) {
                 Button("about.repository", action: AboutPanel.openRepository)
@@ -97,6 +111,28 @@ struct FjarrConnectApp: App {
                 }
             }
         }
+    }
+
+    @MainActor
+    private func showAboutAfterMainWindowOpens() async {
+        // `openWindow` requests a scene; it does not synchronously create and
+        // lay out the NSWindow. Wait for that observable state before ordering
+        // the standard About panel above it.
+        for _ in 0..<40 {
+            if NSApp.windows.contains(where: { window in
+                window.title == "FjärrConnect" && window.isVisible &&
+                    (window.contentView?.frame.width ?? 0) > 0 &&
+                    (window.contentView?.frame.height ?? 0) > 0
+            }) {
+                AboutPanel.show()
+                return
+            }
+            try? await Task.sleep(for: .milliseconds(25))
+        }
+
+        // Do not leave the menu command inert if macOS is unusually slow to
+        // create the scene; the next invocation will retry opening the window.
+        AboutPanel.show()
     }
 
     /// The release smoke test passes a random token and waits for the window

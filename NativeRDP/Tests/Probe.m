@@ -85,21 +85,57 @@ int main(int argc, const char **argv) {
         NSView *view = (__bridge_transfer NSView *)fc_rdp_create(arguments.UTF8String, json.UTF8String);
         if (!view) { fputs("fc_rdp_create returned NULL\n", stderr); return 3; }
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_RDP_NEGOTIATION"] isEqualToString:@"1"]) {
-            // A password-free live probe isolates FreeRDP negotiation from
-            // authentication. Print only state enums and protocol flags.
+            // The default mode isolates negotiation without credentials. The
+            // frame mode accepts credentials through stdin and reports only
+            // safe state/flag values, never their contents.
+            const BOOL waitForFrame = [NSProcessInfo.processInfo.environment[@"FC_TEST_RDP_WAIT_FOR_FRAME"] isEqualToString:@"1"];
+            NSWindow *liveWindow = nil;
+            if (waitForFrame) {
+                liveWindow = [[NSWindow alloc] initWithContentRect:NSMakeRect(80, 80, 960, 600)
+                                                         styleMask:NSWindowStyleMaskTitled
+                                                           backing:NSBackingStoreBuffered defer:NO];
+                liveWindow.releasedWhenClosed = NO;
+                liveWindow.contentView = view;
+                [liveWindow makeKeyAndOrderFront:nil];
+                [NSApp activateIgnoringOtherApps:YES];
+            }
             fc_rdp_start((__bridge void *)view);
             int status = 0;
             for (NSUInteger attempt = 0; attempt < 200; attempt++) {
                 status = fc_rdp_status((__bridge void *)view);
                 if (status == 2 || status == 3) break;
-                usleep(100000);
+                [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
             }
+            BOOL hasFrame = fc_rdp_has_frame((__bridge void *)view) != 0;
+            if (waitForFrame && status == 2) {
+                for (NSUInteger attempt = 0; attempt < 200 && !hasFrame; attempt++) {
+                    [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+                    hasFrame = fc_rdp_has_frame((__bridge void *)view) != 0;
+                }
+            }
+            const BOOL embeddedInWindow = !waitForFrame || view.window == liveWindow;
             const char *phase = fc_rdp_connection_phase((__bridge void *)view);
-            printf("RDP negotiation probe: status=%d phase=%s failure=%d error=0x%08x requested=0x%08x selected=0x%08x\n",
+            const BOOL sessionPassed = status == 2 && hasFrame && embeddedInWindow;
+            printf("RDP negotiation probe: status=%d phase=%s failure=%d error=0x%08x requested=0x%08x selected=0x%08x input-state=0x%08x first-frame=%d embedded-in-window=%d\n",
                    status, phase ?: "unavailable", fc_rdp_failure((__bridge void *)view),
                    fc_rdp_error((__bridge void *)view),
-                   fc_rdp_requested_protocols((__bridge void *)view), fc_rdp_selected_protocol((__bridge void *)view));
+                   fc_rdp_requested_protocols((__bridge void *)view), fc_rdp_selected_protocol((__bridge void *)view),
+                   fc_rdp_input_state((__bridge void *)view), hasFrame, embeddedInWindow);
+            fflush(stdout);
             fc_rdp_stop((__bridge void *)view);
+            BOOL stopped = NO;
+            if (waitForFrame) {
+                for (NSUInteger attempt = 0; attempt < 200; attempt++) {
+                    if (fc_rdp_status((__bridge void *)view) == 3) { stopped = YES; break; }
+                    [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.025]];
+                }
+            }
+            const int stoppedStatus = fc_rdp_status((__bridge void *)view);
+            printf("RDP probe cleanup: stop-requested=%d stopped=%d final-status=%d\n",
+                   waitForFrame, stopped, stoppedStatus);
+            fflush(stdout);
+            [liveWindow close];
+            if (waitForFrame) return sessionPassed && stopped ? 0 : 25;
             return status == 3 && phase ? 0 : 25;
         }
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_CLIPBOARD_FILE_OPTION"] isEqualToString:@"1"]) {
@@ -204,7 +240,14 @@ int main(int argc, const char **argv) {
                 unsafeRejected && oversizedRejected ? 0 : 26;
         }
         const uint32_t abi = fc_rdp_abi();
-        if (abi != 7) { fprintf(stderr, "Unexpected RDP ABI: %u\n", abi); return 3; }
+        if (abi != 8) { fprintf(stderr, "Unexpected RDP ABI: %u\n", abi); return 3; }
+        if ([NSProcessInfo.processInfo.environment[@"FC_TEST_RDP_RTT_BRIDGE"] isEqualToString:@"1"]) {
+            if (fc_rdp_round_trip_milliseconds((__bridge void *)view) != 0) return 27;
+            [view setValue:@42 forKey:@"roundTripMilliseconds"];
+            if (fc_rdp_round_trip_milliseconds((__bridge void *)view) != 42) return 28;
+            puts("RDP measured round-trip metric bridge passed and remains unavailable until sampled.");
+            return 0;
+        }
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_SECURITY_PROTOCOLS"] isEqualToString:@"1"]) {
             [view setValue:@(0x0B) forKey:@"requestedProtocols"];
             [view setValue:@(0x08) forKey:@"selectedProtocol"];
@@ -269,6 +312,9 @@ int main(int argc, const char **argv) {
                 {"activation", FREERDP_ERROR_CONNECT_ACTIVATION_TIMEOUT, CONNECTION_STATE_ACTIVE, 5},
                 {"nla", FREERDP_ERROR_CONNECT_HYBRID_REQUIRED_BY_SERVER, CONNECTION_STATE_NEGO, 6},
                 {"licensing", MAKE_FREERDP_ERROR(ERRINFO, ERRINFO_LICENSE_NO_LICENSE_SERVER), CONNECTION_STATE_LICENSING, 7},
+                {"virtual-channel-data", MAKE_FREERDP_ERROR(ERRINFO, ERRINFO_VCHANNEL_DATA_TOO_SHORT), CONNECTION_STATE_ACTIVE, 10},
+                {"virtual-channel-compression", MAKE_FREERDP_ERROR(ERRINFO, ERRINFO_VIRTUAL_CHANNEL_DECOMPRESSION), CONNECTION_STATE_ACTIVE, 10},
+                {"virtual-channel-id", MAKE_FREERDP_ERROR(ERRINFO, ERRINFO_INVALID_CHANNEL_ID), CONNECTION_STATE_ACTIVE, 10},
                 {"server-logoff", FREERDP_ERROR_LOGOFF_BY_USER, CONNECTION_STATE_ACTIVE, 8},
                 {"unknown", UINT32_MAX, CONNECTION_STATE_INITIAL, 0}
             };
@@ -283,7 +329,7 @@ int main(int argc, const char **argv) {
                     return 11;
                 }
             }
-            puts("RDP failure categories passed: network, negotiation transport, security negotiation, certificate, authentication, account, activation, NLA, licensing, server logoff, unknown.");
+            puts("RDP failure categories passed: network, negotiation transport, security negotiation, certificate, authentication, account, activation, NLA, licensing, virtual channel, server logoff, unknown.");
             return 0;
         }
         if ([NSProcessInfo.processInfo.environment[@"FC_TEST_RDP_FOCUS_RELEASE"] isEqualToString:@"1"]) {
