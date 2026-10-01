@@ -38,7 +38,7 @@ final class CFStreamNetworkConnectionTests: XCTestCase {
     }
 
     func testKeyboardWriteIsNotBlockedByPendingServerRead() async throws {
-        let peer = try DelayedCFStreamPeer()
+        let peer = try DelayedCFStreamPeer(sendsDelayedByte: true)
         defer { peer.stop() }
 
         let connection = CFStreamNetworkConnection(settings: NetworkConnectionSettings(
@@ -72,11 +72,13 @@ final class CFStreamNetworkConnectionTests: XCTestCase {
 private final class DelayedCFStreamPeer: @unchecked Sendable {
     private let listener: Int32
     let port: UInt16
+    private let sendsDelayedByte: Bool
     let receivedClientData = XCTestExpectation(description: "Client data reached the VNC server")
     private let lock = NSLock()
     private var client: Int32 = -1
 
-    init() throws {
+    init(sendsDelayedByte: Bool = false) throws {
+        self.sendsDelayedByte = sendsDelayedByte
         let fd = socket(AF_INET, SOCK_STREAM, 0)
         guard fd >= 0 else { throw POSIXError(.init(rawValue: errno) ?? .EIO) }
         var reuse: Int32 = 1
@@ -130,10 +132,12 @@ private final class DelayedCFStreamPeer: @unchecked Sendable {
         guard fd >= 0 else { return }
         lock.lock(); client = fd; lock.unlock()
 
-        // Let the client's first read block. A healthy transport still writes concurrently.
-        DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(650)) {
-            var byte: UInt8 = 0x52
-            _ = Darwin.send(fd, &byte, 1, 0)
+        if sendsDelayedByte {
+            // Let the client's first read block. A healthy transport still writes concurrently.
+            DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(650)) {
+                var byte: UInt8 = 0x52
+                _ = Darwin.send(fd, &byte, 1, 0)
+            }
         }
 
         var received: UInt8 = 0

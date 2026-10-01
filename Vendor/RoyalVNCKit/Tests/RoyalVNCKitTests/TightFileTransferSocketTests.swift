@@ -60,7 +60,7 @@ final class TightFileTransferSocketTests: XCTestCase {
         XCTAssertEqual(connection.connectionState.status, .connected)
         try connection.requestFileList(directory: "/")
         await fulfillment(of: [finished], timeout: 20)
-        XCTAssertEqual(eventNames, ["fileList", "fileList", "downloadData", "downloadFinished"], "server at \(server.currentStage), fixture error \(String(describing: server.error)), connection error \(String(describing: connection.connectionState.error)), log \(logger.messages.suffix(12))")
+        XCTAssertEqual(eventNames, ["fileList", "fileList", "downloadData", "downloadFinished"], "server at \(server.currentStage), fixture error \(String(describing: server.error)), connection error \(String(describing: connection.connectionState.error)), server wire trace \(server.wireTrace), log \(logger.messages.suffix(12))")
         XCTAssertTrue(connection.canTransferFiles)
         XCTAssertNil(server.error)
         XCTAssertEqual(server.receivedUpload, Data("uploaded bytes".utf8))
@@ -90,10 +90,12 @@ private final class TightFileTransferServer: @unchecked Sendable {
     private var storedUpload = Data()
     private var storedUploadModificationTime: UInt32?
     private var storedStage = "listening"
+    private var storedWireTrace: [String] = []
     var error: Error? { lock.lock(); defer { lock.unlock() }; return storedError }
     var receivedUpload: Data { lock.lock(); defer { lock.unlock() }; return storedUpload }
     var receivedUploadModificationTime: UInt32? { lock.lock(); defer { lock.unlock() }; return storedUploadModificationTime }
     var currentStage: String { lock.lock(); defer { lock.unlock() }; return storedStage }
+    var wireTrace: [String] { lock.lock(); defer { lock.unlock() }; return storedWireTrace }
     private var stopped = false
 
     init() throws {
@@ -229,11 +231,15 @@ private final class TightFileTransferServer: @unchecked Sendable {
         if type == 130 {
             let header = try readExactly(fd, 3)
             let size = Int(header[1]) << 8 | Int(header[2])
-            return try readExactly(fd, size)
+            let path = try readExactly(fd, size)
+            recordWireTrace("C→S type=\(type) header=\(hex(header)) path=\(hex(path))")
+            return path
         }
         let header = try readExactly(fd, 7)
         let size = Int(header[1]) << 8 | Int(header[2])
-        return try readExactly(fd, size)
+        let path = try readExactly(fd, size)
+        recordWireTrace("C→S type=\(type) header=\(hex(header)) path=\(hex(path))")
+        return path
     }
 
     private func readUploadPacket(_ fd: Int32) throws -> Data {
@@ -242,14 +248,18 @@ private final class TightFileTransferServer: @unchecked Sendable {
         let realSize = Int(header[1]) << 8 | Int(header[2])
         let compressedSize = Int(header[3]) << 8 | Int(header[4])
         guard realSize == compressedSize else { throw fixtureError("fixture expects uncompressed upload") }
-        return try readExactly(fd, compressedSize)
+        let payload = try readExactly(fd, compressedSize)
+        recordWireTrace("C→S type=133 header=\(hex(header)) payloadLength=\(payload.count)")
+        return payload
     }
 
     private func readUploadEnd(_ fd: Int32) throws -> UInt32 {
         guard try readExactly(fd, 1) == Data([133]) else { throw fixtureError("expected upload end marker") }
         let body = try readExactly(fd, 9)
         guard body[1...4].allSatisfy({ $0 == 0 }) else { throw fixtureError("invalid upload end marker") }
-        return body.withUnsafeBytes { UInt32(bigEndian: $0.loadUnaligned(fromByteOffset: 5, as: UInt32.self)) }
+        let modificationTime = body.withUnsafeBytes { UInt32(bigEndian: $0.loadUnaligned(fromByteOffset: 5, as: UInt32.self)) }
+        recordWireTrace("C→S type=133 end=\(hex(body))")
+        return modificationTime
     }
 
     private func sendFileList(_ fd: Int32) throws {
@@ -259,6 +269,13 @@ private final class TightFileTransferServer: @unchecked Sendable {
         body.append(UInt16(names.count), bigEndian: true)
         body.append(UInt32(14), bigEndian: true); body.append(UInt32(123), bigEndian: true)
         body.append(names)
+        let expected = Data([130, 0, 0, 1, 0, 11, 0, 11,
+                             0, 0, 0, 14, 0, 0, 0, 123,
+                             114, 101, 109, 111, 116, 101, 46, 116, 120, 116, 0])
+        guard body == expected else {
+            throw fixtureError("file-list response differs from its wire fixture: got \(hex(body)); expected \(hex(expected))")
+        }
+        recordWireTrace("S→C file-list length=\(body.count) bytes=\(hex(body))")
         try writeAll(fd, body)
     }
 
@@ -304,6 +321,14 @@ private final class TightFileTransferServer: @unchecked Sendable {
 
     private func fixtureError(_ message: String) -> NSError {
         NSError(domain: "TightFileTransferSocketTests", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
+    }
+
+    private func recordWireTrace(_ entry: String) {
+        lock.lock(); storedWireTrace.append(entry); lock.unlock()
+    }
+
+    private func hex(_ data: Data) -> String {
+        data.map { String(format: "%02x", $0) }.joined()
     }
 
     private func setStage(_ value: String) { lock.lock(); storedStage = value; lock.unlock() }
