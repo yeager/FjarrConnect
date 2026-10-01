@@ -1281,7 +1281,10 @@ final class VNCIntegrationTests: XCTestCase {
                       "A cursor shape update must take effect while the pointer remains over the framebuffer")
         XCTAssertGreaterThan(window.cursorRectInvalidations, 0,
                              "A changed server cursor must invalidate AppKit's cached cursor rectangles")
-        XCTAssertTrue(resizedView?.trackingAreas.contains { $0.options.contains(.cursorUpdate) } == true,
+        let cursorTrackingAreaArrived = await waitForUI(timeout: 5) {
+            resizedView?.trackingAreas.contains { $0.options.contains(.cursorUpdate) } == true
+        }
+        XCTAssertTrue(cursorTrackingAreaArrived,
                       "The framebuffer must receive AppKit cursor-update events while the pointer is over it")
         resizedView?.frame = NSRect(x: 0, y: 0, width: 2.5, height: 1.5)
         XCTAssertEqual(resizedView?.scaleRatio ?? -1, 0.5, accuracy: 0.001)
